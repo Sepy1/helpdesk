@@ -9,10 +9,13 @@ class Ticket extends Model
 {
     use HasFactory;
      protected $fillable = [
-        'nomor_tiket','user_id','kategori','deskripsi','lampiran','status','it_id','eskalasi','taken_at','closed_at',
+        'nomor_tiket','user_id','kategori','deskripsi','lampiran',
+        'status','it_id','eskalasi','taken_at','closed_at',
+        'vendor_followup','vendor_followup_at','closed_note',
     ];
 
     protected $casts = [
+    'vendor_followup_at' => 'datetime',
     'taken_at'  => 'datetime',
     'closed_at' => 'datetime',
 ];

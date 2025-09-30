@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
-    /** Sumber kebenaran kategori & status  */
+    /** Sumber kebenaran kategori & status */
     public const KATEGORI = ['JARINGAN','LAYANAN','CBS','OTHER'];
     public const STATUS   = ['OPEN','ON_PROGRESS','CLOSED'];
 
@@ -68,6 +68,8 @@ class TicketController extends Controller
                 'deskripsi'   => $request->deskripsi,
                 'lampiran'    => $lampiran,
                 'status'      => 'OPEN',
+                // default untuk kolom baru (kalau ada)
+                'eskalasi'    => 'TIDAK',
             ]);
         });
 
@@ -126,7 +128,7 @@ class TicketController extends Controller
         return view('it.dashboard', compact('tickets'));
     }
 
-    /** Tiket yang sedang diambil alih oleh IT ini */
+    /** Tiket yang sedang diambil alih oleh IT ini + filter */
     public function myAssigned(Request $request)
     {
         if (Auth::user()->role !== 'IT') abort(403);
@@ -152,21 +154,21 @@ class TicketController extends Controller
     /** IT mengambil alih tiket */
     public function take(Ticket $ticket)
     {
-         if (Auth::user()->role !== 'IT') abort(403);
-    if ($ticket->status === 'CLOSED') {
-        return back()->with('error', 'Tiket sudah ditutup.');
-    }
-    if ($ticket->status !== 'OPEN' && $ticket->it_id && $ticket->it_id !== Auth::id()) {
-        return back()->with('error', 'Tiket sudah ditangani orang lain.');
-    }
+        if (Auth::user()->role !== 'IT') abort(403);
+        if ($ticket->status === 'CLOSED') {
+            return back()->with('error', 'Tiket sudah ditutup.');
+        }
+        if ($ticket->status !== 'OPEN' && $ticket->it_id && $ticket->it_id !== Auth::id()) {
+            return back()->with('error', 'Tiket sudah ditangani orang lain.');
+        }
 
-    $ticket->update([
-        'status'   => 'ON_PROGRESS',
-        'it_id'    => Auth::id(),
-        'taken_at' => $ticket->taken_at ?: now(), // set sekali saat pertama di-take
-    ]);
+        $ticket->update([
+            'status'   => 'ON_PROGRESS',
+            'it_id'    => Auth::id(),
+            'taken_at' => $ticket->taken_at ?: now(), // set sekali saat pertama di-take
+        ]);
 
-    return back()->with('success', 'Tiket diambil.');
+        return back()->with('success', 'Tiket diambil.');
     }
 
     /** IT melepaskan tiket yang sedang di-handle (kembali OPEN) */
@@ -186,51 +188,73 @@ class TicketController extends Controller
         return back()->with('success', 'Tiket dilepas kembali ke antrian.');
     }
 
-    /** IT menutup tiket */
-    public function close(Ticket $ticket)
+    /** IT menutup tiket (wajib catatan tindak lanjut) */
+    public function close(Request $request, Ticket $ticket)
     {
-         if (Auth::user()->role !== 'IT') abort(403);
+        if (Auth::user()->role !== 'IT') abort(403);
 
-    $ticket->update([
-        'status'    => 'CLOSED',
-        'it_id'     => $ticket->it_id ?: Auth::id(),
-        'closed_at' => now(),
-    ]);
+        $request->validate([
+            'closed_note' => 'required|string|min:3',
+        ]);
 
-    return back()->with('success', 'Tiket ditutup.');
+        $ticket->update([
+            'status'      => 'CLOSED',
+            'it_id'       => $ticket->it_id ?: Auth::id(),
+            'closed_at'   => now(),
+            'closed_note' => $request->closed_note,
+        ]);
+
+        return back()->with('success', 'Tiket ditutup.');
     }
 
     /** Re-open tiket (IT) -> kembali OPEN & tanpa handler */
     public function reopen(Ticket $ticket)
     {
-         if (Auth::user()->role !== 'IT') abort(403);
+        if (Auth::user()->role !== 'IT') abort(403);
 
-    $ticket->update([
-        'status'    => 'OPEN',
-        'it_id'     => null,
-        'closed_at' => null,
-        // Jika ingin reset juga taken_at, uncomment:
-        // 'taken_at'  => null,
-    ]);
+        $ticket->update([
+            'status'    => 'OPEN',
+            'it_id'     => null,
+            'closed_at' => null,
+            // 'taken_at' => null, // jika ingin reset juga
+        ]);
 
-    return back()->with('success', 'Tiket dibuka kembali.');
+        return back()->with('success', 'Tiket dibuka kembali.');
     }
 
-
-    /*eskalasi*/
-
+    /** Set eskalasi (VENDOR/TIDAK) */
     public function setEskalasi(Request $request, Ticket $ticket)
-{
-    if (Auth::user()->role !== 'IT') abort(403);
+    {
+        if (Auth::user()->role !== 'IT') abort(403);
 
-    $data = $request->validate([
-        'eskalasi' => 'required|in:VENDOR,TIDAK',
-    ]);
+        $data = $request->validate([
+            'eskalasi' => 'required|in:VENDOR,TIDAK',
+        ]);
 
-    $ticket->update(['eskalasi' => $data['eskalasi']]);
+        $ticket->update(['eskalasi' => $data['eskalasi']]);
 
-    return back()->with('success', 'Eskalasi tersimpan.');
-}
+        return back()->with('success', 'Eskalasi tersimpan.');
+    }
+
+    /** Simpan tindak lanjut dari vendor + timestamp */
+    public function vendorFollowup(Request $request, Ticket $ticket)
+    {
+        if (Auth::user()->role !== 'IT') abort(403);
+
+        $request->validate([
+            'vendor_followup' => 'required|string|min:3',
+        ]);
+
+        $ticket->update([
+            'vendor_followup'    => $request->vendor_followup,
+            'vendor_followup_at' => now(),
+            // pastikan flag eskalasi menjadi VENDOR
+            'eskalasi'           => 'VENDOR',
+        ]);
+
+        return back()->with('success', 'Tindak lanjut vendor disimpan.');
+    }
+
     /* =========================
      * DETAIL, KOMENTAR & LAMPIRAN
      * ========================= */
@@ -288,6 +312,10 @@ class TicketController extends Controller
         return Storage::disk('public')->download($ticket->lampiran);
     }
 
+    /* =========================
+     * STATISTIK IT
+     * ========================= */
+
     /** Statistik untuk IT: kategori, status, top 5 user */
     public function stats()
     {
@@ -301,7 +329,7 @@ class TicketController extends Controller
         $kategoriLabels = $qKategori->pluck('kategori');
         $kategoriData   = $qKategori->pluck('total');
 
-        // Status (pastikan 0 jika tidak ada)
+        // Status (pastikan urutan & default 0)
         $qStatus = Ticket::select('status', DB::raw('COUNT(*) AS total'))
             ->groupBy('status')
             ->get()
@@ -319,13 +347,10 @@ class TicketController extends Controller
         $topLabels = $topUsers->pluck('name');
         $topData   = $topUsers->pluck('total');
 
-        return view('it.stats', [
-            'kategoriLabels' => $kategoriLabels,
-            'kategoriData'   => $kategoriData,
-            'statusLabels'   => $statusLabels,
-            'statusData'     => $statusData,
-            'topLabels'      => $topLabels,
-            'topData'        => $topData,
-        ]);
+        return view('it.stats', compact(
+            'kategoriLabels','kategoriData',
+            'statusLabels','statusData',
+            'topLabels','topData'
+        ));
     }
 }

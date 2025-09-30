@@ -11,7 +11,7 @@ use App\Http\Controllers\ProfileController;
 | - Root -> login
 | - /dashboard redirect sesuai role
 | - Cabang: buat & lihat tiket sendiri
-| - IT: list, take, release, close, reopen
+| - IT: list, take, release, close, reopen, stats, vendor followup, eskalasi
 | - Keduanya: lihat detail & komentar, unduh lampiran
 |--------------------------------------------------------------------------
 */
@@ -40,23 +40,24 @@ Route::middleware(['auth'])->group(function () {
 
     // ===== CABANG =====
     Route::middleware(['role:CABANG'])->group(function () {
-        Route::get('/cabang/dashboard', [TicketController::class, 'create'])->name('cabang.dashboard');   // form buat tiket
-        Route::post('/cabang/ticket', [TicketController::class, 'store'])->name('cabang.ticket.store');   // simpan tiket
-        Route::get('/cabang/tickets', [TicketController::class, 'myTickets'])->name('cabang.tickets');    // daftar tiket saya
+        Route::get('/cabang/dashboard', [TicketController::class, 'create'])->name('cabang.dashboard'); // form buat tiket
+        Route::post('/cabang/ticket', [TicketController::class, 'store'])->name('cabang.ticket.store'); // simpan tiket
+        Route::get('/cabang/tickets', [TicketController::class, 'myTickets'])->name('cabang.tickets');  // daftar tiket saya
     });
 
     // ===== IT =====
     Route::middleware(['role:IT'])->group(function () {
-           Route::get('/it/dashboard', [TicketController::class, 'index'])->name('it.dashboard');
-    Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');   // <— NEW
-    Route::post('/it/ticket/{ticket}/take',    [TicketController::class, 'take'])->name('it.ticket.take');
-    Route::post('/it/ticket/{ticket}/release', [TicketController::class, 'release'])->name('it.ticket.release');
-    Route::post('/it/ticket/{ticket}/close',   [TicketController::class, 'close'])->name('it.ticket.close');
-    Route::post('/it/ticket/{ticket}/reopen',  [TicketController::class, 'reopen'])->name('it.ticket.reopen');
-     Route::get('/it/stats', [\App\Http\Controllers\TicketController::class, 'stats'])->name('it.stats');
-      Route::post('/it/ticket/{ticket}/eskalasi', [TicketController::class, 'setEskalasi'])
-        ->name('it.ticket.eskalasi');
-});
+        Route::get('/it/dashboard', [TicketController::class, 'index'])->name('it.dashboard');           // semua tiket + filter
+        Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');            // tiket saya (IT)
+        Route::get('/it/stats', [TicketController::class, 'stats'])->name('it.stats');                   // statistik
+
+        Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
+        Route::post('/it/ticket/{ticket}/release',         [TicketController::class, 'release'])->name('it.ticket.release');
+        Route::post('/it/ticket/{ticket}/reopen',          [TicketController::class, 'reopen'])->name('it.ticket.reopen');
+        Route::post('/it/ticket/{ticket}/close',           [TicketController::class, 'close'])->name('it.ticket.close');
+        Route::post('/it/ticket/{ticket}/eskalasi',        [TicketController::class, 'setEskalasi'])->name('it.ticket.eskalasi');
+        Route::post('/it/ticket/{ticket}/vendor-followup', [TicketController::class, 'vendorFollowup'])->name('it.ticket.vendor_followup');
+    });
 });
 
 // Auth routes (Breeze/Fortify/Jetstream)
