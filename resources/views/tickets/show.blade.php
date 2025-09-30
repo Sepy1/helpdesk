@@ -1,6 +1,23 @@
 @extends('layouts.app')
 @section('title', 'Detail Tiket')
 
+@push('styles')
+<style>
+  /* Timeline (garis vertikal + titik + panah antar item) */
+  .tl{position:relative;padding-left:1.5rem}
+  .tl:before{content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;background:#e5e7eb}
+  .tl-item{position:relative;padding-left:1rem;margin-left:.25rem}
+  .tl-item:before{
+    content:"";position:absolute;left:-6px;top:1.1rem;width:10px;height:10px;
+    background:#fff;border:3px solid var(--dot,#4f46e5);border-radius:9999px
+  }
+  .tl-item:not(:last-child):after{
+    content:"";position:absolute;left:6px;bottom:-12px;
+    border-left:6px solid #e5e7eb;border-top:6px solid transparent;border-bottom:6px solid transparent
+  }
+</style>
+@endpush
+
 @section('content')
 <div class="grid gap-6 lg:grid-cols-3">
   {{-- Kolom kiri --}}
@@ -11,8 +28,9 @@
         <div>
           <h2 class="text-lg font-semibold text-gray-800">#{{ $ticket->nomor_tiket }}</h2>
           <p class="text-sm text-gray-500">
-            Dibuat oleh: <span class="font-medium text-gray-700">{{ $ticket->user->name ?? '-' }}</span>
-            • {{ $ticket->created_at->format('d M Y H:i') }}
+            Dibuat oleh:
+            <span class="font-medium text-gray-700">{{ $ticket->user->name ?? '-' }}</span>
+            • {{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}
           </p>
         </div>
         @php
@@ -56,22 +74,21 @@
       <div class="mt-6 flex flex-col gap-3">
         @auth
           @if(auth()->user()->role === 'IT')
+
             {{-- Progress IT (hanya jika belum closed) --}}
             @if($ticket->status !== 'CLOSED')
-            <form method="POST" action="{{ route('it.ticket.progress', $ticket->id) }}">
-              @csrf
-              <textarea name="progress_note" rows="3" required
-                        class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                        placeholder="Catat tindakan progress (mis: restart service, konfigurasi ulang, pengecekan jaringan)…">{{ old('progress_note', $ticket->progress_note) }}</textarea>
-              @error('progress_note')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-              @enderror
-              <div class="mt-2">
-                <button class="inline-flex items-center rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800">
-                  Simpan
-                </button>
-              </div>
-            </form>
+              <form method="POST" action="{{ route('it.ticket.progress', $ticket->id) }}">
+                @csrf
+                <textarea name="progress_note" rows="3" required
+                          class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Catat tindakan progress (mis: restart service, konfigurasi ulang, pengecekan jaringan)…">{{ old('progress_note', $ticket->progress_note) }}</textarea>
+                @error('progress_note') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                <div class="mt-2">
+                  <button class="inline-flex items-center rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800">
+                    Simpan
+                  </button>
+                </div>
+              </form>
             @endif
 
             {{-- Eskalasi --}}
@@ -87,24 +104,59 @@
 
             {{-- Tindak lanjut vendor (muncul saat eskalasi vendor) --}}
             @if($ticket->eskalasi === 'VENDOR')
-            <form method="POST" action="{{ route('it.ticket.vendor_followup', $ticket->id) }}" class="flex flex-col sm:flex-row gap-2 sm:items-center">
-              @csrf
-              <textarea name="vendor_followup" rows="2" required
-                        class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                        placeholder="Catat tindak lanjut dari vendor...">{{ old('vendor_followup', $ticket->vendor_followup) }}</textarea>
-              <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 text-sm shrink-0">Simpan</button>
-            </form>
+              <form method="POST" action="{{ route('it.ticket.vendor_followup', $ticket->id) }}" class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                @csrf
+                <textarea name="vendor_followup" rows="2" required
+                          class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Catat tindak lanjut dari vendor...">{{ old('vendor_followup', $ticket->vendor_followup) }}</textarea>
+                <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 text-sm shrink-0">Simpan</button>
+              </form>
             @endif
 
-            {{-- Tutup tiket + catatan penyelesaian --}}
+            {{-- Tutup tiket + root cause + catatan --}}
             @if($ticket->status !== 'CLOSED')
-            <form method="POST" action="{{ route('it.ticket.close', $ticket->id) }}" class="flex flex-col sm:flex-row gap-2 sm:items-center">
-              @csrf
-              <textarea name="closed_note" rows="2" required
-                        class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                        placeholder="Ringkasan tindak lanjut penyelesaian...">{{ old('closed_note') }}</textarea>
-              <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 text-sm shrink-0">Tutup Tiket</button>
-            </form>
+              <form method="POST" action="{{ route('it.ticket.close', $ticket->id) }}"
+                    class="grid gap-2 sm:grid-cols-[220px_1fr_auto] items-start">
+                @csrf
+                {{-- Root cause --}}
+                @php
+                  $rootCauses = [
+                    'Human Error',
+                    'Pergantian User',
+                    'Penyesuaian Sistem',
+                    'Bug Sistem',
+                    'Kerusakan Hardware',
+                    'Kerusakan Software',
+                    'ISP Down',
+                    'Wireless Down',
+                    'Lainnya',
+                  ];
+                @endphp
+                <select name="root_cause" required
+                        class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                  <option value="">Pilih Root Cause</option>
+                  @foreach($rootCauses as $rc)
+                    <option value="{{ $rc }}" @selected(old('root_cause')===$rc)>{{ $rc }}</option>
+                  @endforeach
+                </select>
+
+                {{-- Catatan penyelesaian --}}
+                <textarea name="closed_note" rows="2" required
+                          class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Ringkasan tindak lanjut penyelesaian...">{{ old('closed_note') }}</textarea>
+
+                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700">
+                  Tutup Tiket
+                </button>
+              </form>
+            @else
+              {{-- Re-open (hanya saat CLOSED) --}}
+              <form method="POST" action="{{ route('it.ticket.reopen', $ticket->id) }}">
+                @csrf
+                <button class="inline-flex items-center rounded-lg bg-amber-600 px-3 py-2 text-white hover:bg-amber-700">
+                  Re-open Tiket
+                </button>
+              </form>
             @endif
           @endif
         @endauth
@@ -138,7 +190,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-sm font-medium text-gray-800">{{ $c->user->name ?? 'User' }}</div>
-                <div class="text-xs text-gray-500">{{ $c->created_at->format('d M Y H:i') }}</div>
+                <div class="text-xs text-gray-500">{{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}</div>
               </div>
               @auth
                 @if(auth()->id() === $c->user_id || auth()->user()->role === 'IT')
@@ -167,7 +219,7 @@
         <div class="flex justify-between"><dt>Nomor</dt><dd class="font-medium">{{ $ticket->nomor_tiket }}</dd></div>
         <div class="flex justify-between"><dt>Status</dt><dd class="font-medium">{{ $ticket->status }}</dd></div>
         <div class="flex justify-between"><dt>Kategori</dt><dd>{{ $ticket->kategori }}</dd></div>
-        <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ $ticket->created_at->format('d M Y H:i') }}</dd></div>
+        <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Handler</dt><dd>{{ $ticket->it->name ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Eskalasi</dt><dd>{{ $ticket->eskalasi ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Taken At</dt><dd>{{ optional($ticket->taken_at)->format('d M Y H:i') ?? '-' }}</dd></div>
@@ -208,25 +260,16 @@
               @click="open=false" aria-label="Tutup">✕</button>
     </div>
 
-    {{-- ====== TIMELINE (dengan panah) ====== --}}
-    <style>
-      .tl{position:relative;padding-left:1.5rem}
-      .tl:before{content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;background:#e5e7eb}
-      .tl-item{position:relative;padding-left:1rem;margin-left:.25rem}
-      .tl-item:before{content:"";position:absolute;left:-6px;top:1.1rem;width:10px;height:10px;background:#fff;border:3px solid var(--dot,#4f46e5);border-radius:9999px}
-      .tl-item:not(:last-child):after{content:"";position:absolute;left:6px;bottom:-12px;border-left:6px solid #e5e7eb;border-top:6px solid transparent;border-bottom:6px solid transparent}
-    </style>
-
     <ul class="tl space-y-5">
       {{-- Created --}}
       <li class="tl-item" style="--dot:#4f46e5">
         <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div class="text-xs font-medium uppercase tracking-wide text-indigo-600">Created</div>
-          <div class="mt-1 text-sm text-gray-800">{{ $ticket->created_at->format('d M Y H:i') }}</div>
+          <div class="mt-1 text-sm text-gray-800">{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</div>
           <div class="mt-1 text-xs text-gray-500">
             Pembuat: <span class="font-medium text-gray-700">{{ $ticket->user->name ?? '-' }}</span>
           </div>
-          {{-- Kategori --}}
+          {{-- Kategori & deskripsi singkat --}}
           <div class="mt-2">
             @php
               $badge = match($ticket->kategori){
@@ -249,63 +292,65 @@
       {{-- Proses --}}
       @php $progressTime = $ticket->progress_at ?? $ticket->taken_at; @endphp
       @if($progressTime || $ticket->progress_note)
-      <li class="tl-item" style="--dot:#f59e0b">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="text-xs font-medium uppercase tracking-wide text-amber-600">Proses</div>
-          <div class="mt-1 text-sm text-gray-800">{{ optional($progressTime)->format('d M Y H:i') ?? '-' }}</div>
-          <div class="mt-1 text-xs text-gray-500">
-            IT Handler: <span class="font-medium text-gray-700">{{ $ticket->it->name ?? '-' }}</span>
+        <li class="tl-item" style="--dot:#f59e0b">
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="text-xs font-medium uppercase tracking-wide text-amber-600">Proses</div>
+            <div class="mt-1 text-sm text-gray-800">{{ optional($progressTime)->format('d M Y H:i') ?? '-' }}</div>
+            <div class="mt-1 text-xs text-gray-500">
+              IT Handler: <span class="font-medium text-gray-700">{{ $ticket->it->name ?? '-' }}</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-xs text-gray-500">Tindakan</div>
+              <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->progress_note ?? '—' }}</div>
+            </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xs text-gray-500">Tindakan</div>
-            <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->progress_note ?? '—' }}</div>
-          </div>
-        </div>
-      </li>
+        </li>
       @endif
 
       {{-- Eskalasi --}}
       @if(!empty($ticket->eskalasi))
-      <li class="tl-item" style="--dot:#a21caf">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="flex items-center gap-2">
-            <div class="text-xs font-medium uppercase tracking-wide text-fuchsia-600">Eskalasi</div>
-            <span class="inline-flex items-center rounded-full bg-fuchsia-50 px-2 py-0.5 text-[11px] font-medium text-fuchsia-700 ring-1 ring-fuchsia-100">
-              {{ $ticket->eskalasi }}
-            </span>
-          </div>
-          @if($ticket->eskalasi === 'VENDOR')
-            <div class="mt-2">
-              <div class="text-xs text-gray-500">Tindak lanjut vendor</div>
-              <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->vendor_followup ?? '—' }}</div>
-              @if($ticket->vendor_followup_at)
-                <div class="mt-1 text-xs text-gray-500">Diperbarui: {{ $ticket->vendor_followup_at->format('d M Y H:i') }}</div>
-              @endif
+        <li class="tl-item" style="--dot:#a21caf">
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="flex items-center gap-2">
+              <div class="text-xs font-medium uppercase tracking-wide text-fuchsia-600">Eskalasi</div>
+              <span class="inline-flex items-center rounded-full bg-fuchsia-50 px-2 py-0.5 text-[11px] font-medium text-fuchsia-700 ring-1 ring-fuchsia-100">
+                {{ $ticket->eskalasi }}
+              </span>
             </div>
-          @endif
-        </div>
-      </li>
+            @if($ticket->eskalasi === 'VENDOR')
+              <div class="mt-2">
+                <div class="text-xs text-gray-500">Tindak lanjut vendor</div>
+                <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->vendor_followup ?? '—' }}</div>
+                @if($ticket->vendor_followup_at)
+                  <div class="mt-1 text-xs text-gray-500">Diperbarui: {{ optional($ticket->vendor_followup_at)->format('d M Y H:i') ?? '-' }}</div>
+                @endif
+              </div>
+            @endif
+          </div>
+        </li>
       @endif
 
       {{-- Closed --}}
       @if($ticket->closed_at)
-      <li class="tl-item" style="--dot:#059669">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="text-xs font-medium uppercase tracking-wide text-emerald-600">Closed</div>
-          <div class="mt-1 text-sm text-gray-800">{{ $ticket->closed_at->format('d M Y H:i') }}</div>
-          <div class="mt-1 text-xs text-gray-500">
-            IT Handler (penutup):
-            <span class="font-medium text-gray-700">{{ $ticket->it->name ?? '-' }}</span>
+        <li class="tl-item" style="--dot:#059669">
+          <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="text-xs font-medium uppercase tracking-wide text-emerald-600">Closed</div>
+            <div class="mt-1 text-sm text-gray-800">{{ optional($ticket->closed_at)->format('d M Y H:i') ?? '-' }}</div>
+            <div class="mt-1 text-xs text-gray-500">
+              IT Handler (penutup): <span class="font-medium text-gray-700">{{ $ticket->it->name ?? '-' }}</span>
+            </div>
+            <div class="mt-2">
+              <div class="text-xs text-gray-500">Root Cause</div>
+              <div class="mt-0.5 text-sm text-gray-800">{{ $ticket->root_cause ?? '—' }}</div>
+            </div>
+            <div class="mt-2">
+              <div class="text-xs text-gray-500">Catatan penyelesaian</div>
+              <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->closed_note ?? '—' }}</div>
+            </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xs text-gray-500">Catatan penyelesaian</div>
-            <div class="mt-0.5 text-sm text-gray-800 whitespace-pre-line">{{ $ticket->closed_note ?? '—' }}</div>
-          </div>
-        </div>
-      </li>
+        </li>
       @endif
     </ul>
-    {{-- ====== /TIMELINE ====== --}}
   </div>
 </div>
 {{-- =================== /MODAL HISTORY ====================== --}}

@@ -27,6 +27,10 @@
       .page-root,#page-loader,aside[aria-label="Sidebar"]>div{transition:none!important}
     }
   </style>
+
+  {{-- Styles pushed from child views (e.g., timeline CSS) --}}
+@stack('styles')
+
 </head>
 <body
   class="h-full font-sans antialiased"
