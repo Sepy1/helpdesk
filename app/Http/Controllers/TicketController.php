@@ -236,6 +236,31 @@ class TicketController extends Controller
         return back()->with('success', 'Eskalasi tersimpan.');
     }
 
+      /** Save Progress */
+    public function saveProgress(Request $request, Ticket $ticket)
+{
+    if (Auth::user()->role !== 'IT') abort(403);
+
+    $data = $request->validate([
+        'progress_note' => 'required|string|min:3',
+    ]);
+
+    // Set status ON_PROGRESS jika belum
+    if ($ticket->status === 'OPEN') {
+        $ticket->status   = 'ON_PROGRESS';
+        $ticket->it_id    = $ticket->it_id ?: Auth::id();
+        $ticket->taken_at = $ticket->taken_at ?: now();
+    }
+
+    $ticket->progress_note = $data['progress_note'];
+    $ticket->progress_at   = now();
+    $ticket->save();
+
+    return back()->with('success', 'Tindakan progress disimpan.');
+}
+
+
+
     /** Simpan tindak lanjut dari vendor + timestamp */
     public function vendorFollowup(Request $request, Ticket $ticket)
     {

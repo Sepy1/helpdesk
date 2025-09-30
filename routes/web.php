@@ -57,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/it/ticket/{ticket}/close',           [TicketController::class, 'close'])->name('it.ticket.close');
         Route::post('/it/ticket/{ticket}/eskalasi',        [TicketController::class, 'setEskalasi'])->name('it.ticket.eskalasi');
         Route::post('/it/ticket/{ticket}/vendor-followup', [TicketController::class, 'vendorFollowup'])->name('it.ticket.vendor_followup');
+        Route::post('/it/ticket/{ticket}/progress', [TicketController::class, 'saveProgress'])
+     ->name('it.ticket.progress');
+  
     });
 });
 

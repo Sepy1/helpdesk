@@ -9,15 +9,18 @@ class Ticket extends Model
 {
     use HasFactory;
      protected $fillable = [
-        'nomor_tiket','user_id','kategori','deskripsi','lampiran',
-        'status','it_id','eskalasi','taken_at','closed_at',
-        'vendor_followup','vendor_followup_at','closed_note',
+        'nomor_tiket','user_id','kategori','deskripsi','lampiran','status',
+        'it_id','taken_at','progress_note','progress_at','eskalasi',
+        'vendor_followup','vendor_followup_at','closed_note','closed_at'
     ];
 
     protected $casts = [
-    'vendor_followup_at' => 'datetime',
-    'taken_at'  => 'datetime',
-    'closed_at' => 'datetime',
+    'created_at'         => 'datetime',
+        'updated_at'         => 'datetime',
+        'taken_at'           => 'datetime',
+        'progress_at'        => 'datetime',
+        'vendor_followup_at' => 'datetime',
+        'closed_at'          => 'datetime',
 ];
 
     public function user() {        // pembuat (cabang)
