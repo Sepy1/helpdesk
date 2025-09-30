@@ -152,20 +152,21 @@ class TicketController extends Controller
     /** IT mengambil alih tiket */
     public function take(Ticket $ticket)
     {
-        if (Auth::user()->role !== 'IT') abort(403);
-        if ($ticket->status === 'CLOSED') {
-            return back()->with('error', 'Tiket sudah ditutup.');
-        }
-        if ($ticket->status !== 'OPEN' && $ticket->it_id && $ticket->it_id !== Auth::id()) {
-            return back()->with('error', 'Tiket sudah ditangani orang lain.');
-        }
+         if (Auth::user()->role !== 'IT') abort(403);
+    if ($ticket->status === 'CLOSED') {
+        return back()->with('error', 'Tiket sudah ditutup.');
+    }
+    if ($ticket->status !== 'OPEN' && $ticket->it_id && $ticket->it_id !== Auth::id()) {
+        return back()->with('error', 'Tiket sudah ditangani orang lain.');
+    }
 
-        $ticket->update([
-            'status' => 'ON_PROGRESS',
-            'it_id'  => Auth::id(),
-        ]);
+    $ticket->update([
+        'status'   => 'ON_PROGRESS',
+        'it_id'    => Auth::id(),
+        'taken_at' => $ticket->taken_at ?: now(), // set sekali saat pertama di-take
+    ]);
 
-        return back()->with('success', 'Tiket diambil.');
+    return back()->with('success', 'Tiket diambil.');
     }
 
     /** IT melepaskan tiket yang sedang di-handle (kembali OPEN) */
@@ -188,29 +189,48 @@ class TicketController extends Controller
     /** IT menutup tiket */
     public function close(Ticket $ticket)
     {
-        if (Auth::user()->role !== 'IT') abort(403);
+         if (Auth::user()->role !== 'IT') abort(403);
 
-        $ticket->update([
-            'status' => 'CLOSED',
-            'it_id'  => $ticket->it_id ?: Auth::id(),
-        ]);
+    $ticket->update([
+        'status'    => 'CLOSED',
+        'it_id'     => $ticket->it_id ?: Auth::id(),
+        'closed_at' => now(),
+    ]);
 
-        return back()->with('success', 'Tiket ditutup.');
+    return back()->with('success', 'Tiket ditutup.');
     }
 
     /** Re-open tiket (IT) -> kembali OPEN & tanpa handler */
     public function reopen(Ticket $ticket)
     {
-        if (Auth::user()->role !== 'IT') abort(403);
+         if (Auth::user()->role !== 'IT') abort(403);
 
-        $ticket->update([
-            'status' => 'OPEN',
-            'it_id'  => null,
-        ]);
+    $ticket->update([
+        'status'    => 'OPEN',
+        'it_id'     => null,
+        'closed_at' => null,
+        // Jika ingin reset juga taken_at, uncomment:
+        // 'taken_at'  => null,
+    ]);
 
-        return back()->with('success', 'Tiket dibuka kembali.');
+    return back()->with('success', 'Tiket dibuka kembali.');
     }
 
+
+    /*eskalasi*/
+
+    public function setEskalasi(Request $request, Ticket $ticket)
+{
+    if (Auth::user()->role !== 'IT') abort(403);
+
+    $data = $request->validate([
+        'eskalasi' => 'required|in:VENDOR,TIDAK',
+    ]);
+
+    $ticket->update(['eskalasi' => $data['eskalasi']]);
+
+    return back()->with('success', 'Eskalasi tersimpan.');
+}
     /* =========================
      * DETAIL, KOMENTAR & LAMPIRAN
      * ========================= */

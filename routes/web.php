@@ -54,6 +54,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/it/ticket/{ticket}/close',   [TicketController::class, 'close'])->name('it.ticket.close');
     Route::post('/it/ticket/{ticket}/reopen',  [TicketController::class, 'reopen'])->name('it.ticket.reopen');
      Route::get('/it/stats', [\App\Http\Controllers\TicketController::class, 'stats'])->name('it.stats');
+      Route::post('/it/ticket/{ticket}/eskalasi', [TicketController::class, 'setEskalasi'])
+        ->name('it.ticket.eskalasi');
 });
 });
 

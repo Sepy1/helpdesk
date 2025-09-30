@@ -56,55 +56,35 @@
         @endif
       </div>
 
-      {{-- Aksi IT --}}
-      @auth
-        @if(auth()->user()->role === 'IT')
-          <div class="mt-6 flex flex-wrap gap-2">
-            {{-- Ambil alih saat OPEN --}}
-            @if($ticket->status === 'OPEN')
-              <form method="POST" action="{{ route('it.ticket.take', $ticket->id) }}">
-                @csrf
-                <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">
-                  Ambil Alih
-                </button>
-              </form>
-            @endif
-
-            {{-- Lepas/Tutup saat ON_PROGRESS oleh IT yang sama --}}
-            @if($ticket->status === 'ON_PROGRESS' && optional($ticket->it)->id === auth()->id())
-              <form method="POST" action="{{ route('it.ticket.release', $ticket->id) }}">
-                @csrf
-                <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-700 hover:bg-gray-300">
-                  Lepas
-                </button>
-              </form>
-              <form method="POST" action="{{ route('it.ticket.close', $ticket->id) }}">
-                @csrf
-                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700">
-                  Tutup Tiket
-                </button>
-              </form>
-            @endif
-
-            {{-- Info jika sedang ditangani IT lain --}}
-            @if($ticket->status === 'ON_PROGRESS' && optional($ticket->it)->id !== auth()->id())
-              <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-500 cursor-not-allowed" disabled>
-                Ditangani: {{ $ticket->it->name ?? '-' }}
+      {{-- Aksi IT + History --}}
+      <div class="mt-6 flex flex-wrap gap-2 items-center">
+        @auth
+          @if(auth()->user()->role === 'IT')
+            {{-- Form Eskalasi (Vendor/Tidak) --}}
+            <form method="POST" action="{{ route('it.ticket.eskalasi', $ticket->id) }}"
+                  class="flex items-center gap-2">
+              @csrf
+              <label class="text-sm text-gray-600">Eskalasi</label>
+              <select name="eskalasi"
+                      class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                <option value="TIDAK"  @selected($ticket->eskalasi==='TIDAK')>Tidak</option>
+                <option value="VENDOR" @selected($ticket->eskalasi==='VENDOR')>Vendor</option>
+              </select>
+              <button class="rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800 text-sm">
+                Simpan
               </button>
-            @endif
+            </form>
+          @endif
+        @endauth
 
-            {{-- Reopen saat CLOSED --}}
-            @if($ticket->status === 'CLOSED')
-              <form method="POST" action="{{ route('it.ticket.reopen', $ticket->id) }}">
-                @csrf
-                <button class="rounded-lg bg-amber-600 px-3 py-2 text-white hover:bg-amber-700">
-                  Reopen
-                </button>
-              </form>
-            @endif
-          </div>
-        @endif
-      @endauth
+        {{-- Tombol History (semua role bisa) --}}
+        <button type="button"
+                x-data
+                @click="$dispatch('open-history')"
+                class="rounded-lg bg-white ring-1 ring-gray-200 px-3 py-2 text-gray-700 hover:bg-gray-50">
+          History
+        </button>
+      </div>
     </div>
 
     {{-- Kartu Komentar / Progres --}}
@@ -160,6 +140,7 @@
         <div class="flex justify-between"><dt>Kategori</dt><dd>{{ $ticket->kategori }}</dd></div>
         <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ $ticket->created_at->format('d M Y H:i') }}</dd></div>
         <div class="flex justify-between"><dt>Handler</dt><dd>{{ $ticket->it->name ?? '-' }}</dd></div>
+        <div class="flex justify-between"><dt>Eskalasi</dt><dd>{{ $ticket->eskalasi ?? '-' }}</dd></div>
       </dl>
 
       <div class="mt-4">
@@ -171,4 +152,49 @@
     </div>
   </aside>
 </div>
+
+{{-- ===================== MODAL HISTORY (Alpine) ===================== --}}
+<div x-data="{ open:false }"
+     x-on:open-history.window="open=true"
+     x-show="open" x-cloak
+     class="fixed inset-0 z-[110] flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/40" @click="open=false"></div>
+
+  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">History Tiket</h3>
+
+    <dl class="text-sm text-gray-700 space-y-2">
+      <div class="flex justify-between">
+        <dt>Tanggal dibuat</dt>
+        <dd class="font-medium">{{ $ticket->created_at?->format('d M Y H:i') ?? '-' }}</dd>
+      </div>
+
+      <div class="flex justify-between">
+        <dt>Tanggal progress</dt>
+        <dd class="font-medium">
+          {{ $ticket->taken_at?->format('d M Y H:i') ?? '-' }}
+          @if($ticket->it) <span class="text-gray-500">— {{ $ticket->it->name }}</span> @endif
+        </dd>
+      </div>
+
+      <div class="flex justify-between">
+        <dt>Eskalasi</dt>
+        <dd class="font-medium">{{ $ticket->eskalasi ?? '-' }}</dd>
+      </div>
+
+      <div class="flex justify-between">
+        <dt>Tanggal closed</dt>
+        <dd class="font-medium">{{ $ticket->closed_at?->format('d M Y H:i') ?? '-' }}</dd>
+      </div>
+    </dl>
+
+    <div class="mt-5 flex justify-end">
+      <button @click="open=false"
+              class="inline-flex items-center px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
+        Tutup
+      </button>
+    </div>
+  </div>
+</div>
+{{-- =================== /MODAL HISTORY (Alpine) ====================== --}}
 @endsection
