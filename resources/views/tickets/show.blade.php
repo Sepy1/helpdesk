@@ -55,6 +55,7 @@
           <span class="text-gray-400">-</span>
         @endif
       </div>
+      
 
       {{-- Aksi IT + History --}}
       <div class="mt-6 flex flex-wrap gap-2 items-center">
@@ -157,10 +158,25 @@
 <div x-data="{ open:false }"
      x-on:open-history.window="open=true"
      x-show="open" x-cloak
-     class="fixed inset-0 z-[110] flex items-center justify-center">
-  <div class="absolute inset-0 bg-black/40" @click="open=false"></div>
+     class="fixed inset-0 z-[110] flex items-start justify-center"
+     role="dialog" aria-modal="true"
+     @keydown.escape.window="open=false">
 
-  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-6">
+  {{-- Backdrop (fade in/out) --}}
+  <div class="absolute inset-0 bg-black/40"
+       @click="open=false"
+       x-transition.opacity
+       aria-hidden="true"></div>
+
+  {{-- Panel modal (fade + scale + slight slide) --}}
+  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-6 mt-4"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+       x-transition:leave-end="opacity-0 scale-95 -translate-y-1">
+
     <h3 class="text-lg font-semibold text-gray-800 mb-3">History Tiket</h3>
 
     <dl class="text-sm text-gray-700 space-y-2">
@@ -171,10 +187,12 @@
 
       <div class="flex justify-between">
         <dt>Tanggal progress</dt>
-        <dd class="font-medium">
-          {{ $ticket->taken_at?->format('d M Y H:i') ?? '-' }}
-          @if($ticket->it) <span class="text-gray-500">— {{ $ticket->it->name }}</span> @endif
-        </dd>
+        <dd class="font-medium">{{ $ticket->taken_at?->format('d M Y H:i') ?? '-' }}</dd>
+      </div>
+
+      <div class="flex justify-between">
+        <dt>IT Handler</dt>
+        <dd class="font-medium">{{ $ticket->it->name ?? '-' }}</dd>
       </div>
 
       <div class="flex justify-between">
@@ -197,4 +215,6 @@
   </div>
 </div>
 {{-- =================== /MODAL HISTORY (Alpine) ====================== --}}
+
+
 @endsection
