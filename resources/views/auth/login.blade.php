@@ -10,15 +10,18 @@
       {{-- Brand --}}
      <div class="mb-6 text-center">
   <img
-    src="{{ asset('images/logo.png') }}"   {{-- letakkan file di public/images/logo.png --}}
+    src="{{ asset('images/helpdesk.png') }}"   {{-- letakkan file di public/images/logo.png --}}
     alt="PT BPR BKK Jateng"
-    class="mx-auto h-16 w-auto md:h-20"     {{-- perbesar logo --}}
+    class="mx-auto h-32 w-auto md:h-40"     {{-- perbesar logo --}}
     loading="eager"
   />
   <h1 class="mt-3 text-xl md:text-2xl font-semibold text-gray-800">
-    Helpdesk PT BPR BKK Jateng
+    Login - Sambatan
   </h1>
- 
+   {{-- Deskripsi aplikasi --}}
+  <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+    Sistem Penyampaian Bantuan Tiketing Operasional
+  </p>
 </div>
 
       {{-- Flash --}}

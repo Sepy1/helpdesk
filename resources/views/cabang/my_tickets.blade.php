@@ -33,7 +33,7 @@
         @endforeach
       </select>
 
-      <button class="rounded-lg bg-gray-900 text-white px-3 py-2">Filter</button>
+      <button class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-3 py-2">Filter</button>
 
       @if(request()->hasAny(['q','kategori','status']))
         <a href="{{ route('cabang.tickets') }}" class="text-sm px-2 py-2 text-gray-600 hover:underline">Reset</a>
@@ -67,7 +67,7 @@
             <td class="py-3 px-4">
               @php
                 $badge = match($t->status){
-                  'OPEN'        => 'bg-gray-100 text-gray-700 ring-gray-200',
+                  'OPEN'        => 'bg-red-100 text-gray-700 ring-gray-200',
                   'ON_PROGRESS' => 'bg-amber-100 text-amber-800 ring-amber-200',
                   'CLOSED'      => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
                 };
@@ -79,7 +79,7 @@
             <td class="py-3 px-4 whitespace-nowrap">{{ $t->created_at->format('d M Y H:i') }}</td>
             <td class="py-3 px-4">
               <a href="{{ route('ticket.show', $t->id) }}"
-                 class="inline-flex items-center rounded-lg bg-gray-900 px-3 py-1.5 text-white hover:bg-gray-800">
+                 class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-white hover:bg-gray-800">
                 Detail
               </a>
             </td>
@@ -96,7 +96,7 @@
     @forelse($tickets as $i => $t)
       @php
         $badge = match($t->status){
-          'OPEN'        => 'bg-gray-100 text-gray-700 ring-gray-200',
+          'OPEN'        => 'bg-red-100 text-gray-700 ring-gray-200',
           'ON_PROGRESS' => 'bg-amber-100 text-amber-800 ring-amber-200',
           'CLOSED'      => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
         };
@@ -121,7 +121,7 @@
             <span class="text-gray-500">Kategori:</span> {{ $t->kategori }}
           </div>
           <a href="{{ route('ticket.show', $t->id) }}"
-             class="inline-flex items-center rounded-lg bg-gray-900 px-3 py-1.5 text-white hover:bg-gray-800">
+             class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-white hover:bg-gray-800">
             Detail
           </a>
         </div>

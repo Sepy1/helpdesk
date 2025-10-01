@@ -48,41 +48,42 @@
   :class="{ 'overflow-hidden': mobileOpen }"
 >
 
-  {{-- TOPBAR --}}
-  <header class="bg-brand-100 border-b sticky top-0 z-40">
-    <div class="w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-      <div class="flex items-center gap-2 min-w-0">
-        <div class="h-9 w-9 rounded-xl bg-indigo-600/10 flex items-center justify-center shrink-0">
-          <span class="text-tulisan-50 font-bold">HD</span>
-        </div>
-        <span class="font-semibold text-tulisan-50 truncate">Helpdesk</span>
-
-        <button type="button"
-                class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-tulisan-700 text-tulisan-50"
-                @click="toggleSidebar()" :aria-pressed="sidebarOpen.toString()"
-                aria-label="Tampilkan/sembunyikan menu">☰</button>
-
-        <button type="button"
-                class="inline-flex md:hidden ml-1 h-9 w-9 items-center justify-center rounded-lg hover:bg-tulisan-700 text-tulisan-50"
-                @click="mobileOpen = true" aria-controls="mobile-drawer" aria-expanded="true" aria-label="Buka menu">☰</button>
+  {{-- TOPBAR (gradient) --}}
+<header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 border-b sticky top-0 z-40">
+  <div class="w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+        <span class="text-white font-bold">HD</span>
       </div>
+      <span class="font-semibold text-white truncate">Helpdesk</span>
 
-      <nav class="flex items-center gap-3 text-sm min-w-0">
-        @auth
-          <span class="hidden sm:inline text-tulisan-600 truncate max-w-[40ch]">
-            {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
-          </span>
-          <form method="POST" action="{{ route('logout') }}" class="shrink-0">
-            @csrf
-            <button type="submit"
-              class="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-gray-800">
-              Logout
-            </button>
-          </form>
-        @endauth
-      </nav>
+      <button type="button"
+              class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
+              @click="toggleSidebar()" :aria-pressed="sidebarOpen.toString()"
+              aria-label="Tampilkan/sembunyikan menu">☰</button>
+
+      <button type="button"
+              class="inline-flex md:hidden ml-1 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
+              @click="mobileOpen = true" aria-controls="mobile-drawer" aria-expanded="true" aria-label="Buka menu">☰</button>
     </div>
-  </header>
+
+    <nav class="flex items-center gap-3 text-sm min-w-0">
+      @auth
+        <span class="hidden sm:inline text-white/80 truncate max-w-[40ch]">
+          {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
+        </span>
+        <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+          @csrf
+          <button type="submit"
+            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50">
+            Logout
+          </button>
+        </form>
+      @endauth
+    </nav>
+  </div>
+</header>
+
 
   {{-- ====== LAYOUT: SIDEBAR KIRI + KONTEN ====== --}}
   <div class="relative">

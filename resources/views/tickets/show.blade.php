@@ -35,7 +35,7 @@
         </div>
         @php
           $badge = match($ticket->status){
-            'OPEN' => 'bg-gray-100 text-gray-700 ring-gray-200',
+            'OPEN' => 'bg-red-100 text-gray-700 ring-gray-200',
             'ON_PROGRESS' => 'bg-amber-100 text-amber-800 ring-amber-200',
             'CLOSED' => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
           };
@@ -179,7 +179,7 @@
   @csrf
   <textarea name="body" class="w-full rounded-lg border-gray-300" required></textarea>
   <input type="file" name="attachment" class="mt-2">
-  <button class="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg">Kirim</button>
+  <button class="mt-2 bg-brand-50 text-white px-4 py-2 rounded-lg">Kirim</button>
 </form>
 
       <div class="space-y-4">

@@ -17,7 +17,7 @@
   ];
 
   // Logo file (opsional). Taruh logo di public/images/logo-helpdesk.svg
-  $logoPath = asset('images/logo-helpdesk.svg');
+  $logoPath = asset('images/helpdesk.png');
 
   // Menu per role
   $menu = $role === 'IT'
