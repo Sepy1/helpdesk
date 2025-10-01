@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id" class="h-full bg-gray-50 loading">
+<html lang="id" class="h-full bg-grey-50 loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -49,33 +49,33 @@
 >
 
   {{-- TOPBAR --}}
-  <header class="bg-whitenp border-b sticky top-0 z-40">
+  <header class="bg-brand-100 border-b sticky top-0 z-40">
     <div class="w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
       <div class="flex items-center gap-2 min-w-0">
         <div class="h-9 w-9 rounded-xl bg-indigo-600/10 flex items-center justify-center shrink-0">
-          <span class="text-indigo-600 font-bold">HD</span>
+          <span class="text-tulisan-50 font-bold">HD</span>
         </div>
-        <span class="font-semibold text-gray-900 truncate">Helpdesk</span>
+        <span class="font-semibold text-tulisan-50 truncate">Helpdesk</span>
 
         <button type="button"
-                class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600"
+                class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-tulisan-700 text-tulisan-50"
                 @click="toggleSidebar()" :aria-pressed="sidebarOpen.toString()"
                 aria-label="Tampilkan/sembunyikan menu">☰</button>
 
         <button type="button"
-                class="inline-flex md:hidden ml-1 h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600"
+                class="inline-flex md:hidden ml-1 h-9 w-9 items-center justify-center rounded-lg hover:bg-tulisan-700 text-tulisan-50"
                 @click="mobileOpen = true" aria-controls="mobile-drawer" aria-expanded="true" aria-label="Buka menu">☰</button>
       </div>
 
       <nav class="flex items-center gap-3 text-sm min-w-0">
         @auth
-          <span class="hidden sm:inline text-gray-600 truncate max-w-[40ch]">
+          <span class="hidden sm:inline text-tulisan-600 truncate max-w-[40ch]">
             {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
           </span>
           <form method="POST" action="{{ route('logout') }}" class="shrink-0">
             @csrf
             <button type="submit"
-              class="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800">
+              class="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-gray-800">
               Logout
             </button>
           </form>

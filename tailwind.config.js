@@ -12,12 +12,39 @@ module.exports = {
     ],
 
     theme: {
-        extend: {
-            fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
-            },
+    extend: {
+      colors: {
+        // ganti sesuai palet yang kamu mau
+        tombol: {
+          DEFAULT: "#ff6600", // Blue-600
+          50:  "#2cb403ff",
+          100: "#ff6600",
+          500: "#ff6600",
+          600: "#ff6600",
+          700: "#ff6600",
         },
+
+        tulisan: {
+          DEFAULT: "#ffffffff", // Blue-600
+          50:  "#ffffffff",
+          100: "#ffffffff",
+          500: "rgba(255, 255, 255, 0.94)",
+          600: "#fdfdfdff",
+          700: "#0e0000ff",
+        },
+
+        brand: {
+          DEFAULT: "#064980", // Blue-600
+          50:  "#064980",
+          100: "#064980",
+          500: "#064980",
+          600: "#064980",
+          700: "#064980",
+        },
+
+      },
     },
+  },
 
     plugins: [require('@tailwindcss/forms')],
 };

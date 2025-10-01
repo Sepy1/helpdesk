@@ -47,14 +47,14 @@
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran (opsional)</label>
       <input type="file" name="lampiran"
-             class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
+             class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
       />
       <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
       @error('lampiran') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
 
     <div class="pt-2">
-      <button class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2.5 text-white hover:bg-indigo-700">
+      <button class="block w-full items-center rounded-lg bg-brand-100 px-10 py-2 text-white hover:bg-indigo-700">
         Kirim Tiket
       </button>
     </div>

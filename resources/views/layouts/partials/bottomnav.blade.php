@@ -5,14 +5,14 @@
   $isIT = $role === 'IT';
 
   $base = 'flex flex-col items-center justify-center gap-1 px-6 py-2 text-xs';
-  $on   = 'text-indigo-600';
-  $off  = 'text-gray-600';
+  $on   = 'text-tulisan-100';
+  $off  = 'text-tulisan-500';
 
   // jumlah kolom: IT = 3, CABANG = 2
   $cols = $isIT ? 'grid-cols-3' : 'grid-cols-2';
 @endphp
 
-<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-sm"
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-brand-100 border-t shadow-sm"
      style="padding-bottom: env(safe-area-inset-bottom)">
   <ul class="grid {{ $cols }} text-center">
     {{-- LEFT ITEM --}}
