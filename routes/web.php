@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ProfileController;
-
+use App\Http\Controllers\TicketCommentController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -33,10 +33,18 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     // ===== Shared: detail, komentar, lampiran =====
-    Route::get('/ticket/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
-    Route::post('/ticket/{ticket}/comment', [TicketController::class, 'comment'])->name('ticket.comment');
-    Route::delete('/comment/{comment}', [TicketController::class, 'deleteComment'])->name('comment.delete');
-    Route::get('/ticket/{ticket}/download', [TicketController::class, 'downloadAttachment'])->name('ticket.download');
+    
+Route::get('/ticket/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
+Route::get('/ticket/{ticket}/download', [TicketController::class, 'downloadAttachment'])->name('ticket.download');
+
+// Komentar tiket
+Route::post('/ticket/{ticket}/comment', [TicketCommentController::class, 'store'])->name('ticket.comment');
+
+Route::delete('/comment/{comment}', [TicketController::class, 'deleteComment'])
+    ->name('comment.delete');
+
+Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'downloadCommentAttachment'])
+    ->name('comment.download');
 
     // ===== CABANG =====
     Route::middleware(['role:CABANG'])->group(function () {

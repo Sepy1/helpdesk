@@ -307,17 +307,25 @@ class TicketController extends Controller
     /** Tambah komentar */
     public function comment(Request $request, Ticket $ticket)
     {
-        if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) abort(403);
+        
+        $request->validate([
+        'body' => 'required|string',
+        'attachment' => 'nullable|file|max:5048',
+    ]);
 
-        $request->validate(['body' => 'required|min:2']);
+    $data = [
+        'ticket_id' => $ticket->id,
+        'user_id' => auth()->id(),
+        'body' => $request->body,
+    ];
 
-        TicketComment::create([
-            'ticket_id' => $ticket->id,
-            'user_id'   => Auth::id(),
-            'body'      => $request->body,
-        ]);
+    if ($request->hasFile('attachment')) {
+        $data['attachment'] = $request->file('attachment')->store('attachments', 'public');
+    }
 
-        return back()->with('success', 'Komentar ditambahkan.');
+    \App\Models\TicketComment::create($data);
+
+    return back()->with('success','Komentar berhasil ditambahkan');
     }
 
     /** Hapus komentar (pemilik komentar atau IT) */
@@ -329,6 +337,51 @@ class TicketController extends Controller
         $comment->delete();
         return back()->with('success', 'Komentar dihapus.');
     }
+
+    public function storeComment(Request $request, Ticket $ticket)
+{
+    $request->validate([
+        'comment' => 'required|string',
+        'attachment' => 'nullable|file|max:2048', // max 2MB
+    ]);
+
+    $path = null;
+    if ($request->hasFile('attachment')) {
+        $path = $request->file('attachment')->store('attachments', 'public');
+    }
+
+    $ticket->comments()->create([
+        'user_id' => auth()->id(),
+        'comment' => $request->comment,
+        'attachment' => $path,
+    ]);
+
+    return back()->with('success', 'Komentar berhasil ditambahkan.');
+}
+
+
+
+// Unduh lampiran komentar comment tiket 
+public function downloadCommentAttachment(TicketComment $comment)
+{
+    // otorisasi: pemilik komentar, pemilik tiket, atau IT
+    $user = auth()->user();
+    $isOwnerComment = $user && $user->id === $comment->user_id;
+    $isTicketOwner  = $user && $user->id === $comment->ticket->user_id;
+    $isIT           = $user && $user->role === 'IT';
+
+    if (! ($isOwnerComment || $isTicketOwner || $isIT)) {
+        abort(403);
+    }
+
+    if (! $comment->attachment) {
+        abort(404);
+    }
+
+    // file tersimpan di disk 'public'
+    return Storage::disk('public')->download($comment->attachment);
+}
+
 
     /** Unduh lampiran tiket */
     public function downloadAttachment(Ticket $ticket)

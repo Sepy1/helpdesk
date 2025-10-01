@@ -175,39 +175,48 @@
     {{-- Komentar --}}
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
       <h3 class="font-semibold text-gray-800 mb-3">Komentar / Progres</h3>
-      <form method="POST" action="{{ route('ticket.comment', $ticket->id) }}" class="mb-4">
-        @csrf
-        <textarea name="body" rows="3" required
-                  class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="Tulis update atau komentar..."></textarea>
-        <div class="mt-2">
-          <button class="rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800">Kirim</button>
-        </div>
-      </form>
+     <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data">
+  @csrf
+  <textarea name="body" class="w-full rounded-lg border-gray-300" required></textarea>
+  <input type="file" name="attachment" class="mt-2">
+  <button class="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg">Kirim</button>
+</form>
 
       <div class="space-y-4">
         @forelse($ticket->comments as $c)
-          <div class="rounded-lg border border-gray-100 p-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-sm font-medium text-gray-800">{{ $c->user->name ?? 'User' }}</div>
-                <div class="text-xs text-gray-500">{{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}</div>
-              </div>
-              @auth
-                @if(auth()->id() === $c->user_id || auth()->user()->role === 'IT')
-                  <form method="POST" action="{{ route('comment.delete', $c->id) }}"
-                        onsubmit="return confirm('Hapus komentar ini?')">
-                    @csrf @method('DELETE')
-                    <button class="text-xs text-red-600 hover:underline">Hapus</button>
-                  </form>
-                @endif
-              @endauth
-            </div>
-            <div class="mt-2 text-gray-700 whitespace-pre-line">{{ $c->body }}</div>
-          </div>
-        @empty
-          <div class="text-gray-500 text-sm">Belum ada komentar.</div>
-        @endforelse
+  <div class="rounded-lg border border-gray-100 p-3">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-sm font-medium text-gray-800">{{ $c->user->name ?? 'User' }}</div>
+        <div class="text-xs text-gray-500">{{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}</div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        @if($c->attachment)
+          <a href="{{ route('comment.download', $c->id) }}"
+             class="inline-flex items-center px-3 py-1.5 rounded-lg ring-1 ring-gray-200 text-sm text-indigo-600 hover:bg-indigo-50"
+             download
+             data-noloader="1">
+            Unduh Lampiran
+          </a>
+        @endif
+
+        @auth
+          @if(auth()->id() === $c->user_id || auth()->user()->role === 'IT')
+            <form method="POST" action="{{ route('comment.delete', $c->id) }}" onsubmit="return confirm('Hapus komentar ini?')">
+              @csrf @method('DELETE')
+              <button class="text-xs text-red-600 hover:underline">Hapus</button>
+            </form>
+          @endif
+        @endauth
+      </div>
+    </div>
+
+    <div class="mt-2 text-gray-700 whitespace-pre-line">{{ $c->body }}</div>
+  </div>
+@empty
+  <div class="text-gray-500 text-sm">Belum ada komentar.</div>
+@endforelse
       </div>
     </div>
   </div>

@@ -7,9 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class TicketComment extends Model
 {
-   use HasFactory;
-    protected $fillable = ['ticket_id','user_id','body'];
+    use HasFactory;
 
-    public function ticket(){ return $this->belongsTo(Ticket::class); }
-    public function user(){ return $this->belongsTo(User::class); }
+    protected $fillable = [
+        'ticket_id',
+        'user_id',
+        'body',       
+        'attachment'
+    ];
+
+    
+    public function ticket()
+    {
+        return $this->belongsTo(Ticket::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
