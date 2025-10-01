@@ -64,8 +64,9 @@
       <div class="mt-4">
         <div class="text-xs text-gray-500 mb-1">Lampiran</div>
         @if($ticket->lampiran)
-          <a class="text-indigo-600 hover:underline" href="{{ route('ticket.download', $ticket->id) }}">Unduh lampiran</a>
-        @else
+          <a href="{{ route('ticket.download',$ticket->id) }}" class="text-indigo-600 hover:underline" download data-noloader="1">
+  Unduh lampiran
+</a>
           <span class="text-gray-400">-</span>
         @endif
       </div>

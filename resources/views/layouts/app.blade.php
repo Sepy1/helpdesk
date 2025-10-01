@@ -4,13 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#ffffff">
   <title>@yield('title','Helpdesk')</title>
 
   @vite(['resources/css/app.css','resources/js/app.js'])
 
+  {{-- Alpine --}}
   <style>[x-cloak]{display:none!important}</style>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  {{-- NProgress --}}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.css">
   <script defer src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.js"></script>
 
@@ -18,19 +21,25 @@
     .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     #nprogress .bar{background:#4f46e5!important;height:3px!important}
     #nprogress .peg{box-shadow:0 0 10px #4f46e5,0 0 5px #4f46e5!important}
+
+    /* konten smooth-in saat berpindah */
     .page-root{opacity:1;transform:none;transition:opacity .32s ease, transform .36s ease;will-change:opacity,transform}
     html.loading .page-root{opacity:0;transform:translateY(8px)}
+
+    /* overlay loader */
     #page-loader{display:flex;opacity:0;pointer-events:none;transition:opacity .24s ease}
     html.loading #page-loader{opacity:1;pointer-events:auto}
+
+    /* sidebar fade (opsional) */
     aside[aria-label="Sidebar"]>div{transition:opacity .25s ease}
+
     @media (prefers-reduced-motion:reduce){
       .page-root,#page-loader,aside[aria-label="Sidebar"]>div{transition:none!important}
     }
   </style>
 
-  {{-- Styles pushed from child views (e.g., timeline CSS) --}}
-@stack('styles')
-
+  {{-- Styles dari child (mis. timeline) --}}
+  @stack('styles')
 </head>
 <body
   class="h-full font-sans antialiased"
@@ -75,9 +84,9 @@
     </div>
   </header>
 
-  {{-- ====== LAYOUT: SIDEBAR FIXED KIRI + KONTEN BERGESER ====== --}}
+  {{-- ====== LAYOUT: SIDEBAR KIRI + KONTEN ====== --}}
   <div class="relative">
-    {{-- SIDEBAR (desktop) --}}
+    {{-- Sidebar (desktop) --}}
     <aside aria-label="Sidebar"
            class="hidden md:block fixed z-30 top-16 bottom-0 left-0 w-64 border-r bg-white overflow-y-auto
                   transition-transform duration-200 will-change-transform"
@@ -87,7 +96,7 @@
       </div>
     </aside>
 
-    {{-- KONTEN (desktop + mobile) --}}
+    {{-- Konten --}}
     <div class="pt-6 px-4 sm:px-6 lg:px-8 transition-[margin] duration-200
                 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-0"
          :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
@@ -104,7 +113,7 @@
     </div>
   </div>
 
-  {{-- DRAWER MOBILE --}}
+  {{-- Drawer Mobile --}}
   <div id="mobile-drawer" x-show="mobileOpen" x-cloak
        class="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu navigasi">
     <div class="absolute inset-0 bg-black/40" @click="mobileOpen=false" aria-hidden="true"></div>
@@ -118,7 +127,7 @@
     </div>
   </div>
 
-  {{-- OVERLAY LOADER --}}
+  {{-- Overlay loader (global) --}}
   <div id="page-loader"
        class="fixed inset-0 z-[9999] items-center justify-center bg-white/70 backdrop-blur-sm"
        aria-live="polite" aria-busy="true">
@@ -131,7 +140,7 @@
     </div>
   </div>
 
-  {{-- Bottom nav khusus mobile --}}
+  {{-- Bottom nav mobile --}}
   @include('layouts.partials.bottomnav')
 
   <script>
@@ -139,24 +148,47 @@
       return {
         sidebarOpen: true,
         mobileOpen: false,
+        _loaderTimeout: null,
+
         init(){
+          // restore sidebar state
           const saved = localStorage.getItem('sidebarOpen');
           if (saved !== null) this.sidebarOpen = saved === '1';
 
+          // stop loader saat siap / kembali dari bfcache
           window.addEventListener('DOMContentLoaded', stopLoading, { once:true });
           window.addEventListener('pageshow', stopLoading);
+
+          // start loader sebelum unload
           window.addEventListener('beforeunload', startLoading);
 
+          // klik link internal → start loader (kecuali download / data-noloader / new tab / hash)
           document.addEventListener('click', (e)=>{
-            const a = e.target.closest('a'); if(!a) return;
-            const href = a.getAttribute('href')||'';
-            if(!href || href.startsWith('#') || a.hasAttribute('download')) return;
-            if(a.target==='_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-            try{ const u=new URL(href,location.href); if(u.origin!==location.origin) return; startLoading(); }catch(_){}
+            const a = e.target.closest('a');
+            if (!a) return;
+
+            // abaikan link tertentu
+            if (a.hasAttribute('download') || a.dataset.noloader === '1') return;
+
+            const href = a.getAttribute('href') || '';
+            if (!href || href.startsWith('#')) return;
+            if (a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+            try{
+              const u = new URL(href, location.href);
+              if (u.origin !== location.origin) return;
+              startLoading();
+            }catch(_){}
           }, true);
 
-          document.addEventListener('submit', ()=> startLoading(), true);
+          // submit form (kecuali target _blank)
+          document.addEventListener('submit', (e)=>{
+            const f = e.target;
+            if (f && f.target === '_blank') return;
+            startLoading();
+          }, true);
         },
+
         toggleSidebar(){
           this.sidebarOpen = !this.sidebarOpen;
           localStorage.setItem('sidebarOpen', this.sidebarOpen ? '1' : '0');
@@ -165,10 +197,16 @@
     }
 
     function startLoading(){
-      document.documentElement.classList.add('loading');
+      // fallback auto-stop 15s agar tidak "menggantung" jika ada error
+      const s = document.documentElement;
+      s.classList.add('loading');
       if (window.NProgress) NProgress.start();
+      clearTimeout(window.__loaderTimeout);
+      window.__loaderTimeout = setTimeout(stopLoading, 15000);
     }
+
     function stopLoading(){
+      clearTimeout(window.__loaderTimeout);
       requestAnimationFrame(()=>{
         document.documentElement.classList.remove('loading');
         if (window.NProgress) NProgress.done();
