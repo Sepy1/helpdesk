@@ -35,7 +35,7 @@
   {{-- ===== Desktop: tabel ===== --}}
   <div class="hidden md:block overflow-x-auto">
     <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-gray-600">
+      <thead class="bg-white-50 text-gray-600">
         <tr>
           <th class="py-3 px-4 text-left">#</th>
           <th class="py-3 px-4 text-left">Nomor</th>

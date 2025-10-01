@@ -49,7 +49,7 @@
 >
 
   {{-- TOPBAR --}}
-  <header class="bg-white border-b sticky top-0 z-40">
+  <header class="bg-whitenp border-b sticky top-0 z-40">
     <div class="w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
       <div class="flex items-center gap-2 min-w-0">
         <div class="h-9 w-9 rounded-xl bg-indigo-600/10 flex items-center justify-center shrink-0">
