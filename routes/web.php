@@ -46,6 +46,7 @@ Route::delete('/comment/{comment}', [TicketController::class, 'deleteComment'])
 Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'downloadCommentAttachment'])
     ->name('comment.download');
 
+    
     // ===== CABANG =====
     Route::middleware(['role:CABANG'])->group(function () {
         Route::get('/cabang/dashboard', [TicketController::class, 'create'])->name('cabang.dashboard'); // form buat tiket
@@ -70,6 +71,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
   
     });
 });
-
+Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])
+    ->name('categories.subcategories');
 // Auth routes (Breeze/Fortify/Jetstream)
 require __DIR__ . '/auth.php';

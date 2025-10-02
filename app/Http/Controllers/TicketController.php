@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Category;
+use App\Models\Subcategory;
+use Illuminate\Support\Facades\Schema;
 
 class TicketController extends Controller
 {
@@ -53,43 +56,81 @@ class TicketController extends Controller
      * ========================= */
 
     /** Form buat tiket */
-    public function create()
-    {
-        return view('cabang.create_ticket', ['kategori' => self::KATEGORI]);
+    
+public function create()
+{
+    // Ambil kategori beserta subkategori (eager load).
+    // Pastikan subcategory memuat category_id agar relasi terhubung saat eager load.
+    $categories = Category::with(['subcategories' => function ($q) {
+        $q->select('id', 'category_id', 'name')->orderBy('name');
+    }])->orderBy('name')->get(['id', 'name']);
+
+    return view('cabang.create_ticket', compact('categories'));
+}
+
+/** Simpan tiket baru */
+public function store(Request $request)
+{
+    // validasi
+    $data = $request->validate([
+        'category_id'   => 'required|exists:categories,id',
+        'subcategory_id'=> 'nullable|exists:subcategories,id',
+        'deskripsi'     => 'required|min:5',
+        'lampiran'      => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
+    ], [], [
+        'category_id' => 'kategori',
+        'subcategory_id' => 'subkategori',
+        'deskripsi' => 'deskripsi',
+    ]);
+
+    // pastikan subkategori memang milik kategori yang dipilih (jika ada)
+    if (!empty($data['subcategory_id'])) {
+        $ok = Subcategory::where('id', $data['subcategory_id'])
+            ->where('category_id', $data['category_id'])
+            ->exists();
+
+        if (!$ok) {
+            return back()
+                ->withErrors(['subcategory_id' => 'Subkategori tidak valid untuk kategori yang dipilih.'])
+                ->withInput();
+        }
     }
 
-    /** Simpan tiket baru */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'kategori'  => 'required|in:' . implode(',', self::KATEGORI),
-            'deskripsi' => 'required|min:5',
-            'lampiran'  => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
-        ]);
+    // simpan file jika ada
+    $lampiranPath = $request->hasFile('lampiran')
+        ? $request->file('lampiran')->store('lampiran', 'public')
+        : null;
 
-        $lampiran = $request->hasFile('lampiran')
-            ? $request->file('lampiran')->store('lampiran', 'public')
-            : null;
+    // buat tiket dalam transaction
+    $ticket = DB::transaction(function () use ($data, $lampiranPath) {
+        $payload = [
+            'nomor_tiket'    => $this->generateTicketNumber(),
+            'user_id'        => auth()->id(),
+            'category_id'    => $data['category_id'],
+            'subcategory_id' => $data['subcategory_id'] ?? null,
+            'deskripsi'      => $data['deskripsi'],
+            'lampiran'       => $lampiranPath,
+            'status'         => 'OPEN',
+            'eskalasi'       => 'TIDAK',
+        ];
 
-        $ticket = DB::transaction(function () use ($request, $lampiran) {
-            return Ticket::create([
-                'nomor_tiket' => $this->generateTicketNumber(),
-                'user_id'     => auth()->id(),
-                'kategori'    => $request->kategori,
-                'deskripsi'   => $request->deskripsi,
-                'lampiran'    => $lampiran,
-                'status'      => 'OPEN',
-                'eskalasi'    => 'TIDAK',   // default
-            ]);
-        });
+        // backward-compat: jika masih ada kolom 'kategori', isi dengan nama kategori
+        if (Schema::hasColumn('tickets', 'kategori')) {
+            $cat = Category::find($data['category_id']);
+            $payload['kategori'] = $cat ? $cat->name : null;
+        }
 
-        return redirect()
-            ->route('cabang.dashboard')
-            ->with('success', 'Tiket berhasil dibuat.')
-            ->with('new_ticket_no', $ticket->nomor_tiket)
-            ->with('new_ticket_id', $ticket->id);
-    }
+        return Ticket::create($payload);
+    });
 
+    // session flash untuk modal sukses & redirect
+    session()->flash('new_ticket_no', $ticket->nomor_tiket ?? $ticket->id);
+    session()->flash('new_ticket_id', $ticket->id);
+
+    return redirect()
+        ->route('cabang.dashboard')
+        ->with('success', 'Tiket berhasil dibuat.');
+}
     /** Daftar tiket milik user cabang (+filter) */
     public function myTickets(Request $request)
     {
@@ -120,46 +161,103 @@ class TicketController extends Controller
 
     /** Dashboard IT: list tiket + filter */
     public function index(Request $request)
-    {
-        $tickets = Ticket::with(['user', 'it'])
-            ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('kategori'), fn ($q) => $q->where('kategori', $request->kategori))
-            ->when($request->filled('q'), function ($q) use ($request) {
-                $v = trim($request->q);
-                $q->where(function ($qq) use ($v) {
-                    $qq->where('nomor_tiket', 'like', "%$v%")
-                       ->orWhere('deskripsi', 'like', "%$v%");
-                });
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+{
+    // Ambil daftar kategori untuk select filter
+    $categories = Category::orderBy('name')->get(['id','name']);
 
-        return view('it.dashboard', compact('tickets'));
+    // Jika ada category_id di query, ambil subkategori terkait (untuk render awal)
+    $selectedCategoryId = $request->query('category_id') ?? null;
+    $subcategories = collect();
+    if ($selectedCategoryId) {
+        $subcategories = Subcategory::where('category_id', $selectedCategoryId)
+                        ->orderBy('name')
+                        ->get(['id','name']);
     }
+
+    // Cek apakah tabel tickets sudah punya kolom category_id/subcategory_id
+    $hasCategoryId = Schema::hasColumn('tickets', 'category_id');
+    $hasSubcategoryId = Schema::hasColumn('tickets', 'subcategory_id');
+
+    $tickets = Ticket::with(['user','it'])
+        // filter status
+        ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+
+        // filter category: jika kolom category_id ada, pakai itu; jika belum, fallback ke legacy 'kategori'
+        ->when($hasCategoryId && $request->filled('category_id'),
+               fn($q) => $q->where('category_id', $request->category_id))
+        ->when(!$hasCategoryId && $request->filled('kategori'),
+               fn($q) => $q->where('kategori', $request->kategori))
+
+        // filter subcategory jika kolom ada dan param disertakan
+        ->when($hasSubcategoryId && $request->filled('subcategory_id'),
+               fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+
+        // pencarian teks di nomor_tiket atau deskripsi
+        ->when($request->filled('q'), function ($q) use ($request) {
+            $v = trim($request->q);
+            $q->where(function ($qq) use ($v) {
+                $qq->where('nomor_tiket', 'like', "%{$v}%")
+                   ->orWhere('deskripsi', 'like', "%{$v}%");
+            });
+        })
+
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+    // kirim semua data ke view agar select bisa di-render
+    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId'));
+}
 
     /** Tiket yang sedang diambil alih oleh IT ini + filter */
     public function myAssigned(Request $request)
-    {
-        if (Auth::user()->role !== 'IT') abort(403);
+{
+    if (Auth::user()->role !== 'IT') abort(403);
 
-        $tickets = Ticket::with(['user', 'it'])
-            ->where('it_id', Auth::id())
-            ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('kategori'), fn ($q) => $q->where('kategori', $request->kategori))
-            ->when($request->filled('q'), function ($q) use ($request) {
-                $v = trim($request->q);
-                $q->where(function ($qq) use ($v) {
-                    $qq->where('nomor_tiket', 'like', "%$v%")
-                       ->orWhere('deskripsi', 'like', "%$v%");
-                });
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+    // Ambil semua kategori untuk dropdown (urutkan bila perlu)
+    $categories = \App\Models\Category::orderBy('name')->get();
 
-        return view('it.my', compact('tickets'));
+    // ambil nilai terpilih dari query string (bisa datang sebagai category_id atau kategori)
+    $selectedCategoryId = $request->query('category_id');
+    $selectedSubcategoryId = $request->query('subcategory_id');
+
+    // Siapkan koleksi subkategori (kosong default)
+    $subcategories = collect();
+    if ($selectedCategoryId) {
+        // jika ada relationship Category->subcategories
+        $cat = \App\Models\Category::with('subcategories')->find($selectedCategoryId);
+        if ($cat) {
+            $subcategories = $cat->subcategories;
+        } else {
+            // fallback: coba ambil dari tabel subcategories jika model berbeda
+            $subcategories = \App\Models\Subcategory::where('category_id', $selectedCategoryId)->get();
+        }
     }
+
+    $tickets = Ticket::with(['user', 'it'])
+        ->where('it_id', Auth::id())
+        // status filter (sama seperti Anda)
+        ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+        // kategori: dukung dua kemungkinan param (category_id dari form baru, atau kategori lama)
+        ->when($request->filled('category_id'), fn ($q) => $q->where('kategori', $request->category_id))
+        ->when($request->filled('kategori') && !$request->filled('category_id'), fn ($q) => $q->where('kategori', $request->kategori))
+        // subkategori (jika Anda menyimpan subcategory_id di tabel tickets)
+        ->when($request->filled('subcategory_id'), fn ($q) => $q->where('subcategory_id', $request->subcategory_id))
+        // pencarian q (nomor/deskripsi)
+        ->when($request->filled('q'), function ($q) use ($request) {
+            $v = trim($request->q);
+            $q->where(function ($qq) use ($v) {
+                $qq->where('nomor_tiket', 'like', "%$v%")
+                   ->orWhere('deskripsi', 'like', "%$v%");
+            });
+        })
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+    // kirim juga variabel kategori/subkategori & selected id ke view
+    return view('it.my', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'selectedSubcategoryId'));
+}
 
     /** IT mengambil alih tiket */
     public function take(Ticket $ticket)
@@ -439,4 +537,24 @@ public function downloadCommentAttachment(TicketComment $comment)
             'topData'        => $topData,
         ]);
     }
+
+
+
+public function subcategories($id)
+{
+    // pastikan kategori ada
+    $category = Category::find($id);
+    if (!$category) {
+        return response()->json([], 404);
+    }
+
+    $subs = Subcategory::where('category_id', $id)
+            ->select('id','name')
+            ->orderBy('name')
+            ->get();
+
+    return response()->json($subs);
+}
+
+
 }

@@ -12,6 +12,7 @@ class Ticket extends Model
         'nomor_tiket','user_id','kategori','deskripsi','lampiran','status',
         'it_id','taken_at','progress_note','progress_at','eskalasi',
         'vendor_followup','vendor_followup_at','closed_note','closed_at', 'root_cause',
+        'category_id','subcategory_id',
     ];
 
     protected $casts = [
@@ -35,4 +36,15 @@ class Ticket extends Model
 
     public function comments(){ return $this->hasMany(TicketComment::class)->latest(); 
     }
+
+    public function category()
+{
+    return $this->belongsTo(Category::class);
+}
+
+public function subcategory()
+{
+    return $this->belongsTo(Subcategory::class);
+}
+
 }

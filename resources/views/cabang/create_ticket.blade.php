@@ -20,18 +20,30 @@
     @csrf
 
     {{-- Kategori --}}
-    <div>
+   <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-      <select name="kategori"
+      <select name="category_id" id="category-select"
               required
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">-- Pilih --</option>
-        @php $listKategori = $kategori ?? ['JARINGAN','LAYANAN','CBS','OTHER']; @endphp
-        @foreach($listKategori as $k)
-          <option value="{{ $k }}" @selected(old('kategori')===$k)>{{ ucwords(strtolower($k)) }}</option>
+        <option value="">-- Pilih Kategori --</option>
+        @php $list = $categories ?? collect(); @endphp
+        @foreach($list as $cat)
+          <option value="{{ $cat->id }}" @selected(old('category_id') == $cat->id)>{{ $cat->name }}</option>
         @endforeach
       </select>
-      @error('kategori') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      @error('category_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+    </div>
+
+    {{-- Subkategori (akan diisi via JS) --}}
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Subkategori</label>
+      <select name="subcategory_id" id="subcategory-select"
+              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+        <option value="">-- Pilih Subkategori --</option>
+        {{-- Jika ada old value dan kategori terpilih, server-side create() bisa mengirim initial subkategori; 
+            tapi kita handle juga via JS pada page load --}}
+      </select>
+      @error('subcategory_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
 
     {{-- Deskripsi --}}
@@ -102,4 +114,81 @@
   </div>
 </div>
 @endif
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const categorySelect = document.getElementById('category-select');
+  const subcategorySelect = document.getElementById('subcategory-select');
+
+  const baseUrl = '{{ url('/categories') }}'; // -> /categories
+  const csrfToken = '{{ csrf_token() }}';
+  const oldCategory = '{{ old("category_id") }}';
+  const oldSub = '{{ old("subcategory_id") }}';
+
+  async function loadSubcategories(categoryId, setSelected = null) {
+    // reset first
+    subcategorySelect.innerHTML = '<option value="">-- Pilih Subkategori --</option>';
+
+    if (!categoryId) {
+      // nothing to load
+      return;
+    }
+
+    const url = `${baseUrl}/${categoryId}/subcategories`;
+
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken
+        }
+      });
+
+      if (!res.ok) {
+        console.error('Gagal memuat subkategori', res.status);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '— Tidak ada subkategori —';
+        subcategorySelect.appendChild(opt);
+        return;
+      }
+
+      data.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.name;
+        subcategorySelect.appendChild(opt);
+      });
+
+      // set selected jika ada
+      const toSelect = setSelected ?? oldSub;
+      if (toSelect) subcategorySelect.value = toSelect;
+    } catch (err) {
+      console.error('Error saat memuat subkategori', err);
+    }
+  }
+
+  // Event listener saat kategori berubah
+  categorySelect.addEventListener('change', function () {
+    const catId = this.value;
+    loadSubcategories(catId, null);
+  });
+
+  // Jika ada old value (mis. after validation error), muat subkategori pada page load
+  if (oldCategory) {
+    // set select to old category (already set by blade) then load subcategories and set old sub
+    loadSubcategories(oldCategory, oldSub);
+  }
+});
+</script>
+
 @endsection
