@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="theme-color" content="#ffffff">
   <title>@yield('title','Helpdesk')</title>
-
+ <style>[x-cloak]{display:none!important}</style>
   @vite(['resources/css/app.css','resources/js/app.js'])
 
   {{-- Alpine --}}

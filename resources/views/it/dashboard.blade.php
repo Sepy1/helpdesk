@@ -57,7 +57,7 @@
 
       {{-- Buttons: Filter + Reset --}}
       <div class="w-full md:w-auto flex flex-wrap gap-2">
-        <button type="submit" class="w-full md:w-auto rounded-lg bg-gray-900 text-white px-4 py-2">Filter</button>
+        <button type="submit" class="w-full md:w-auto rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4 py-2">Filter</button>
 
         @if(request()->hasAny(['q','category_id','subcategory_id','status','kategori']))
           <a href="{{ route('it.dashboard') }}"
@@ -113,14 +113,14 @@
           </td>
           <td class="py-3 px-4 truncate">{{ $t->it->name ?? '-' }}</td>
           <td class="py-3 px-4 space-x-1 whitespace-nowrap">
-            <a href="{{ route('ticket.show',$t->id) }}" class="inline-flex items-center rounded-lg bg-gray-100 px-3 py-1.5 text-gray-800 hover:bg-gray-200">Detail</a>
+            <a href="{{ route('ticket.show',$t->id) }}" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
             @if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id))
               <form method="POST" class="inline" action="{{ route('it.ticket.take',$t->id) }}">@csrf
                 <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Ambil Alih</button>
               </form>
             @elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
               <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
-                <button class="rounded-lg bg-gray-200 px-3 py-1.5 text-gray-800 hover:bg-gray-300">Lepas</button>
+                <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
               </form>
               <form method="POST" class="inline" action="{{ route('it.ticket.close',$t->id) }}">@csrf
                 <button class="rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700">Tutup</button>
@@ -165,7 +165,7 @@
         </div>
 
         <div class="mt-3 flex flex-wrap gap-2">
-          <a href="{{ route('ticket.show',$t->id) }}" class="rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800">Detail</a>
+          <a href="{{ route('ticket.show',$t->id) }}" class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-2 text-tulisan-50 hover:bg-gray-800">Detail</a>
 
           @if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id))
             <form method="POST" action="{{ route('it.ticket.take',$t->id) }}">@csrf

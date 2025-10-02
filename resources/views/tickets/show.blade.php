@@ -85,7 +85,7 @@
                           placeholder="Catat tindakan progress (mis: restart service, konfigurasi ulang, pengecekan jaringan)…">{{ old('progress_note', $ticket->progress_note) }}</textarea>
                 @error('progress_note') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 <div class="mt-2">
-                  <button class="inline-flex items-center rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800">
+                  <button class="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-gray-800">
                     Simpan
                   </button>
                 </div>
@@ -100,7 +100,7 @@
                 <option value="TIDAK"  @selected($ticket->eskalasi==='TIDAK')>Tidak</option>
                 <option value="VENDOR" @selected($ticket->eskalasi==='VENDOR')>Vendor</option>
               </select>
-              <button class="rounded-lg bg-gray-900 px-3 py-2 text-white hover:bg-gray-800 text-sm">Simpan</button>
+              <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-gray-800 text-sm">Simpan</button>
             </form>
 
             {{-- Tindak lanjut vendor (muncul saat eskalasi vendor) --}}
@@ -110,7 +110,7 @@
                 <textarea name="vendor_followup" rows="2" required
                           class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
                           placeholder="Catat tindak lanjut dari vendor...">{{ old('vendor_followup', $ticket->vendor_followup) }}</textarea>
-                <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 text-sm shrink-0">Simpan</button>
+                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-indigo-700 text-sm shrink-0">Simpan</button>
               </form>
             @endif
 
@@ -165,7 +165,7 @@
         {{-- Tombol History --}}
         <div>
           <button type="button" x-data @click="$dispatch('open-history')"
-                  class="rounded-lg bg-white ring-1 ring-gray-200 px-3 py-2 text-gray-700 hover:bg-gray-50">
+                  class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 ring-1 ring-gray-200 px-3 py-2 text-tulisan-50 hover:bg-gray-50">
             History
           </button>
         </div>
@@ -179,7 +179,7 @@
   @csrf
   <textarea name="body" class="w-full rounded-lg border-gray-300" required></textarea>
   <input type="file" name="attachment" class="mt-2">
-  <button class="mt-2 bg-brand-50 text-white px-4 py-2 rounded-lg">Kirim</button>
+  <button class="mt-2 bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4 py-2 rounded-lg">Kirim</button>
 </form>
 
       <div class="space-y-4">
