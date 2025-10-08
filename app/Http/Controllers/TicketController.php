@@ -11,7 +11,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Subcategory;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketSubmitted;
 use Illuminate\Support\Facades\Schema;
+use App\Mail\TicketClosed;
+use Illuminate\Support\Facades\Log;
+
 
 class TicketController extends Controller
 {
@@ -71,6 +76,8 @@ public function create()
 /** Simpan tiket baru */
 public function store(Request $request)
 {
+    Log::info('TicketStore: masuk ke store() oleh user_id=' . optional(Auth::user())->id);
+
     // validasi
     $data = $request->validate([
         'category_id'   => 'required|exists:categories,id',
@@ -83,6 +90,11 @@ public function store(Request $request)
         'deskripsi' => 'deskripsi',
     ]);
 
+    Log::info('TicketStore: validasi berhasil', ['input' => [
+        'category_id' => $data['category_id'],
+        'subcategory_id' => $data['subcategory_id'] ?? null,
+    ]]);
+
     // pastikan subkategori memang milik kategori yang dipilih (jika ada)
     if (!empty($data['subcategory_id'])) {
         $ok = Subcategory::where('id', $data['subcategory_id'])
@@ -90,10 +102,20 @@ public function store(Request $request)
             ->exists();
 
         if (!$ok) {
+            Log::warning('TicketStore: subkategori tidak valid', [
+                'category_id' => $data['category_id'],
+                'subcategory_id' => $data['subcategory_id']
+            ]);
+
             return back()
                 ->withErrors(['subcategory_id' => 'Subkategori tidak valid untuk kategori yang dipilih.'])
                 ->withInput();
         }
+
+        Log::info('TicketStore: subkategori valid', [
+            'category_id' => $data['category_id'],
+            'subcategory_id' => $data['subcategory_id']
+        ]);
     }
 
     // simpan file jika ada
@@ -101,36 +123,102 @@ public function store(Request $request)
         ? $request->file('lampiran')->store('lampiran', 'public')
         : null;
 
+    if ($lampiranPath) {
+        Log::info('TicketStore: lampiran disimpan', ['path' => $lampiranPath]);
+    } else {
+        Log::info('TicketStore: tidak ada lampiran di request');
+    }
+
     // buat tiket dalam transaction
-    $ticket = DB::transaction(function () use ($data, $lampiranPath) {
-        $payload = [
-            'nomor_tiket'    => $this->generateTicketNumber(),
-            'user_id'        => auth()->id(),
-            'category_id'    => $data['category_id'],
-            'subcategory_id' => $data['subcategory_id'] ?? null,
-            'deskripsi'      => $data['deskripsi'],
-            'lampiran'       => $lampiranPath,
-            'status'         => 'OPEN',
-            'eskalasi'       => 'TIDAK',
-        ];
+    try {
+        $ticket = DB::transaction(function () use ($data, $lampiranPath) {
+            $payload = [
+                'nomor_tiket'    => $this->generateTicketNumber(),
+                'user_id'        => auth()->id(),
+                'category_id'    => $data['category_id'],
+                'subcategory_id' => $data['subcategory_id'] ?? null,
+                'deskripsi'      => $data['deskripsi'],
+                'lampiran'       => $lampiranPath,
+                'status'         => 'OPEN',
+                'eskalasi'       => 'TIDAK',
+            ];
 
-        // backward-compat: jika masih ada kolom 'kategori', isi dengan nama kategori
-        if (Schema::hasColumn('tickets', 'kategori')) {
-            $cat = Category::find($data['category_id']);
-            $payload['kategori'] = $cat ? $cat->name : null;
+            // backward-compat: jika masih ada kolom 'kategori', isi dengan nama kategori
+            if (Schema::hasColumn('tickets', 'kategori')) {
+                $cat = Category::find($data['category_id']);
+                $payload['kategori'] = $cat ? $cat->name : null;
+            }
+
+            $created = Ticket::create($payload);
+
+            Log::info('TicketStore: ticket dibuat di transaction', [
+                'ticket_id' => $created->id,
+                'nomor_tiket' => $created->nomor_tiket,
+                'user_id' => $created->user_id,
+            ]);
+
+            return $created;
+        });
+    } catch (\Throwable $e) {
+        Log::error('TicketStore: gagal membuat ticket', ['error' => $e->getMessage()]);
+        return back()->with('error', 'Gagal membuat tiket. Silakan coba lagi.');
+    }
+
+    // kirim email notifikasi ke user (jika ada email)
+    try {
+        $user = $ticket->user ?? auth()->user();
+        $recipientEmail = $user->email ?? null;
+
+        Log::info('TicketStore: persiapan kirim email', [
+            'ticket_id' => $ticket->id,
+            'recipient' => $recipientEmail,
+            'queue_default' => config('queue.default')
+        ]);
+
+        if (empty($recipientEmail)) {
+            Log::warning('TicketStore: tidak ada email penerima, melewatkan pengiriman', [
+                'ticket_id' => $ticket->id
+            ]);
+        } else {
+            // Pilih metode pengiriman berdasarkan koneksi queue
+            if (config('queue.default') === 'sync') {
+                // sync = kirim langsung (berguna untuk debugging/lingkungan tanpa worker)
+                Mail::to($recipientEmail)->send(new TicketSubmitted($ticket));
+                Log::info('TicketStore: Mail::send() dipanggil (sync)', [
+                    'ticket_id' => $ticket->id,
+                    'recipient' => $recipientEmail
+                ]);
+            } else {
+                // jika menggunakan queue (database/redis), queue job dan log bahwa job di-queue
+                Mail::to($recipientEmail)->queue(new TicketSubmitted($ticket));
+                Log::info('TicketStore: Mail::queue() dipanggil (queued)', [
+                    'ticket_id' => $ticket->id,
+                    'recipient' => $recipientEmail
+                ]);
+            }
         }
-
-        return Ticket::create($payload);
-    });
+    } catch (\Throwable $e) {
+        // log error tapi jangan lempar exception ke user
+        Log::error("Gagal mengirim email tiket baru (ticket_id: {$ticket->id}): " . $e->getMessage(), [
+            'ticket_id' => $ticket->id,
+            'exception' => $e,
+        ]);
+    }
 
     // session flash untuk modal sukses & redirect
     session()->flash('new_ticket_no', $ticket->nomor_tiket ?? $ticket->id);
     session()->flash('new_ticket_id', $ticket->id);
 
+    Log::info('TicketStore: selesai store(), redirect ke cabang.dashboard', [
+        'ticket_id' => $ticket->id,
+        'nomor_tiket' => $ticket->nomor_tiket ?? null
+    ]);
+
     return redirect()
         ->route('cabang.dashboard')
         ->with('success', 'Tiket berhasil dibuat.');
 }
+
     /** Daftar tiket milik user cabang (+filter) */
     public function myTickets(Request $request)
     {
@@ -296,15 +384,32 @@ public function store(Request $request)
     }
 
     /** IT menutup tiket (wajib root cause + catatan penyelesaian) */
-    public function close(Request $request, Ticket $ticket)
-    {
-        if (Auth::user()->role !== 'IT') abort(403);
+  public function close(Request $request, Ticket $ticket)
+{
+    Log::info('TicketClose: masuk ke close() oleh user_id=' . optional(Auth::user())->id, [
+        'ticket_id' => $ticket->id
+    ]);
 
-        $data = $request->validate([
-            'root_cause'  => 'required|string|in:' . implode(',', self::ROOT_CAUSES),
-            'closed_note' => 'required|string|min:3',
+    if (Auth::user()->role !== 'IT') {
+        Log::warning('TicketClose: akses ditolak, bukan IT user', [
+            'user_id' => optional(Auth::user())->id,
+            'user_role' => Auth::user()->role ?? null,
+            'ticket_id' => $ticket->id
         ]);
+        abort(403);
+    }
 
+    $data = $request->validate([
+        'root_cause'  => 'required|string|in:' . implode(',', self::ROOT_CAUSES),
+        'closed_note' => 'required|string|min:3',
+    ]);
+
+    Log::info('TicketClose: validasi berhasil', [
+        'ticket_id' => $ticket->id,
+        'root_cause' => $data['root_cause']
+    ]);
+
+    try {
         $ticket->update([
             'status'      => 'CLOSED',
             'it_id'       => $ticket->it_id ?: Auth::id(),
@@ -313,8 +418,65 @@ public function store(Request $request)
             'closed_note' => $data['closed_note'],
         ]);
 
-        return back()->with('success', 'Tiket ditutup.');
+        Log::info('TicketClose: ticket diupdate', [
+            'ticket_id' => $ticket->id,
+            'it_id' => $ticket->it_id,
+            'closed_at' => $ticket->closed_at,
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('TicketClose: gagal update tiket', [
+            'ticket_id' => $ticket->id,
+            'exception' => $e->getMessage()
+        ]);
+        return back()->with('error', 'Gagal menutup tiket. Silakan coba lagi.');
     }
+
+    // Kirim notifikasi email ke pemilik tiket (jika ada)
+    try {
+        // prioritas: relationship user -> email, fallback ke kolom email di tabel tickets (jika ada)
+        $recipientEmail = optional($ticket->user)->email ?? ($ticket->email ?? null);
+
+        Log::info('TicketClose: persiapan kirim email', [
+            'ticket_id' => $ticket->id,
+            'recipient' => $recipientEmail,
+            'queue_default' => config('queue.default')
+        ]);
+
+        if (empty($recipientEmail)) {
+            Log::warning('TicketClose: tidak ada email penerima, melewatkan pengiriman', [
+                'ticket_id' => $ticket->id
+            ]);
+        } else {
+            if (config('queue.default') === 'sync') {
+                // kirim langsung (sinkron)
+                Mail::to($recipientEmail)->send(new \App\Mail\TicketClosed($ticket));
+                Log::info('TicketClose: Mail::send() dipanggil (sync)', [
+                    'ticket_id' => $ticket->id,
+                    'recipient' => $recipientEmail
+                ]);
+            } else {
+                // gunakan queue (butuh queue worker berjalan)
+                Mail::to($recipientEmail)->queue(new \App\Mail\TicketClosed($ticket));
+                Log::info('TicketClose: Mail::queue() dipanggil (queued)', [
+                    'ticket_id' => $ticket->id,
+                    'recipient' => $recipientEmail
+                ]);
+            }
+        }
+    } catch (\Throwable $e) {
+        // Log error agar tidak mengganggu UX
+        Log::error("Gagal mengirim email tiket closed (ticket_id: {$ticket->id}): " . $e->getMessage(), [
+            'ticket_id' => $ticket->id,
+            'exception' => $e
+        ]);
+    }
+
+    Log::info('TicketClose: selesai close(), kembali ke halaman sebelumnya', [
+        'ticket_id' => $ticket->id
+    ]);
+
+    return back()->with('success', 'Tiket ditutup.');
+}
 
     /** Re-open tiket (IT) -> kembali OPEN & tanpa handler */
     public function reopen(Ticket $ticket)
