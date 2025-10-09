@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketCommentController;
+use App\Http\Controllers\StatsController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -73,5 +74,13 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])
     ->name('categories.subcategories');
+
+
+    
+Route::get('/statistics', function(){
+    return view('statistics');
+})->name('stats.view');
+
+Route::get('/statistics/data', [StatsController::class, 'data'])->name('stats.data');
 // Auth routes (Breeze/Fortify/Jetstream)
 require __DIR__ . '/auth.php';
