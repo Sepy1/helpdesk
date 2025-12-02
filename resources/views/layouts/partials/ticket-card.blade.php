@@ -5,9 +5,12 @@
 
 @php
   $badge = match($ticket->status){
-    'OPEN'        => 'bg-gray-100 text-gray-700 ring-gray-200',
-    'ON_PROGRESS' => 'bg-amber-100 text-amber-800 ring-amber-200',
-    'CLOSED'      => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+    'OPEN'             => 'bg-gray-100 text-gray-700 ring-gray-200',
+    'ON_PROGRESS'      => 'bg-amber-100 text-amber-800 ring-amber-200',
+    'ESKALASI_VENDOR'  => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
+    'VENDOR_RESOLVED'  => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+    'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+    default            => 'bg-gray-100 text-gray-700 ring-gray-200',
   };
 @endphp
 

@@ -28,9 +28,13 @@ Route::middleware(['auth'])->group(function () {
     // ===== Dashboard role-based =====
     Route::get('/dashboard', function () {
         $user = auth()->user();
-        return $user->role === 'IT'
-            ? redirect()->route('it.dashboard')
-            : redirect()->route('cabang.dashboard');
+        if ($user->role === 'IT') {
+            return redirect()->route('it.dashboard');
+        }
+        if ($user->role === 'VENDOR') {
+            return redirect()->route('vendor.dashboard');
+        }
+        return redirect()->route('cabang.dashboard');
     })->name('dashboard');
 
     // ===== Shared: detail, komentar, lampiran =====
@@ -67,9 +71,17 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/ticket/{ticket}/close',           [TicketController::class, 'close'])->name('it.ticket.close');
         Route::post('/it/ticket/{ticket}/eskalasi',        [TicketController::class, 'setEskalasi'])->name('it.ticket.eskalasi');
         Route::post('/it/ticket/{ticket}/vendor-followup', [TicketController::class, 'vendorFollowup'])->name('it.ticket.vendor_followup');
+        Route::post('/it/ticket/{ticket}/assign-vendor',   [TicketController::class, 'assignVendor'])->name('it.ticket.assign_vendor');
         Route::post('/it/ticket/{ticket}/progress', [TicketController::class, 'saveProgress'])
      ->name('it.ticket.progress');
   
+    });
+
+    // ===== VENDOR =====
+    Route::middleware(['role:VENDOR'])->group(function () {
+        Route::get('/vendor/dashboard', [TicketController::class, 'vendorTickets'])->name('vendor.dashboard');
+        Route::get('/vendor/tickets',   [TicketController::class, 'vendorTickets'])->name('vendor.tickets');
+        Route::post('/vendor/ticket/{ticket}/followup', [TicketController::class, 'vendorFollowup'])->name('vendor.ticket.followup');
     });
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])

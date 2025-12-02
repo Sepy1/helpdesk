@@ -1,16 +1,15 @@
 @extends('layouts.app')
-@section('title','Tiket Saya')
+@section('title','Tiket Vendor Saya')
 
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
-  {{-- Header + Filter --}}
   <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Tiket Saya</h2>
-      <p class="text-sm text-gray-500">Klik nomor tiket untuk melihat detail.</p>
+      <h2 class="text-lg font-semibold text-gray-800">Tiket Vendor Saya</h2>
+      <p class="text-sm text-gray-500">Tiket yang ditugaskan kepada Anda (Vendor).</p>
     </div>
 
-    <form method="GET" action="{{ route('cabang.tickets') }}" class="grid grid-cols-2 sm:flex gap-2">
+    <form method="GET" action="{{ route('vendor.tickets') }}" class="grid grid-cols-2 sm:flex gap-2">
       <input
         type="text"
         name="q"
@@ -28,7 +27,7 @@
 
       <select name="status" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
         <option value="">Status</option>
-        @foreach(($status ?? ['OPEN','ON_PROGRESS','ESKALASI_VENDOR','VENDOR_RESOLVED','CLOSED']) as $s)
+        @foreach(($status ?? ['OPEN','ON_PROGRESS','CLOSED']) as $s)
           <option value="{{ $s }}" @selected(request('status')===$s)>{{ $s }}</option>
         @endforeach
       </select>
@@ -36,12 +35,11 @@
       <button class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-3 py-2">Filter</button>
 
       @if(request()->hasAny(['q','kategori','status']))
-        <a href="{{ route('cabang.tickets') }}" class="text-sm px-2 py-2 text-gray-600 hover:underline">Reset</a>
+        <a href="{{ route('vendor.tickets') }}" class="text-sm px-2 py-2 text-gray-600 hover:underline">Reset</a>
       @endif
     </form>
   </div>
 
-  {{-- DESKTOP / TABLET: Tabel --}}
   <div class="hidden md:block overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50 text-gray-600">
@@ -94,7 +92,6 @@
     </table>
   </div>
 
-  {{-- MOBILE: Cards --}}
   <div class="md:hidden space-y-3">
     @forelse($tickets as $i => $t)
       @php
@@ -139,7 +136,6 @@
     @endforelse
   </div>
 
-  {{-- Pagination --}}
   <div class="mt-4">{{ $tickets->links() }}</div>
 </div>
 @endsection

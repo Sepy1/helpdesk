@@ -24,7 +24,7 @@ class ResetUsersSeeder extends Seeder
                     'username' => $username,
                     // email dummy unik jika kolom email masih unique
                     'email'    => $username.'@example.test',
-                    'role'     => $role,       // 'IT' atau 'CABANG'
+                    'role'     => $role,       // 'IT' / 'CABANG' / 'VENDOR'
                     'password' => Hash::make('password'),
                 ]);
             };
@@ -39,6 +39,11 @@ class ResetUsersSeeder extends Seeder
                 $u = str_pad((string)$i, 3, '0', STR_PAD_LEFT); // 001, 002, ..., 028
                 $make($u, 'CABANG', 'Cabang '.$u);
             }
+
+            // === VENDOR ===
+            $make('vendor',   'VENDOR', 'Vendor Default');
+            $make('vendor02', 'VENDOR', 'Vendor 02');
+            $make('vendor03', 'VENDOR', 'Vendor 03');
         });
     }
 }

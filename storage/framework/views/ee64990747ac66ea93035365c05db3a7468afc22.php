@@ -1,5 +1,5 @@
-{{-- resources/views/layouts/partials/sidebar.blade.php --}}
-@php
+
+<?php
   $user  = auth()->user();
   $role  = $user->role ?? 'CABANG';
   $is    = fn(...$names) => request()->routeIs(...$names);
@@ -41,41 +41,42 @@
 
   // Tambahkan ikon 'folder' sederhana jika dipakai di atas
   $icons['folder'] = '<path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.8" fill="none"/>';
-@endphp
+?>
 
-{{-- Header logo menu --}}
+
 <div class="flex items-center gap-3 mb-3 px-2">
-  <img src="{{ $logoPath }}" alt="Logo Helpdesk" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+  <img src="<?php echo e($logoPath); ?>" alt="Logo Helpdesk" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
   <div>
     <div class="text-sm font-semibold text-gray-900 leading-tight">Helpdesk</div>
-    <div class="text-xs text-gray-500 leading-tight">{{ $user->name ?? '-' }}</div>
+    <div class="text-xs text-gray-500 leading-tight"><?php echo e($user->name ?? '-'); ?></div>
   </div>
 </div>
 
-{{-- Garis --}}
+
 <hr class="border-gray-100 mb-3">
 
-{{-- List menu --}}
+
 <nav class="space-y-1">
-  @foreach ($menu as $item)
-    @php
+  <?php $__currentLoopData = $menu; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+    <?php
       $active = $item['active'];
       $base   = 'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors';
       $cls    = $active
         ? 'bg-indigo-50 text-indigo-700'
         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900';
-    @endphp
+    ?>
 
-    <a href="{{ route($item['route']) }}" class="{{ $base }} {{ $cls }}" aria-current="{{ $active ? 'page' : 'false' }}">
-      <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0">{!! $icons[$item['icon']] ?? '' !!}</svg>
-      <span class="text-sm font-medium truncate">{{ $item['label'] }}</span>
+    <a href="<?php echo e(route($item['route'])); ?>" class="<?php echo e($base); ?> <?php echo e($cls); ?>" aria-current="<?php echo e($active ? 'page' : 'false'); ?>">
+      <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><?php echo $icons[$item['icon']] ?? ''; ?></svg>
+      <span class="text-sm font-medium truncate"><?php echo e($item['label']); ?></span>
     </a>
-  @endforeach
+  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </nav>
 
-{{-- Footer kecil (opsional) --}}
+
 <div class="mt-4 px-3">
   <div class="text-[11px] text-gray-400">
-    © {{ date('Y') }} Helpdesk.
+    © <?php echo e(date('Y')); ?> Helpdesk.
   </div>
 </div>
+<?php /**PATH C:\laragon\www\helpdesk-app\resources\views/layouts/partials/sidebar.blade.php ENDPATH**/ ?>

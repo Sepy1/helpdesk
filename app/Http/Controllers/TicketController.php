@@ -22,7 +22,7 @@ class TicketController extends Controller
 {
     /** Sumber kebenaran kategori, status, root cause */
     public const KATEGORI    = ['JARINGAN','LAYANAN','CBS','OTHER'];
-    public const STATUS      = ['OPEN','ON_PROGRESS','CLOSED'];
+    public const STATUS      = ['OPEN','ON_PROGRESS','ESKALASI_VENDOR','VENDOR_RESOLVED','CLOSED'];
     public const ROOT_CAUSES = [
         'Human Error',
         'Pergantian User',
@@ -157,6 +157,14 @@ public function store(Request $request)
                 'user_id' => $created->user_id,
             ]);
 
+            // catat history: created
+            \App\Models\TicketHistory::create([
+                'ticket_id' => $created->id,
+                'user_id'   => auth()->id(),
+                'action'    => 'created',
+                'note'      => 'Ticket dibuat',
+                'meta'      => ['nomor_tiket' => $created->nomor_tiket],
+            ]);
             return $created;
         });
     } catch (\Throwable $e) {
@@ -364,6 +372,13 @@ public function store(Request $request)
             'taken_at' => $ticket->taken_at ?: now(),
         ]);
 
+        // history
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'taken',
+            'note'      => 'Tiket diambil oleh IT',
+        ]);
         return back()->with('success', 'Tiket diambil.');
     }
 
@@ -380,6 +395,12 @@ public function store(Request $request)
             'it_id'  => null,
         ]);
 
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'released',
+            'note'      => 'Tiket dilepas ke antrian',
+        ]);
         return back()->with('success', 'Tiket dilepas kembali ke antrian.');
     }
 
@@ -416,6 +437,15 @@ public function store(Request $request)
             'closed_at'   => now(),
             'root_cause'  => $data['root_cause'],
             'closed_note' => $data['closed_note'],
+        ]);
+
+        // history close
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'closed',
+            'note'      => $data['closed_note'],
+            'meta'      => ['root_cause' => $data['root_cause']],
         ]);
 
         Log::info('TicketClose: ticket diupdate', [
@@ -491,6 +521,12 @@ public function store(Request $request)
             // 'taken_at'  => null,
         ]);
 
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'reopened',
+            'note'      => 'Tiket dibuka kembali',
+        ]);
         return back()->with('success', 'Tiket dibuka kembali.');
     }
 
@@ -527,25 +563,112 @@ public function store(Request $request)
         $ticket->progress_at   = now();
         $ticket->save();
 
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'progress',
+            'note'      => $data['progress_note'],
+        ]);
         return back()->with('success', 'Tindakan progress disimpan.');
     }
 
-    /** Simpan tindak lanjut dari vendor (+timestamp) */
+    /** Simpan tindak lanjut dari vendor (+timestamp)
+     *  - IT boleh mengisi
+     *  - VENDOR boleh mengisi hanya jika ticket.vendor_id == auth()->id()
+     */
     public function vendorFollowup(Request $request, Ticket $ticket)
     {
-        if (Auth::user()->role !== 'IT') abort(403);
+        $user = Auth::user();
+        if (! $user) abort(401);
+
+        $isIT = $user->role === 'IT';
+        $isVendorOwner = $user->role === 'VENDOR' && (int)$ticket->vendor_id === (int)$user->id;
+        if (!($isIT || $isVendorOwner)) {
+            abort(403);
+        }
 
         $request->validate([
             'vendor_followup' => 'required|string|min:3',
         ]);
 
-        $ticket->update([
-            'vendor_followup'    => $request->vendor_followup,
-            'vendor_followup_at' => now(),
-            'eskalasi'           => 'VENDOR',
+        // Simpan tindak lanjut vendor
+        $ticket->vendor_followup    = $request->vendor_followup;
+        $ticket->vendor_followup_at = now();
+
+        // Jika IT yang menyimpan, sekaligus tutup tiket (sesuai permintaan)
+        if ($isIT) {
+            $ticket->status    = 'CLOSED';
+            $ticket->it_id     = $ticket->it_id ?: $user->id;
+            $ticket->closed_at = now();
+        } else {
+            // Jika vendor yang mengisi, tandai sebagai vendor resolved
+            $ticket->status = 'VENDOR_RESOLVED';
+        }
+
+        $ticket->save();
+
+        // history vendor follow-up
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => $user->id,
+            'action'    => 'vendor_followup',
+            'note'      => $request->vendor_followup,
+            'meta'      => ['closed_by_it' => $isIT],
         ]);
 
-        return back()->with('success', 'Tindak lanjut vendor disimpan.');
+        return back()->with('success', $isIT ? 'Tindak lanjut disimpan dan tiket ditutup.' : 'Tindak lanjut vendor disimpan.');
+    }
+
+    /** Assign ticket ke vendor (role VENDOR) */
+    public function assignVendor(Request $request, Ticket $ticket)
+    {
+        if (Auth::user()->role !== 'IT') abort(403);
+
+        $data = $request->validate([
+            // vendor bisa dikosongkan (opsi "Tidak")
+            'vendor_id' => ['nullable','integer','exists:users,id'],
+        ]);
+
+        // jika kosong, hapus assignment vendor
+        if (empty($data['vendor_id'])) {
+            $ticket->vendor_id = null;
+            if (Schema::hasColumn('tickets','eskalasi')) {
+                $ticket->eskalasi = 'TIDAK';
+            }
+            $ticket->save();
+            \App\Models\TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => Auth::id(),
+                'action'    => 'assign_vendor_cleared',
+                'note'      => 'Assignment vendor dihapus',
+            ]);
+            return back()->with('success', 'Vendor dihapus dari tiket.');
+        }
+
+        // pastikan user yang dipilih adalah VENDOR
+        $vendor = User::where('id', $data['vendor_id'])->where('role', 'VENDOR')->first();
+        if (! $vendor) {
+            return back()->withErrors(['vendor_id' => 'Pilih vendor yang valid.'])->withInput();
+        }
+
+        $ticket->update([
+            'vendor_id' => $vendor->id,
+            // kompatibilitas lama: set eskalasi VENDOR bila kolom ada
+            'eskalasi'  => Schema::hasColumn('tickets','eskalasi') ? 'VENDOR' : $ticket->eskalasi,
+            // set status khusus agar terlihat di UI sebagai eskalasi ke vendor
+            'status'    => 'ESKALASI_VENDOR',
+        ]);
+
+        // history assign vendor
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'assigned_vendor',
+            'note'      => 'Assign ke vendor: ' . ($vendor->name ?? ('ID '.$vendor->id)),
+            'meta'      => ['vendor_id' => $vendor->id, 'vendor_name' => $vendor->name],
+        ]);
+
+        return back()->with('success', 'Vendor berhasil diassign.');
     }
 
     /* =========================
@@ -555,13 +678,14 @@ public function store(Request $request)
     /** Detail tiket (IT & cabang-yang-bersangkutan) */
     public function show(Ticket $ticket)
     {
-        $ticket->load(['user', 'it', 'comments.user']);
+        $ticket->load(['user', 'it', 'vendor', 'comments.user', 'histories.user']);
 
         if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) {
             abort(403);
         }
 
-        return view('tickets.show', compact('ticket'));
+        $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
+        return view('tickets.show', compact('ticket','vendors'));
     }
 
     /** Tambah komentar */
@@ -717,6 +841,36 @@ public function subcategories($id)
 
     return response()->json($subs);
 }
+
+    /* =========================
+     * VENDOR
+     * ========================= */
+    /** Daftar tiket yang di-assign ke vendor ini */
+    public function vendorTickets(Request $request)
+    {
+        if (auth()->user()->role !== 'VENDOR') abort(403);
+
+        $tickets = Ticket::with(['user','it','vendor'])
+            ->where('vendor_id', auth()->id())
+            ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('kategori'), fn ($q) => $q->where('kategori', $request->kategori))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $v = trim($request->q);
+                $q->where(function ($qq) use ($v) {
+                    $qq->where('nomor_tiket', 'like', "%$v%")
+                       ->orWhere('deskripsi', 'like', "%$v%");
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->appends($request->query());
+
+        return view('vendor.my_tickets', [
+            'tickets'  => $tickets,
+            'kategori' => self::KATEGORI,
+            'status'   => self::STATUS,
+        ]);
+    }
 
 
 }

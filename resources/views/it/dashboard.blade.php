@@ -49,7 +49,7 @@
         <label class="sr-only">Status</label>
         <select name="status" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
           <option value="">Status</option>
-          @foreach(['OPEN','ON_PROGRESS','CLOSED'] as $s)
+          @foreach(['OPEN','ON_PROGRESS','ESKALASI_VENDOR','VENDOR_RESOLVED','CLOSED'] as $s)
             <option value="{{ $s }}" @selected(request('status')===$s)>{{ $s }}</option>
           @endforeach
         </select>
@@ -104,9 +104,12 @@
           <td class="py-3 px-4">
             @php
               $badge = match($t->status){
-                'OPEN'=>'bg-gray-100 text-gray-700 ring-gray-200',
-                'ON_PROGRESS'=>'bg-amber-100 text-amber-800 ring-amber-200',
-                'CLOSED'=>'bg-emerald-100 text-emerald-800 ring-emerald-200',
+                'OPEN'             => 'bg-gray-100 text-gray-700 ring-gray-200',
+                'ON_PROGRESS'      => 'bg-amber-100 text-amber-800 ring-amber-200',
+                'ESKALASI_VENDOR'  => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
+                'VENDOR_RESOLVED'  => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+                'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+                default            => 'bg-gray-100 text-gray-700 ring-gray-200',
               };
             @endphp
             <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 {{ $badge }}">{{ $t->status }}</span>
@@ -116,7 +119,7 @@
             <a href="{{ route('ticket.show',$t->id) }}" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
             @if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id))
               <form method="POST" class="inline" action="{{ route('it.ticket.take',$t->id) }}">@csrf
-                <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Ambil Alih</button>
+                <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Take</button>
               </form>
             @elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
               <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
@@ -150,9 +153,12 @@
 
           @php
             $badge = match($t->status){
-              'OPEN'=>'bg-gray-100 text-gray-700 ring-gray-200',
-              'ON_PROGRESS'=>'bg-amber-100 text-amber-800 ring-amber-200',
-              'CLOSED'=>'bg-emerald-100 text-emerald-800 ring-emerald-200',
+              'OPEN'             => 'bg-gray-100 text-gray-700 ring-gray-200',
+              'ON_PROGRESS'      => 'bg-amber-100 text-amber-800 ring-amber-200',
+              'ESKALASI_VENDOR'  => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
+              'VENDOR_RESOLVED'  => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+              'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+              default            => 'bg-gray-100 text-gray-700 ring-gray-200',
             };
           @endphp
           <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 {{ $badge }}">{{ $t->status }}</span>

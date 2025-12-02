@@ -10,7 +10,7 @@ class Ticket extends Model
     use HasFactory;
      protected $fillable = [
         'nomor_tiket','user_id','kategori','deskripsi','lampiran','status',
-        'it_id','taken_at','progress_note','progress_at','eskalasi',
+        'it_id','vendor_id','taken_at','progress_note','progress_at','eskalasi',
         'vendor_followup','vendor_followup_at','closed_note','closed_at', 'root_cause',
         'category_id','subcategory_id',
     ];
@@ -32,6 +32,14 @@ class Ticket extends Model
 
     public function it() {          // handler (IT)
         return $this->belongsTo(User::class, 'it_id');
+    }
+
+    public function vendor() {      // vendor yang ditugaskan
+        return $this->belongsTo(User::class, 'vendor_id');
+    }
+
+    public function histories() {
+        return $this->hasMany(\App\Models\TicketHistory::class)->latest('created_at');
     }
 
     public function comments(){ return $this->hasMany(TicketComment::class)->latest(); 
