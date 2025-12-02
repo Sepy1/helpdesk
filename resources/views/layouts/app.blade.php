@@ -69,6 +69,35 @@
 
     <nav class="flex items-center gap-3 text-sm min-w-0">
       @auth
+        <div x-data="notifState()" x-init="init()" class="relative">
+          <button @click="toggle()" @keydown.escape.window="open=false" type="button"
+                  class="relative h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-white/10 text-white"
+                  aria-label="Notifikasi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 006 14h12a1 1 0 00.707-1.707L18 11.586V8a6 6 0 00-6-6zm0 20a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+            </svg>
+            <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
+          </button>
+          <div x-show="open" x-cloak @click.outside="open=false"
+               class="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-xl shadow-lg ring-1 ring-gray-200 overflow-hidden z-50">
+            <div class="flex items-center justify-between px-3 py-2 border-b">
+              <div class="font-medium text-gray-800">Notifikasi</div>
+              <button @click="markAll()" class="text-xs text-indigo-600 hover:underline">Tandai sudah dibaca</button>
+            </div>
+            <div class="max-h-80 overflow-auto">
+              <template x-if="items.length===0">
+                <div class="px-3 py-4 text-sm text-gray-500">Tidak ada notifikasi.</div>
+              </template>
+              <template x-for="n in items" :key="n.id">
+                <a :href="n.url || '#'" class="block px-3 py-2 hover:bg-gray-50" @click.prevent="open=false; markOne(n);">
+                  <div class="text-sm font-medium text-gray-800" x-text="n.title"></div>
+                  <div class="text-xs text-gray-600 mt-0.5" x-text="n.body"></div>
+                  <div class="text-[11px] text-gray-400 mt-0.5" x-text="formatTime(n.created_at)"></div>
+                </a>
+              </template>
+            </div>
+          </div>
+        </div>
         <span class="hidden sm:inline text-white/80 truncate max-w-[40ch]">
           {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
         </span>
@@ -212,6 +241,61 @@
         document.documentElement.classList.remove('loading');
         if (window.NProgress) NProgress.done();
       });
+    }
+  </script>
+
+  <script>
+    function notifState(){
+      return {
+        open: false,
+        count: 0,
+        items: [],
+        timer: null,
+        init(){ this.fetchNow(); this.timer = setInterval(()=>this.fetchNow(), 30000); },
+        toggle(){ this.open = !this.open; if(this.open) this.fetchNow(); },
+        badgeText(){ return this.count>99 ? '99+' : String(this.count); },
+        async fetchNow(){
+          try{
+            const res = await fetch('{{ route('notifications.index') }}', { headers: { 'Accept':'application/json' } });
+            if(!res.ok) return;
+            const json = await res.json();
+            this.count = json.unread || 0;
+            this.items = json.items || [];
+          }catch(_){ }
+        },
+        async markAll(){
+          try{
+            const res = await fetch('{{ route('notifications.readAll') }}', {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept':'application/json'
+              }
+            });
+            if(res.ok){ this.count = 0; this.fetchNow(); }
+          }catch(_){ }
+        },
+        async markOne(n){
+          try{
+            const res = await fetch('{{ route('notifications.readOne', ':id') }}'.replace(':id', encodeURIComponent(n.id)), {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content,
+                'Accept':'application/json'
+              }
+            });
+            // Decrease badge locally even if network is slow
+            if(this.count>0) this.count--;
+            // Navigate after marking
+            if(n.url){
+              window.location.href = n.url;
+            }
+          }catch(_){ if(n.url){ window.location.href = n.url; } }
+        },
+        formatTime(iso){
+          try{ const d = new Date(iso); return d.toLocaleString(); }catch(_){ return ''; }
+        }
+      }
     }
   </script>
 

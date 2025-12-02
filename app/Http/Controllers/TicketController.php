@@ -16,6 +16,7 @@ use App\Mail\TicketSubmitted;
 use Illuminate\Support\Facades\Schema;
 use App\Mail\TicketClosed;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\TicketActivity;
 
 
 class TicketController extends Controller
@@ -38,6 +39,38 @@ class TicketController extends Controller
     /* =========================
      * UTIL
      * ========================= */
+    /** Notify ticket participants (owner, IT, vendor) about a history change */
+    protected function notifyHistory(\App\Models\Ticket $ticket, \App\Models\TicketHistory $history, string $title, ?string $body = null): void
+    {
+        try {
+            $actor = auth()->user();
+            $ticket->loadMissing(['user','it','vendor']);
+            $recipients = collect([$ticket->user, $ticket->it, $ticket->vendor])
+                ->filter()
+                ->unique('id')
+                ->reject(fn($u) => $actor && $u->id === $actor->id);
+
+            $url = route('ticket.show', $ticket->id) . '#h-' . $history->id;
+            $payload = [
+                'ticket_id'   => $ticket->id,
+                'ticket_no'   => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                'kind'        => 'history',
+                'title'       => $title,
+                'body'        => $body,
+                'url'         => $url,
+                'actor_id'    => $actor?->id,
+                'actor_name'  => $actor?->name,
+                'history_id'  => $history->id,
+                'action'      => $history->action,
+                'created_at'  => now()->toIso8601String(),
+            ];
+            foreach ($recipients as $user) {
+                $user->notify(new TicketActivity($payload));
+            }
+        } catch (\Throwable $e) {
+            // ignore notification errors
+        }
+    }
 
     /** Generate nomor tiket unik: TCK-YYYYMM-XXXX (atomic dgn transaksi) */
     private function generateTicketNumber(): string
@@ -373,12 +406,13 @@ public function store(Request $request)
         ]);
 
         // history
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'taken',
             'note'      => 'Tiket diambil oleh IT',
         ]);
+        $this->notifyHistory($ticket, $h, 'Tiket diambil oleh IT', 'Tiket sedang ditangani.');
         return back()->with('success', 'Tiket diambil.');
     }
 
@@ -395,12 +429,13 @@ public function store(Request $request)
             'it_id'  => null,
         ]);
 
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'released',
             'note'      => 'Tiket dilepas ke antrian',
         ]);
+        $this->notifyHistory($ticket, $h, 'Tiket dilepas ke antrian', 'Status kembali OPEN.');
         return back()->with('success', 'Tiket dilepas kembali ke antrian.');
     }
 
@@ -440,13 +475,14 @@ public function store(Request $request)
         ]);
 
         // history close
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'closed',
             'note'      => $data['closed_note'],
             'meta'      => ['root_cause' => $data['root_cause']],
         ]);
+        $this->notifyHistory($ticket, $h, 'Tiket ditutup', $data['closed_note']);
 
         Log::info('TicketClose: ticket diupdate', [
             'ticket_id' => $ticket->id,
@@ -521,12 +557,13 @@ public function store(Request $request)
             // 'taken_at'  => null,
         ]);
 
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'reopened',
             'note'      => 'Tiket dibuka kembali',
         ]);
+        $this->notifyHistory($ticket, $h, 'Tiket dibuka kembali', 'Status kembali OPEN.');
         return back()->with('success', 'Tiket dibuka kembali.');
     }
 
@@ -563,12 +600,13 @@ public function store(Request $request)
         $ticket->progress_at   = now();
         $ticket->save();
 
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'progress',
             'note'      => $data['progress_note'],
         ]);
+        $this->notifyHistory($ticket, $h, 'Progres IT', $data['progress_note']);
         return back()->with('success', 'Tindakan progress disimpan.');
     }
 
@@ -608,13 +646,14 @@ public function store(Request $request)
         $ticket->save();
 
         // history vendor follow-up
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => $user->id,
             'action'    => 'vendor_followup',
             'note'      => $request->vendor_followup,
             'meta'      => ['closed_by_it' => $isIT],
         ]);
+        $this->notifyHistory($ticket, $h, $isIT ? 'Vendor follow-up (ditutup IT)' : 'Vendor follow-up', $request->vendor_followup);
 
         return back()->with('success', $isIT ? 'Tindak lanjut disimpan dan tiket ditutup.' : 'Tindak lanjut vendor disimpan.');
     }
@@ -636,12 +675,13 @@ public function store(Request $request)
                 $ticket->eskalasi = 'TIDAK';
             }
             $ticket->save();
-            \App\Models\TicketHistory::create([
+            $h = \App\Models\TicketHistory::create([
                 'ticket_id' => $ticket->id,
                 'user_id'   => Auth::id(),
                 'action'    => 'assign_vendor_cleared',
                 'note'      => 'Assignment vendor dihapus',
             ]);
+            $this->notifyHistory($ticket, $h, 'Vendor dihapus dari tiket');
             return back()->with('success', 'Vendor dihapus dari tiket.');
         }
 
@@ -660,13 +700,14 @@ public function store(Request $request)
         ]);
 
         // history assign vendor
-        \App\Models\TicketHistory::create([
+        $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id'   => Auth::id(),
             'action'    => 'assigned_vendor',
             'note'      => 'Assign ke vendor: ' . ($vendor->name ?? ('ID '.$vendor->id)),
             'meta'      => ['vendor_id' => $vendor->id, 'vendor_name' => $vendor->name],
         ]);
+        $this->notifyHistory($ticket, $h, 'Assign ke vendor', 'Ditugaskan ke '.$vendor->name);
 
         return back()->with('success', 'Vendor berhasil diassign.');
     }

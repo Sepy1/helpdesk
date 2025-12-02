@@ -20,6 +20,10 @@ use App\Http\Controllers\StatsController;
 Route::get('/', fn () => redirect()->route('login'))->name('home');
 
 Route::middleware(['auth'])->group(function () {
+        // ===== Notifications (server-side)
+        Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markOne'])->name('notifications.readOne');
     // ===== Profile =====
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

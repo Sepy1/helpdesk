@@ -118,8 +118,9 @@
             <?php endif; ?>
           <?php endif; ?>
 
-          <button type="button" x-data @click="$dispatch('open-history')" class="rounded-lg bg-blue-500 px-3 py-2 text-white text-sm hover:bg-blue-600">
+          <button type="button" x-data @click="$dispatch('open-history')" class="relative rounded-lg bg-blue-500 px-3 py-2 text-white text-sm hover:bg-blue-600">
             History
+            <span id="history-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold hidden"></span>
           </button>
           <?php if(auth()->guard()->check()): ?>
             <?php if(auth()->user()->role === 'IT' || (auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id())): ?>
@@ -156,14 +157,18 @@
   
   <aside class="space-y-4 lg:mt-6 h-full">
     <div class="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-4 h-full flex flex-col min-h-0">
-      <div class="shrink-0">
-        <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
+      <div class="shrink-0 flex items-center justify-between">
+        <div class="flex items-center">
+          <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
+          <span id="comment-badge" class="ml-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold align-middle hidden"></span>
+        </div>
+      
       </div>  
 
       <div id="chat-list" class="mt-3 flex-1 overflow-auto max-h-[50vh] sm:max-h-[56vh] pr-1 space-y-3">
         <?php $__empty_1 = true; $__currentLoopData = $ticket->comments->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
           <?php $mine = auth()->check() && auth()->id() === $c->user_id; ?>
-          <div class="flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>">
+          <div id="c-<?php echo e($c->id); ?>" class="flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>" data-comment-ts="<?php echo e(optional($c->created_at)->format('c')); ?>">
             <div class="max-w-[85%] sm:max-w-[78%]">
               <div class="text-[11px] text-gray-500 leading-4 <?php echo e($mine ? 'text-right' : ''); ?>">
                 <?php echo e($c->user->name ?? 'User'); ?> · <?php echo e(optional($c->created_at)->format('d M Y H:i') ?? '-'); ?>
@@ -272,7 +277,7 @@
           $label = $labels[$h->action] ?? ucfirst(str_replace('_',' ', $h->action));
           $meta = $h->meta ?? [];
         ?>
-        <li class="tl-item" style="--dot: <?php echo e($dot); ?>; --accent: <?php echo e($dot); ?>">
+        <li id="h-<?php echo e($h->id); ?>" class="tl-item" style="--dot: <?php echo e($dot); ?>; --accent: <?php echo e($dot); ?>" data-history-ts="<?php echo e(optional($h->created_at)->format('c')); ?>">
           <div class="tl-card rounded-xl border border-gray-200 bg-white p-4 shadow-md">
             <div class="flex items-center justify-between gap-3">
               <span class="tl-label"><?php echo e($label); ?></span>
@@ -455,6 +460,116 @@
         };
         attachInput.addEventListener('change', ()=> setActive(attachInput.files && attachInput.files.length>0));
       }
+
+      // Deep-link handling: open History modal and scroll to item when URL hash points to it
+      try{
+        const hash = location.hash || '';
+        if(hash.startsWith('#h-')){
+          // open history modal (Alpine custom event)
+          window.dispatchEvent(new CustomEvent('open-history'));
+          // wait a tick for modal render
+          setTimeout(()=>{
+            const el = document.querySelector(hash);
+            if(el){ el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+          }, 250);
+        }else if(hash.startsWith('#c-')){
+          const el = document.querySelector(hash);
+          if(el){ el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+        }
+      }catch(_){ }
+
+      // ===== Notifications (badges) for History and Comments =====
+      const ticketId = <?php echo e((int) $ticket->id); ?>;
+      const cmKey = `ticket:${ticketId}:seen:comments`;
+      const hsKey = `ticket:${ticketId}:seen:history`;
+      const commentBadge = document.getElementById('comment-badge');
+      const historyBadge = document.getElementById('history-badge');
+
+      const parseTs = (s)=>{
+        const t = Date.parse(s);
+        return isNaN(t) ? 0 : t;
+      };
+
+      const getCommentTimestamps = ()=> Array.from(document.querySelectorAll('[data-comment-ts]'))
+        .map(el => parseTs(el.getAttribute('data-comment-ts')))
+        .filter(Boolean)
+        .sort((a,b)=>a-b);
+
+      const getHistoryTimestamps = ()=> Array.from(document.querySelectorAll('[data-history-ts]'))
+        .map(el => parseTs(el.getAttribute('data-history-ts')))
+        .filter(Boolean)
+        .sort((a,b)=>a-b);
+
+      const showBadge = (el, count)=>{
+        if(!el) return;
+        if(count > 0){
+          el.textContent = count > 99 ? '99+' : String(count);
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      };
+
+      // Initialize last-seen to the latest existing item to avoid showing legacy as unread
+      const initSeenIfMissing = ()=>{
+        if(localStorage.getItem(cmKey) === null){
+          const ts = getCommentTimestamps();
+          if(ts.length){ localStorage.setItem(cmKey, String(ts[ts.length-1])); }
+          else { localStorage.setItem(cmKey, String(Date.now())); }
+        }
+        if(localStorage.getItem(hsKey) === null){
+          const ts = getHistoryTimestamps();
+          if(ts.length){ localStorage.setItem(hsKey, String(ts[ts.length-1])); }
+          else { localStorage.setItem(hsKey, String(Date.now())); }
+        }
+      };
+
+      const updateBadges = ()=>{
+        const cmSeen = parseInt(localStorage.getItem(cmKey) || '0', 10);
+        const hsSeen = parseInt(localStorage.getItem(hsKey) || '0', 10);
+        const cmTs = getCommentTimestamps();
+        const hsTs = getHistoryTimestamps();
+        const cmCount = cmTs.filter(t => t > cmSeen).length;
+        const hsCount = hsTs.filter(t => t > hsSeen).length;
+        showBadge(commentBadge, cmCount);
+        showBadge(historyBadge, hsCount);
+      };
+
+      initSeenIfMissing();
+      updateBadges();
+
+      const markCommentsSeen = ()=>{
+        localStorage.setItem(cmKey, String(Date.now()));
+        updateBadges();
+      };
+      const markHistorySeen = ()=>{
+        localStorage.setItem(hsKey, String(Date.now()));
+        updateBadges();
+      };
+
+      // Mark comments seen when focusing composer or reaching bottom
+      const composer = document.querySelector('textarea[name="body"]');
+      if(composer){
+        composer.addEventListener('focus', markCommentsSeen);
+      }
+      if(list){
+        list.addEventListener('scroll', ()=>{
+          const threshold = 12; // px from bottom
+          if(list.scrollHeight - list.scrollTop - list.clientHeight < threshold){
+            markCommentsSeen();
+          }
+        });
+      }
+      const form = document.querySelector('form[action*="ticket.comment"]');
+      if(form){
+        form.addEventListener('submit', ()=>{
+          // Assume user has seen latest after sending
+          markCommentsSeen();
+        });
+      }
+
+      // Mark history seen when opening the history modal (listen to Alpine custom event)
+      window.addEventListener('open-history', markHistorySeen);
     });
   </script>
   <?php $__env->stopPush(); ?>
