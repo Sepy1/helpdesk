@@ -199,17 +199,21 @@
       </div>
 
       <div class="shrink-0 mt-3 border-t pt-3">
-        <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          @csrf
-          <textarea name="body" class="w-full flex-1 rounded-lg border-gray-300 resize-y min-h-[38px] max-h-[120px]" rows="2" required placeholder="Tulis pesan..."></textarea>
-          <label id="attachBtn" class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 ring-gray-200 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer transition-colors self-end sm:self-auto" title="Lampirkan file">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79V7a5 5 0 00-9.9-1M3 13l7.5-7.5a3.5 3.5 0 015 5L9 19a4 4 0 11-5.657-5.657L14 2" />
-            </svg>
-            <input id="attachInput" type="file" name="attachment" class="sr-only" />
-          </label>
-          <button class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg self-end sm:self-auto">Kirim</button>
-        </form>
+        @if($ticket->status !== 'CLOSED')
+          <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            @csrf
+            <textarea name="body" class="w-full flex-1 rounded-lg border-gray-300 resize-y min-h-[38px] max-h-[120px]" rows="2" required placeholder="Tulis pesan..."></textarea>
+            <label id="attachBtn" class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 ring-gray-200 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer transition-colors self-end sm:self-auto" title="Lampirkan file">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79V7a5 5 0 00-9.9-1M3 13l7.5-7.5a3.5 3.5 0 015 5L9 19a4 4 0 11-5.657-5.657L14 2" />
+              </svg>
+              <input id="attachInput" type="file" name="attachment" class="sr-only" />
+            </label>
+            <button class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg self-end sm:self-auto">Kirim</button>
+          </form>
+        @else
+          <div class="rounded-lg bg-gray-50 text-gray-600 ring-1 ring-gray-200 px-4 py-3 text-sm">Tiket telah ditutup. Komentar dan lampiran dinonaktifkan.</div>
+        @endif
       </div>
     </div>
   </aside>
