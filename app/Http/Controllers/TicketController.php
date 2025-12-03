@@ -818,7 +818,14 @@ public function store(Request $request)
     /** Hapus komentar (pemilik komentar atau IT) */
     public function deleteComment(TicketComment $comment)
     {
-        $canDelete = Auth::id() === $comment->user_id || Auth::user()->role === 'IT';
+        // Hanya pemilik komentar yang boleh menghapus, dan tidak boleh jika tiket CLOSED
+        $user = Auth::user();
+        if (! $user) abort(401);
+        $ticket = $comment->ticket;
+        if ($ticket && $ticket->status === 'CLOSED') {
+            abort(403);
+        }
+        $canDelete = $user->id === $comment->user_id;
         if (! $canDelete) abort(403);
 
         $comment->delete();

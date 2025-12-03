@@ -9,8 +9,8 @@
   $on   = 'text-tulisan-100';
   $off  = 'text-tulisan-500';
 
-  // jumlah kolom: IT = 3, CABANG = 2, VENDOR = 1 (hanya Tiket)
-  $cols = $isIT ? 'grid-cols-3' : ($isVendor ? 'grid-cols-1' : 'grid-cols-2');
+  // jumlah kolom: IT = 4 (Dashboard, Tiket, User, Profil), CABANG = 3 (Buat, Tiket, Profil), VENDOR = 2 (Tiket, Profil)
+  $cols = $isIT ? 'grid-cols-4' : ($isVendor ? 'grid-cols-2' : 'grid-cols-3');
 @endphp
 
 {{-- BOTTOM NAV: tampil di mobile, gradient biru, tinggi jelas --}}
@@ -74,8 +74,31 @@
         </a>
       @endif
     </li>
+    {{-- ITEM: Profil (semua role) --}}
+    <li class="h-full">
+      <a href="{{ route('profile.edit') }}"
+         class="{{ request()->routeIs('profile.edit') ? "$base text-white" : "$base text-white/80 hover:bg-white/10" }} h-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z" />
+        </svg>
+        <span>Profil</span>
+      </a>
+    </li>
 
-    {{-- RIGHT ITEM (IT only) --}}
+    {{-- ITEM: IT Manajemen User --}}
+    @if($isIT)
+    <li class="h-full">
+      <a href="{{ route('it.users.index') }}"
+         class="{{ request()->routeIs('it.users.*') ? "$base text-white" : "$base text-white/80 hover:bg-white/10" }} h-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z" />
+        </svg>
+        <span>User</span>
+      </a>
+    </li>
+    @endif
+
+    {{-- ITEM: Statistik (IT) --}}
     @if($isIT)
     <li class="h-full">
       <a href="{{ route('it.stats') }}"

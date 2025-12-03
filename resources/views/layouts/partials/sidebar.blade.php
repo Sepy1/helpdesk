@@ -25,6 +25,8 @@
       ['label'=>'Dashboard',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
       ['label'=>'Tiket Saya',  'route'=>'it.my',          'icon'=>'user',   'active'=>$is('it.my')],
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
+      ['label'=>'Manajemen User', 'route'=>'it.users.index', 'icon'=>'settings', 'active'=>$is('it.users.*')],
+      ['label'=>'Profil',      'route'=>'profile.edit',   'icon'=>'user',   'active'=>$is('profile.edit')],
     ];
   } elseif ($role === 'VENDOR') {
     // Vendor: tidak ada menu "Buat Tiket"
@@ -36,6 +38,7 @@
     $menu = [
       ['label'=>'Buat Tiket',  'route'=>'cabang.dashboard', 'icon'=>'plus',    'active'=>$is('cabang.dashboard')],
       ['label'=>'Tiket Saya',  'route'=>'cabang.tickets',   'icon'=>'folder',  'active'=>$is('cabang.tickets*')],
+      ['label'=>'Profil',      'route'=>'profile.edit',     'icon'=>'user',    'active'=>$is('profile.edit')],
     ];
   }
 

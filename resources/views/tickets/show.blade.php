@@ -183,7 +183,7 @@
               </div>
               <div class="mt-1 flex {{ $mine ? 'justify-end' : 'justify-start' }}">
                 @auth
-                  @if(auth()->id() === $c->user_id || auth()->user()->role === 'IT')
+                  @if($ticket->status !== 'CLOSED' && auth()->id() === $c->user_id)
                     <form method="POST" action="{{ route('comment.delete', $c->id) }}" onsubmit="return confirm('Hapus komentar ini?')">
                       @csrf @method('DELETE')
                       <button class="text-[11px] text-red-500/80 hover:text-red-600 hover:underline">Hapus</button>

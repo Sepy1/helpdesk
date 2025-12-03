@@ -185,7 +185,7 @@
               </div>
               <div class="mt-1 flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>">
                 <?php if(auth()->guard()->check()): ?>
-                  <?php if(auth()->id() === $c->user_id || auth()->user()->role === 'IT'): ?>
+                  <?php if($ticket->status !== 'CLOSED' && auth()->id() === $c->user_id): ?>
                     <form method="POST" action="<?php echo e(route('comment.delete', $c->id)); ?>" onsubmit="return confirm('Hapus komentar ini?')">
                       <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                       <button class="text-[11px] text-red-500/80 hover:text-red-600 hover:underline">Hapus</button>
