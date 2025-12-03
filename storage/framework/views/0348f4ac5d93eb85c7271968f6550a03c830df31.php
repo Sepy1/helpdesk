@@ -78,18 +78,21 @@
             </svg>
             <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
           </button>
-          <div x-show="open" x-cloak @click.outside="open=false"
-               class="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-xl shadow-lg ring-1 ring-gray-200 overflow-hidden z-50">
+          <div x-show="open" x-cloak @click.outside="open=false" @mouseenter="cancelAutoClose()" @mouseleave="scheduleAutoClose()"
+               class="fixed inset-x-2 top-16 md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
             <div class="flex items-center justify-between px-3 py-2 border-b">
               <div class="font-medium text-gray-800">Notifikasi</div>
               <button @click="markAll()" class="text-xs text-indigo-600 hover:underline">Tandai sudah dibaca</button>
             </div>
-            <div class="max-h-80 overflow-auto">
+            <div class="max-h-[70vh] md:max-h-80 overflow-auto">
               <template x-if="items.length===0">
                 <div class="px-3 py-4 text-sm text-gray-500">Tidak ada notifikasi.</div>
               </template>
               <template x-for="n in items" :key="n.id">
-                <a :href="n.url || '#'" class="block px-3 py-2 hover:bg-gray-50" @click.prevent="open=false; markOne(n);">
+                <a :href="n.url || '#'"
+                   class="block px-3 py-2 hover:bg-gray-50 break-words whitespace-normal"
+                   :class="(n.read_at ? 'opacity-60' : 'bg-yellow-50 ring-1 ring-yellow-200')"
+                   @click.prevent="open=false; markOne(n);">
                   <div class="text-sm font-medium text-gray-800" x-text="n.title"></div>
                   <div class="text-xs text-gray-600 mt-0.5" x-text="n.body"></div>
                   <div class="text-[11px] text-gray-400 mt-0.5" x-text="formatTime(n.created_at)"></div>
@@ -130,12 +133,7 @@
     <div class="pt-6 px-4 sm:px-6 lg:px-8 transition-[margin] duration-200
                 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-0"
          :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
-      <?php if(session('success')): ?>
-        <div class="mb-4 rounded-lg bg-green-50 text-green-700 px-4 py-3 border border-green-200"><?php echo e(session('success')); ?></div>
-      <?php endif; ?>
-      <?php if(session('error')): ?>
-        <div class="mb-4 rounded-lg bg-red-50 text-red-700 px-4 py-3 border border-red-200"><?php echo e(session('error')); ?></div>
-      <?php endif; ?>
+      
 
       <div id="page-root" class="page-root">
         <?php echo $__env->yieldContent('content'); ?>
@@ -245,6 +243,21 @@
   </script>
 
   <script>
+    // Auto-hide session flash toasts after 3 seconds
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const flashes = document.querySelectorAll('div.mb-4.rounded-lg');
+      if(!flashes.length) return;
+      setTimeout(()=>{
+        flashes.forEach(el=>{
+          el.style.transition = 'opacity .25s ease';
+          el.style.opacity = '0';
+          setTimeout(()=>{ try{ el.remove(); }catch(_){} }, 300);
+        });
+      }, 3000);
+    });
+  </script>
+
+  <script>
     function notifState(){
       return {
         open: false,
@@ -297,6 +310,40 @@
         }
       }
     }
+  </script>
+
+  
+  <div id="toast-root" class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] space-y-2 pointer-events-none">
+    <?php if(session('success')): ?>
+      <div class="pointer-events-auto rounded-lg bg-green-50 text-green-700 px-4 py-3 border border-green-200 shadow-md">
+        <?php echo e(session('success')); ?>
+
+      </div>
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+      <div class="pointer-events-auto rounded-lg bg-red-50 text-red-700 px-4 py-3 border border-red-200 shadow-md">
+        <?php echo e(session('error')); ?>
+
+      </div>
+    <?php endif; ?>
+  </div>
+
+  <script>
+    // Auto-hide toasts after 3 seconds without shifting layout
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const root = document.getElementById('toast-root');
+      if(!root) return;
+      const toasts = Array.from(root.children);
+      if(!toasts.length) return;
+      setTimeout(()=>{
+        toasts.forEach(el=>{
+          el.style.transition = 'opacity .25s ease, transform .25s ease';
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(8px)';
+          setTimeout(()=>{ try{ el.remove(); }catch(_){} }, 300);
+        });
+      }, 3000);
+    });
   </script>
 
   <?php echo $__env->yieldPushContent('scripts'); ?>

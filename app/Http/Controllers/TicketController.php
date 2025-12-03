@@ -321,12 +321,13 @@ public function store(Request $request)
         ->when($hasSubcategoryId && $request->filled('subcategory_id'),
                fn($q) => $q->where('subcategory_id', $request->subcategory_id))
 
-        // pencarian teks di nomor_tiket atau deskripsi
+        // pencarian teks di nomor_tiket, deskripsi, atau kategori (legacy kolom)
         ->when($request->filled('q'), function ($q) use ($request) {
             $v = trim($request->q);
             $q->where(function ($qq) use ($v) {
                 $qq->where('nomor_tiket', 'like', "%{$v}%")
-                   ->orWhere('deskripsi', 'like', "%{$v}%");
+                   ->orWhere('deskripsi', 'like', "%{$v}%")
+                   ->orWhere('kategori', 'like', "%{$v}%");
             });
         })
 
@@ -337,6 +338,65 @@ public function store(Request $request)
     // kirim semua data ke view agar select bisa di-render
     return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId'));
 }
+
+    /** Export daftar tiket sesuai filter ke CSV (dibuka Excel) */
+    public function export(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $hasCategoryId = Schema::hasColumn('tickets', 'category_id');
+        $hasSubcategoryId = Schema::hasColumn('tickets', 'subcategory_id');
+
+        $dateFrom = $request->query('date_from');
+        $dateTo   = $request->query('date_to');
+
+        $q = Ticket::with(['user','it'])
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($hasCategoryId && $request->filled('category_id'), fn($q) => $q->where('category_id', $request->category_id))
+            ->when(!$hasCategoryId && $request->filled('kategori'), fn($q) => $q->where('kategori', $request->kategori))
+            ->when($hasSubcategoryId && $request->filled('subcategory_id'), fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $v = trim($request->q);
+                $q->where(function ($qq) use ($v) {
+                    $qq->where('nomor_tiket', 'like', "%{$v}%")
+                       ->orWhere('deskripsi', 'like', "%{$v}%")
+                       ->orWhere('kategori', 'like', "%{$v}%");
+                });
+            })
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->orderByDesc('created_at');
+
+        $rows = $q->get();
+
+        $filename = 'tickets_' . now()->format('Ymd_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
+
+        $callback = function() use ($rows) {
+            $out = fopen('php://output', 'w');
+            // BOM for Excel UTF-8
+            echo "\xEF\xBB\xBF";
+            // Header
+            fputcsv($out, ['Nomor', 'Kategori', 'Pembuat', 'IT Handler', 'Status', 'Dibuat', 'Deskripsi'], ';');
+            foreach ($rows as $t) {
+                fputcsv($out, [
+                    $t->nomor_tiket,
+                    $t->kategori,
+                    optional($t->user)->name,
+                    optional($t->it)->name,
+                    $t->status,
+                    optional($t->created_at)?->format('d M Y H:i'),
+                    $t->deskripsi,
+                ], ';');
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 
     /** Tiket yang sedang diambil alih oleh IT ini + filter */
     public function myAssigned(Request $request)
@@ -363,6 +423,7 @@ public function store(Request $request)
         }
     }
 
+
     $tickets = Ticket::with(['user', 'it'])
         ->where('it_id', Auth::id())
         // status filter (sama seperti Anda)
@@ -372,12 +433,13 @@ public function store(Request $request)
         ->when($request->filled('kategori') && !$request->filled('category_id'), fn ($q) => $q->where('kategori', $request->kategori))
         // subkategori (jika Anda menyimpan subcategory_id di tabel tickets)
         ->when($request->filled('subcategory_id'), fn ($q) => $q->where('subcategory_id', $request->subcategory_id))
-        // pencarian q (nomor/deskripsi)
+        // pencarian q (nomor/deskripsi/kategori)
         ->when($request->filled('q'), function ($q) use ($request) {
             $v = trim($request->q);
             $q->where(function ($qq) use ($v) {
                 $qq->where('nomor_tiket', 'like', "%$v%")
-                   ->orWhere('deskripsi', 'like', "%$v%");
+                   ->orWhere('deskripsi', 'like', "%$v%")
+                   ->orWhere('kategori', 'like', "%$v%");
             });
         })
         ->latest()

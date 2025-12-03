@@ -66,6 +66,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
     // ===== IT =====
     Route::middleware(['role:IT'])->group(function () {
         Route::get('/it/dashboard', [TicketController::class, 'index'])->name('it.dashboard');           // semua tiket + filter
+        Route::get('/it/tickets/export', [TicketController::class, 'export'])->name('it.tickets.export'); // export XLS/CSV sesuai filter
         Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');            // tiket saya (IT)
         Route::get('/it/stats', [TicketController::class, 'stats'])->name('it.stats');                   // statistik
 

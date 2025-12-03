@@ -3,52 +3,26 @@
 
 <?php $__env->startSection('content'); ?>
 <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
-  <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-4">
-    <div>
-      <h2 class="text-lg font-semibold text-gray-800">Daftar Tiket</h2>
-      <p class="text-sm text-gray-500">Klik nomor tiket untuk melihat detail.</p>
+  
+  <div class="flex flex-col gap-3 md:gap-4">
+    <div class="flex items-center justify-center text-center">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-800">Daftar Tiket</h2>
+        <p class="text-sm text-gray-500">Klik nomor tiket untuk melihat detail.</p>
+      </div>
     </div>
 
     
-    <form method="GET" class="space-y-3 md:space-y-0 md:flex md:flex-wrap md:items-end md:gap-2" id="filter-form">
-      <div class="w-full md:w-auto md:flex-1">
-        <input type="text" name="q" value="<?php echo e(request('q')); ?>" placeholder="Cari nomor / deskripsi"
-               class="w-full rounded-lg border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500" />
+    <form method="GET" class="w-full flex flex-col md:flex-row items-end justify-center gap-2 md:gap-2 md:flex-nowrap overflow-x-auto mb-4 md:mb-6" id="filter-form">
+      <div class="order-1 md:order-none shrink-0 w-full md:w-[360px]">
+        <input type="text" name="q" value="<?php echo e(request('q')); ?>" placeholder="Cari nomor / deskripsi / kategori"
+               class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" />
       </div>
 
       
-      <div class="w-full md:w-56">
-        <label class="sr-only">Kategori</label>
-        <select name="category_id" id="filter-category"
-                class="w-full rounded-lg border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">Semua Kategori</option>
-          <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <option value="<?php echo e($cat->id); ?>" <?php if((int)request('category_id') === $cat->id || (isset($selectedCategoryId) && (int)$selectedCategoryId === $cat->id)): echo 'selected'; endif; ?>>
-              <?php echo e($cat->name); ?>
-
-            </option>
-          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </select>
-      </div>
-
-      
-      <div class="w-full md:w-56">
-        <label class="sr-only">Subkategori</label>
-        <select name="subcategory_id" id="filter-subcategory"
-                class="w-full rounded-lg border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">Semua Subkategori</option>
-          <?php if(!empty($subcategories) && $subcategories->count()): ?>
-            <?php $__currentLoopData = $subcategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-              <option value="<?php echo e($s->id); ?>" <?php if((int)request('subcategory_id') === $s->id): echo 'selected'; endif; ?>><?php echo e($s->name); ?></option>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-          <?php endif; ?>
-        </select>
-      </div>
-
-      
-      <div class="w-full md:w-40">
+      <div class="order-4 md:order-none shrink-0 w-full md:w-[150px]">
         <label class="sr-only">Status</label>
-        <select name="status" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
+        <select name="status" class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500">
           <option value="">Status</option>
           <?php $__currentLoopData = ['OPEN','ON_PROGRESS','ESKALASI_VENDOR','VENDOR_RESOLVED','CLOSED']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <option value="<?php echo e($s); ?>" <?php if(request('status')===$s): echo 'selected'; endif; ?>><?php echo e($s); ?></option>
@@ -57,14 +31,32 @@
       </div>
 
       
-      <div class="w-full md:w-auto flex flex-wrap gap-2">
-        <button type="submit" class="w-full md:w-auto rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4 py-2">Filter</button>
+      <div class="shrink-0 flex flex-col md:flex-row gap-2 w-full md:w-auto">
+        <div class="order-2 md:order-none shrink-0 w-full md:w-[150px]">
+          <input type="text" name="date_from" value="<?php echo e(request('date_from')); ?>" placeholder="Tgl Awal" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}"
+                 class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500"
+                 onfocus="this.type='date'" onblur="if(!this.value) this.type='text'" />
+        </div>
+        <div class="order-3 md:order-none shrink-0 w-full md:w-[150px]">
+          <input type="text" name="date_to" value="<?php echo e(request('date_to')); ?>" placeholder="Tgl Akhir" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}"
+                 class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500"
+                 onfocus="this.type='date'" onblur="if(!this.value) this.type='text'" />
+        </div>
+      </div>
 
-        <?php if(request()->hasAny(['q','category_id','subcategory_id','status','kategori'])): ?>
+      
+      <div class="order-5 md:order-none shrink-0 flex gap-2 justify-center w-full md:w-auto">
+        <button type="submit" class="w-full md:w-auto h-10 rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4">Filter</button>
+
+        <?php if(request()->hasAny(['q','status','date_from','date_to'])): ?>
           <a href="<?php echo e(route('it.dashboard')); ?>"
-             class="w-full md:w-auto inline-block text-center rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:underline">
+             class="shrink-0 h-10 inline-block text-center rounded-lg border border-gray-200 px-4 text-sm text-gray-700 hover:underline leading-10">
              Reset
-          </a>
+           </a>
+            <a href="<?php echo e(route('it.tickets.export', request()->query())); ?>"
+              class="shrink-0 h-10 inline-block text-center rounded-lg bg-emerald-600 px-4 text-white hover:bg-emerald-700 leading-10">
+             Export Result
+           </a>
         <?php endif; ?>
       </div>
     </form>
@@ -164,7 +156,7 @@
               default            => 'bg-gray-100 text-gray-700 ring-gray-200',
             };
           ?>
-          <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 <?php echo e($badge); ?>"><?php echo e($t->status); ?></span>
+          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 <?php echo e($badge); ?>"><?php echo e($t->status); ?></span>
         </div>
 
         <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -217,93 +209,7 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const catSelect = document.getElementById('filter-category');
-  const subSelect = document.getElementById('filter-subcategory');
-  // endpoint base — pastikan route di web.php: /categories/{id}/subcategories
-  const baseUrl = '<?php echo e(url('categories')); ?>';
-  const csrf = '<?php echo e(csrf_token()); ?>';
-  const initialCategory = '<?php echo e(request("category_id")); ?>';
-  const initialSub = '<?php echo e(request("subcategory_id")); ?>';
-
-  function emptySubOptions(text = 'Semua Subkategori') {
-    subSelect.innerHTML = '';
-    const d = document.createElement('option');
-    d.value = '';
-    d.textContent = text;
-    subSelect.appendChild(d);
-  }
-
-  async function loadSubs(catId, selectValue = null) {
-    emptySubOptions('Memuat...');
-    if (!catId) {
-      // jika tidak ada category, reset ke default
-      emptySubOptions('Semua Subkategori');
-      return;
-    }
-
-    try {
-      const url = `${baseUrl}/${encodeURIComponent(catId)}/subcategories`;
-      const res = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrf,
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin'
-      });
-
-      if (!res.ok) {
-        console.warn('Gagal memuat subkategori, status', res.status);
-        // jika 401/302 kemungkinan sesi logout -> biarkan pesan
-        emptySubOptions('— Gagal memuat —');
-        return;
-      }
-
-      const data = await res.json();
-
-      // support API yang mengembalikan { data: [...] } atau langsung array
-      const list = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
-      if (!list.length) {
-        emptySubOptions('— Tidak ada subkategori —');
-        return;
-      }
-
-      // populate options
-      subSelect.innerHTML = '';
-      const defaultOpt = document.createElement('option');
-      defaultOpt.value = '';
-      defaultOpt.textContent = 'Semua Subkategori';
-      subSelect.appendChild(defaultOpt);
-
-      list.forEach(s => {
-        const opt = document.createElement('option');
-        // jika object lengkap: gunakan s.id dan s.name, jika string: pakai s
-        opt.value = (s.id !== undefined) ? s.id : (s.value ?? s);
-        opt.textContent = (s.name !== undefined) ? s.name : (s.label ?? s);
-        subSelect.appendChild(opt);
-      });
-
-      // set selected jika ada
-      if (selectValue) {
-        // coba set value, jika tidak ada, tetap kosong
-        subSelect.value = selectValue;
-      }
-    } catch (err) {
-      console.error('Error saat memuat subkategori', err);
-      emptySubOptions('— Error memuat —');
-    }
-  }
-
-  catSelect?.addEventListener('change', function () {
-    loadSubs(this.value, null);
-  });
-
-  // load initial subcategories jika category preselected
-  if (initialCategory) {
-    loadSubs(initialCategory, initialSub);
-  }
-});
+// Tidak perlu JS untuk subkategori; pencarian digabung dalam kolom q
 </script>
 <?php $__env->stopSection(); ?>
 
