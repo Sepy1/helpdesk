@@ -47,6 +47,25 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="no_hp" :value="__('No. HP')" />
+            @php
+              // Show phone in local format (leading 0) for editing, while stored value is normalized to '62...'
+              $stored = old('no_hp', $user->no_hp);
+              $display = '';
+              if ($stored) {
+                  $d = preg_replace('/\D+/', '', $stored);
+                  if (str_starts_with($d, '62')) {
+                      $display = '0' . substr($d, 2);
+                  } else {
+                      $display = $d;
+                  }
+              }
+            @endphp
+            <input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" value="{{ $display }}" placeholder="0812xxxx" />
+            <x-input-error class="mt-2" :messages="$errors->get('no_hp')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">{{ __('Save') }}</button>
 

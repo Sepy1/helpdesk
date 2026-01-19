@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Helpdesk – Functional Specification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:Segoe UI,SegoeUI,Helvetica,Arial,sans-serif;line-height:1.5;color:#111;margin:40px;}
+    h1{font-size:28px;margin:0 0 6px}
+    h2{font-size:22px;margin:28px 0 8px;border-bottom:2px solid #e5e7eb;padding-bottom:4px}
+    h3{font-size:18px;margin:20px 0 6px}
+    p{margin:8px 0}
+    code,pre{font-family:Consolas,Monaco,monospace;background:#f8fafc}
+    table{border-collapse:collapse;width:100%;margin:8px 0}
+    th,td{border:1px solid #e5e7eb;padding:8px;text-align:left}
+    th{background:#f3f4f6}
+    .muted{color:#6b7280}
+    .toc a{color:#2563eb;text-decoration:none}
+    .card{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin:10px 0;background:#fff}
+    ul{margin:6px 0 6px 18px}
+  </style>
+</head>
+<body>
+  <h1>Helpdesk – Functional Specification</h1>
+  <div class="muted">Version 1.0 · 2025-12-03</div>
+
+  <div class="card toc">
+    <h3>Daftar Isi</h3>
+    <ol>
+      <li><a href="#scope">Tujuan & Cakupan</a></li>
+      <li><a href="#roles">Peran & Akses</a></li>
+      <li><a href="#lifecycle">Siklus Hidup Tiket</a></li>
+      <li><a href="#features">Fitur Utama</a></li>
+      <li><a href="#uiux">UI/UX</a></li>
+      <li><a href="#validation">Validasi</a></li>
+      <li><a href="#data">Model Data</a></li>
+      <li><a href="#routes">Peta Route</a></li>
+      <li><a href="#exports">Ekspor</a></li>
+      <li><a href="#security">Keamanan</a></li>
+      <li><a href="#nfr">Non-Fungsional</a></li>
+      <li><a href="#gaps">Catatan & Gap</a></li>
+      <li><a href="#acceptance">Kriteria Penerimaan</a></li>
+    </ol>
+  </div>
+
+  <h2 id="scope">1. Tujuan & Cakupan</h2>
+  <p>Aplikasi Helpdesk untuk pengelolaan tiket dukungan internal antara Cabang, IT, dan Vendor. Dokumen ini mendefinisikan kebutuhan fungsional berdasarkan kode dan migrasi saat ini.</p>
+
+  <h2 id="roles">2. Peran & Akses</h2>
+  <ul>
+    <li><b>IT</b>: penuh atas manajemen tiket, ekspor, statistik, manajemen user.</li>
+    <li><b>CABANG</b>: buat tiket, lihat tiket sendiri, komentar, unduh lampiran.</li>
+    <li><b>VENDOR</b>: lihat tiket yang ditugaskan, isi tindak lanjut vendor.</li>
+    <li><b>ADMIN</b>: tersedia di UI namun tidak ada pada enum DB saat ini.</li>
+  </ul>
+  <p><b>Sumber kebenaran</b>: kolom <code>users.role</code> (enum IT, CABANG, VENDOR; default CABANG).</p>
+
+  <h2 id="lifecycle">3. Siklus Hidup Tiket</h2>
+  <p>Status: <code>OPEN</code> → <code>ON_PROGRESS</code> → (<code>ESKALASI_VENDOR</code>) → (<code>VENDOR_RESOLVED</code>) → <code>CLOSED</code></p>
+  <ul>
+    <li>Cap waktu: <code>taken_at</code>, <code>progress_at</code>, <code>vendor_followup_at</code>, <code>closed_at</code></li>
+    <li>Kolom terkait: <code>eskalasi</code> (TIDAK/VENDOR), <code>progress_note</code>, <code>vendor_followup</code>, <code>closed_note</code>, <code>root_cause</code></li>
+    <li>Ketika CLOSED: form komentar & lampiran nonaktif; hapus komentar disembunyikan & diblok secara server.</li>
+  </ul>
+
+  <h2 id="features">4. Fitur Utama</h2>
+  <h3>4.1 Autentikasi & Navigasi</h3>
+  <ul>
+    <li>Home → login; Dashboard redirect sesuai peran.</li>
+    <li>Notifikasi: tandai satu/semua dibaca; dropdown responsif mobile.</li>
+  </ul>
+  <h3>4.2 Profil</h3>
+  <ul>
+    <li>Edit informasi (nama, email) & ubah password. Tampilan kartu; input putih.</li>
+    <li>Hapus akun dihilangkan dari UI.</li>
+  </ul>
+  <h3>4.3 CABANG</h3>
+  <ul>
+    <li>Buat tiket, lampiran opsional, komentar (kecuali CLOSED).</li>
+  </ul>
+  <h3>4.4 IT</h3>
+  <ul>
+    <li>Daftar tiket + filter (cari nomor/deskripsi/kategori; rentang tanggal; status); ekspor CSV/PNG.</li>
+    <li>Take/Release/Reopen/Close; progress; eskalasi vendor; assign vendor; vendor follow-up.</li>
+    <li>Statistik.</li>
+  </ul>
+  <h3>4.5 VENDOR</h3>
+  <ul>
+    <li>Lihat tiket ditugaskan, isi tindak lanjut.</li>
+  </ul>
+  <h3>4.6 Manajemen User (IT)</h3>
+  <ul>
+    <li>CRUD user: <code>username</code>, <code>name</code>, <code>email</code>, <code>role</code>, <code>password</code>.</li>
+    <li>Filter q (nama/email/username) & role; tombol aksi mobile menumpuk vertikal.</li>
+  </ul>
+
+  <h2 id="uiux">5. UI/UX</h2>
+  <ul>
+    <li>Filter & tombol rata tengah; tinggi konsisten; urutan mobile: cari → tanggal awal → tanggal akhir → status → aksi.</li>
+    <li>Placeholder tanggal: “Tgl Awal/Tgl Akhir” dengan trik toggle type focus/blur.</li>
+    <li>Badge status menyesuaikan di mobile; notifikasi unread kuning dan wrap teks.</li>
+  </ul>
+
+  <h2 id="validation">6. Validasi</h2>
+  <ul>
+    <li>User create: username unique 3–50, name ≥3, email unique, password ≥8, role ∈ {IT,CABANG,VENDOR}.</li>
+    <li>User update: sama; password opsional.</li>
+    <li>Tiket: nomor_tiket unique; kategori string(255) nullable; deskripsi wajib; lampiran string path opsional.</li>
+    <li>Komentar: body wajib; attachment opsional.</li>
+  </ul>
+
+  <h2 id="data">7. Model Data (DB Saat Ini)</h2>
+  <div class="card">
+    <h3>users</h3>
+    <table><tr><th>Kolom</th><th>Tipe</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>bigint PK</td><td>auto</td></tr>
+      <tr><td>name</td><td>string</td><td>wajib</td></tr>
+      <tr><td>username</td><td>string unique</td><td>wajib</td></tr>
+      <tr><td>email</td><td>string unique</td><td>wajib</td></tr>
+      <tr><td>email_verified_at</td><td>timestamp</td><td>null</td></tr>
+      <tr><td>password</td><td>string</td><td>bcrypt</td></tr>
+      <tr><td>remember_token</td><td>string</td><td>null</td></tr>
+      <tr><td>role</td><td>enum</td><td>IT, CABANG, VENDOR; default CABANG</td></tr>
+      <tr><td>timestamps</td><td>ts</td><td>auto</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>tickets</h3>
+    <table><tr><th>Kolom</th><th>Tipe</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>bigint PK</td><td></td></tr>
+      <tr><td>category_id</td><td>FK categories</td><td>set null</td></tr>
+      <tr><td>subcategory_id</td><td>FK subcategories</td><td>set null</td></tr>
+      <tr><td>nomor_tiket</td><td>string unique</td><td></td></tr>
+      <tr><td>user_id</td><td>FK users</td><td>pelapor</td></tr>
+      <tr><td>it_id</td><td>FK users</td><td>penangan IT, null on delete</td></tr>
+      <tr><td>vendor_id</td><td>FK users</td><td>vendor, null on delete</td></tr>
+      <tr><td>kategori</td><td>string(255)</td><td>nullable</td></tr>
+      <tr><td>deskripsi</td><td>text</td><td>wajib</td></tr>
+      <tr><td>lampiran</td><td>string</td><td>nullable</td></tr>
+      <tr><td>status</td><td>enum</td><td>OPEN, ON_PROGRESS, ESKALASI_VENDOR, VENDOR_RESOLVED, CLOSED</td></tr>
+      <tr><td>eskalasi</td><td>enum</td><td>TIDAK, VENDOR</td></tr>
+      <tr><td>progress_note</td><td>text</td><td>nullable</td></tr>
+      <tr><td>progress_at</td><td>timestamp</td><td>nullable</td></tr>
+      <tr><td>taken_at</td><td>timestamp</td><td>nullable</td></tr>
+      <tr><td>closed_at</td><td>timestamp</td><td>nullable</td></tr>
+      <tr><td>vendor_followup</td><td>text</td><td>nullable</td></tr>
+      <tr><td>vendor_followup_at</td><td>timestamp</td><td>nullable</td></tr>
+      <tr><td>closed_note</td><td>text</td><td>nullable</td></tr>
+      <tr><td>root_cause</td><td>string(100)</td><td>nullable</td></tr>
+      <tr><td>timestamps</td><td>ts</td><td>auto</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>ticket_comments</h3>
+    <table><tr><th>Kolom</th><th>Tipe</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>bigint PK</td><td></td></tr>
+      <tr><td>ticket_id</td><td>FK tickets</td><td>cascade</td></tr>
+      <tr><td>user_id</td><td>FK users</td><td>cascade</td></tr>
+      <tr><td>body</td><td>text</td><td>wajib</td></tr>
+      <tr><td>attachment</td><td>string</td><td>nullable</td></tr>
+      <tr><td>timestamps</td><td>ts</td><td>auto</td></tr>
+    </table>
+  </div>
+  <div class="card"><h3>categories</h3><p>id, name, slug(unique,nullable), description(nullable), timestamps</p></div>
+  <div class="card"><h3>subcategories</h3><p>id, category_id(FK cascade), name, slug(unique,nullable), description(nullable), timestamps</p></div>
+  <div class="card"><h3>ticket_histories</h3><p>id, ticket_id(FK cascade), user_id(FK nullOnDelete), action(50), note nullable, meta json nullable, timestamps</p></div>
+  <div class="card"><h3>notifications</h3><p>uuid id, type, notifiable_type, notifiable_id, data, read_at, timestamps</p></div>
+
+  <h2 id="routes">8. Peta Route</h2>
+  <p>Ringkas: Home→login, Profil(edit/update), Notifikasi(list/mark), Dashboard redirect peran, Ticket shared (show/comment/download/delete), CABANG (create/list), IT (list/export/my/stats + aksi), VENDOR (list/followup), IT User Management CRUD, API subcategories.</p>
+
+  <h2 id="exports">9. Ekspor</h2>
+  <p>CSV dengan filter; PNG snapshot via html2canvas.</p>
+
+  <h2 id="security">10. Keamanan</h2>
+  <ul>
+    <li>Semua route dilindungi <code>auth</code>; grup <code>role:*</code> dan guard inline.</li>
+    <li>Hapus komentar dibatasi pemilik; pembatasan di view + controller.</li>
+  </ul>
+
+  <h2 id="nfr">11. Non-Fungsional</h2>
+  <ul>
+    <li>Responsif mobile: filter bertumpuk, tombol lebar penuh di layar kecil.</li>
+    <li>Standarisasi tinggi komponen dan spacing.</li>
+    <li>Wrap teks notifikasi.</li>
+  </ul>
+
+  <h2 id="gaps">12. Catatan & Gap</h2>
+  <ul>
+    <li>Role ADMIN ada di form tapi belum ada di enum DB; perlu migrasi tambahan jika ingin diaktifkan.</li>
+    <li>Kolom <code>eskalasi</code> diubah/tambah di beberapa migrasi; kondisi akhir sudah tersedia.</li>
+  </ul>
+
+  <h2 id="acceptance">13. Kriteria Penerimaan</h2>
+  <ul>
+    <li>Profil menampilkan dua kartu (Informasi Akun & Ubah Password) dengan input putih dan berhasil simpan.</li>
+    <li>Manajemen User: filter berjalan; tombol aksi nyaman disentuh di mobile.</li>
+    <li>Ticket CLOSED memblok komentar/hapus; server menolak bypass.</li>
+    <li>IT dapat menjalankan seluruh aksi lifecycle dan jejak waktu tercatat.</li>
+  </ul>
+
+  <p class="muted">Dokumen ini merefleksikan kode dan migrasi di repo pada tanggal pembuatan.</p>
+</body>
+</html>

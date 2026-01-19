@@ -367,15 +367,9 @@
               <select name="root_cause" required class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                 @php $rcOld = old('root_cause', $ticket->root_cause); @endphp
                 <option value="" disabled {{ empty($rcOld) ? 'selected' : '' }}>Pilih Root Cause</option>
-                <option value="Human Error" @selected($rcOld === 'Human Error')>Human Error</option>
-                <option value="Pergantian User" @selected($rcOld === 'Pergantian User')>Pergantian User</option>
-                <option value="Penyesuaian Sistem" @selected($rcOld === 'Penyesuaian Sistem')>Penyesuaian Sistem</option>
-                <option value="Bug Sistem" @selected($rcOld === 'Bug Sistem')>Bug Sistem</option>
-                <option value="Kerusakan Hardware" @selected($rcOld === 'Kerusakan Hardware')>Kerusakan Hardware</option>
-                <option value="Kerusakan Software" @selected($rcOld === 'Kerusakan Software')>Kerusakan Software</option>
-                <option value="ISP Down" @selected($rcOld === 'ISP Down')>ISP Down</option>
-                <option value="Wireless Down" @selected($rcOld === 'Wireless Down')>Wireless Down</option>
-                <option value="Lainnya" @selected($rcOld === 'Lainnya')>Lainnya</option>
+                @foreach(($rootCauses ?? collect()) as $rc)
+                  <option value="{{ $rc->name }}" @selected($rcOld === $rc->name)>{{ $rc->name }}</option>
+                @endforeach
               </select>
             </div>
 

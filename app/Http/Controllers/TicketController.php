@@ -11,14 +11,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\RootCause;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketSubmitted;
 use Illuminate\Support\Facades\Schema;
 use App\Mail\TicketClosed;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\TicketActivity;
-
-
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class TicketController extends Controller
 {
     /** Sumber kebenaran kategori, status, root cause */
@@ -337,9 +338,10 @@ public function store(Request $request)
 
     // kirim semua data ke view agar select bisa di-render
     return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId'));
-}
+    }
 
     /** Export daftar tiket sesuai filter ke CSV (dibuka Excel) */
+    /** Export daftar tiket sesuai filter ke XLSX (server-side) */
     public function export(Request $request)
     {
         if (auth()->user()->role !== 'IT') abort(403);
@@ -350,7 +352,7 @@ public function store(Request $request)
         $dateFrom = $request->query('date_from');
         $dateTo   = $request->query('date_to');
 
-        $q = Ticket::with(['user','it'])
+        $q = Ticket::with(['user','it','subcategory'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($hasCategoryId && $request->filled('category_id'), fn($q) => $q->where('category_id', $request->category_id))
             ->when(!$hasCategoryId && $request->filled('kategori'), fn($q) => $q->where('kategori', $request->kategori))
@@ -369,33 +371,57 @@ public function store(Request $request)
 
         $rows = $q->get();
 
-        $filename = 'tickets_' . now()->format('Ymd_His') . '.csv';
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        ];
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $callback = function() use ($rows) {
-            $out = fopen('php://output', 'w');
-            // BOM for Excel UTF-8
-            echo "\xEF\xBB\xBF";
-            // Header
-            fputcsv($out, ['Nomor', 'Kategori', 'Pembuat', 'IT Handler', 'Status', 'Dibuat', 'Deskripsi'], ';');
-            foreach ($rows as $t) {
-                fputcsv($out, [
-                    $t->nomor_tiket,
-                    $t->kategori,
-                    optional($t->user)->name,
-                    optional($t->it)->name,
-                    $t->status,
-                    optional($t->created_at)?->format('d M Y H:i'),
-                    $t->deskripsi,
-                ], ';');
+        $headers = ['Nomor Tiket', 'Pembuat', 'Kategori', 'Subkategori', 'IT Handler', 'Deskripsi', 'Status', 'Tanggal Dibuat', 'Tanggal Ditangani', 'Eskalasi', 'Vendor Followup', 'Vendor Followup At', 'Root Cause', 'Closed Note'];
+
+        // helper: convert 1-based column index to Excel column letters (1 -> A, 27 -> AA)
+        $colLetter = function(int $col) {
+            $letters = '';
+            while ($col > 0) {
+                $mod = ($col - 1) % 26;
+                $letters = chr(65 + $mod) . $letters;
+                $col = intdiv($col - 1, 26);
             }
-            fclose($out);
+            return $letters;
         };
 
-        return response()->stream($callback, 200, $headers);
+        // tulis header
+        foreach ($headers as $i => $h) {
+            $cell = $colLetter($i + 1) . '1';
+            $sheet->setCellValue($cell, $h);
+        }
+
+        $rowNum = 2;
+        foreach ($rows as $t) {
+            $sheet->setCellValue($colLetter(1) . $rowNum, $t->nomor_tiket);
+            $sheet->setCellValue($colLetter(2) . $rowNum, optional($t->user)->name);
+            $sheet->setCellValue($colLetter(3) . $rowNum, $t->kategori);
+            $sheet->setCellValue($colLetter(4) . $rowNum, optional($t->subcategory)->name);
+            $sheet->setCellValue($colLetter(5) . $rowNum, optional($t->it)->name);
+            $sheet->setCellValue($colLetter(6) . $rowNum, $t->deskripsi);
+            $sheet->setCellValue($colLetter(7) . $rowNum, $t->status);
+            $sheet->setCellValue($colLetter(8) . $rowNum, optional($t->created_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(9) . $rowNum, optional($t->taken_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(10) . $rowNum, $t->eskalasi);
+            $sheet->setCellValue($colLetter(11) . $rowNum, $t->vendor_followup);
+            $sheet->setCellValue($colLetter(12) . $rowNum, optional($t->vendor_followup_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(13) . $rowNum, $t->root_cause);
+            $sheet->setCellValue($colLetter(14) . $rowNum, $t->closed_note);
+            $rowNum++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'tickets_' . now()->format('Ymd_His') . '.xlsx';
+
+        // send response
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
     }
 
     /** Tiket yang sedang diambil alih oleh IT ini + filter */
@@ -518,7 +544,7 @@ public function store(Request $request)
     }
 
     $data = $request->validate([
-        'root_cause'  => 'required|string|in:' . implode(',', self::ROOT_CAUSES),
+        'root_cause'  => 'required|string|exists:root_causes,name',
         'closed_note' => 'required|string|min:3',
     ]);
 
@@ -788,7 +814,8 @@ public function store(Request $request)
         }
 
         $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
-        return view('tickets.show', compact('ticket','vendors'));
+        $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
+        return view('tickets.show', compact('ticket','vendors','rootCauses'));
     }
 
     /** Tambah komentar */

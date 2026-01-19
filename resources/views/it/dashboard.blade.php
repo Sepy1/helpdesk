@@ -97,10 +97,10 @@
           <td class="py-3 px-4">
             @php
               $badge = match($t->status){
-                'OPEN'             => 'bg-gray-100 text-gray-700 ring-gray-200',
-                'ON_PROGRESS'      => 'bg-amber-100 text-amber-800 ring-amber-200',
-                'ESKALASI_VENDOR'  => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
-                'VENDOR_RESOLVED'  => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+                'OPEN'             => 'bg-red-100 text-red-800 ring-red-200',
+                'ON_PROGRESS'      => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
+                'ESKALASI_VENDOR'  => 'bg-purple-100 text-purple-800 ring-purple-200',
+                'VENDOR_RESOLVED'  => 'bg-black text-white ring-black',
                 'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
                 default            => 'bg-gray-100 text-gray-700 ring-gray-200',
               };
@@ -118,9 +118,7 @@
               <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
                 <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
               </form>
-              <form method="POST" class="inline" action="{{ route('it.ticket.close',$t->id) }}">@csrf
-                <button class="rounded-lg bg-emerald-600 px-3 py-1.5 text-white hover:bg-emerald-700">Tutup</button>
-              </form>
+              
             @else
               <span class="text-xs text-gray-500">Sudah diambil</span>
             @endif
@@ -146,10 +144,10 @@
 
           @php
             $badge = match($t->status){
-              'OPEN'             => 'bg-gray-100 text-gray-700 ring-gray-200',
-              'ON_PROGRESS'      => 'bg-amber-100 text-amber-800 ring-amber-200',
-              'ESKALASI_VENDOR'  => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
-              'VENDOR_RESOLVED'  => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
+              'OPEN'             => 'bg-red-100 text-red-800 ring-red-200',
+              'ON_PROGRESS'      => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
+              'ESKALASI_VENDOR'  => 'bg-purple-100 text-purple-800 ring-purple-200',
+              'VENDOR_RESOLVED'  => 'bg-black text-white ring-black',
               'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
               default            => 'bg-gray-100 text-gray-700 ring-gray-200',
             };

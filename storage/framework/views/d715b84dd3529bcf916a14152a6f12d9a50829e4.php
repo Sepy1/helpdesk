@@ -12,18 +12,10 @@
 
     <div class="w-full sm:w-auto">
       <form id="filterForm" class="flex flex-col sm:flex-row sm:items-center gap-2">
-        <label for="filterMonth" class="sr-only">Periode</label>
-        <select id="filterMonth" aria-label="Pilih periode" class="w-full sm:w-48 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm">
-          <option value="all">Semua Periode</option>
-          <?php for($m = 0; $m < 12; $m++): ?>
-            <?php
-              $date = \Carbon\Carbon::now()->subMonths($m);
-              $val = $date->format('Y-m');
-              $label = $date->format('F Y');
-            ?>
-            <option value="<?php echo e($val); ?>"><?php echo e($label); ?></option>
-          <?php endfor; ?>
-        </select>
+        <label for="filterFrom" class="sr-only">Dari</label>
+        <input id="filterFrom" name="date_from" type="date" class="w-full sm:w-40 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm" />
+        <label for="filterTo" class="sr-only">Sampai</label>
+        <input id="filterTo" name="date_to" type="date" class="w-full sm:w-40 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm" />
 
         <div class="flex gap-2">
           <button id="btnRefresh" type="button" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-sky-600 text-white text-sm shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500" aria-label="Refresh statistik">
@@ -219,12 +211,15 @@
     el.classList.toggle('hidden', !on);
   }
 
-  async function fetchStats(month = 'all') {
+  async function fetchStats(from = '', to = '') {
     try {
       showLoading(true);
       document.getElementById('btnRefresh').disabled = true;
 
-      const url = `<?php echo e(route('stats.data')); ?>?month=${encodeURIComponent(month)}`;
+      const params = new URLSearchParams();
+      if (from) params.set('date_from', from);
+      if (to) params.set('date_to', to);
+      const url = `<?php echo e(route('stats.data')); ?>?${params.toString()}`;
       const res = await fetch(url, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
@@ -297,34 +292,23 @@
 
   // events
   document.getElementById('btnRefresh').addEventListener('click', () => {
-    const m = document.getElementById('filterMonth').value;
-    fetchStats(m);
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    fetchStats(from, to);
   });
 
-  // export (simple CSV generation)
   document.getElementById('btnDownload').addEventListener('click', () => {
-    // contoh: download kategori sebagai CSV (bisa dikembangkan)
-    try {
-      const labels = charts['chartKategori']?.data?.labels ?? [];
-      const data = charts['chartKategori']?.data?.datasets?.[0]?.data ?? [];
-      let csv = 'Kategori,Jumlah\n';
-      labels.forEach((l,i) => { csv += `"${l}",${data[i] ?? 0}\n`; });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `kategori_${document.getElementById('filterMonth').value || 'all'}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      alert('Gagal mengekspor: ' + e.message);
-    }
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    const params = new URLSearchParams();
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    const url = `<?php echo e(route('it.tickets.export')); ?>?${params.toString()}`;
+    window.location.href = url;
   });
 
-  // initial load
-  fetchStats(document.getElementById('filterMonth').value);
+  // initial load (no date range = all)
+  fetchStats(document.getElementById('filterFrom').value, document.getElementById('filterTo').value);
 
   // responsiveness: reflow charts on orientation change
   window.addEventListener('orientationchange', () => {

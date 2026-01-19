@@ -26,7 +26,31 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $data = $request->validated();
+
+        // Normalize phone number to Indonesian format (e.g. 6285725681860)
+        if (array_key_exists('no_hp', $data)) {
+            $raw = trim($data['no_hp'] ?? '');
+            // remove non-digit chars
+            $digits = preg_replace('/\D+/', '', $raw);
+            if ($digits === '') {
+                $data['no_hp'] = null;
+            } else {
+                if (str_starts_with($digits, '0')) {
+                    $data['no_hp'] = '62' . substr($digits, 1);
+                } elseif (str_starts_with($digits, '62')) {
+                    $data['no_hp'] = $digits;
+                } elseif (str_starts_with($digits, '8')) {
+                    // user entered without leading zero
+                    $data['no_hp'] = '62' . $digits;
+                } else {
+                    // fallback: store as digits
+                    $data['no_hp'] = $digits;
+                }
+            }
+        }
+
+        $request->user()->fill($data);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

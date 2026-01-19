@@ -81,6 +81,14 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::get('/it/tickets/export', [TicketController::class, 'export'])->name('it.tickets.export'); // export XLS/CSV sesuai filter
         Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');            // tiket saya (IT)
         Route::get('/it/stats', [TicketController::class, 'stats'])->name('it.stats');                   // statistik
+        // Parameter management (kategori, subkategori, root cause)
+        Route::get('/it/parameters', [\App\Http\Controllers\ParameterController::class, 'index'])->name('it.parameters');
+        Route::post('/it/parameters/category', [\App\Http\Controllers\ParameterController::class, 'storeCategory'])->name('it.parameters.category.store');
+        Route::post('/it/parameters/category/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteCategory'])->name('it.parameters.category.delete');
+        Route::post('/it/parameters/subcategory', [\App\Http\Controllers\ParameterController::class, 'storeSubcategory'])->name('it.parameters.subcategory.store');
+        Route::post('/it/parameters/subcategory/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteSubcategory'])->name('it.parameters.subcategory.delete');
+        Route::post('/it/parameters/rootcause', [\App\Http\Controllers\ParameterController::class, 'storeRootCause'])->name('it.parameters.rootcause.store');
+        Route::post('/it/parameters/rootcause/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCause'])->name('it.parameters.rootcause.delete');
 
         Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
         Route::post('/it/ticket/{ticket}/release',         [TicketController::class, 'release'])->name('it.ticket.release');

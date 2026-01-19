@@ -20,22 +20,33 @@ class StatsController extends Controller
 {
     Log::info('StatsController::data called', ['month' => $request->query('month')]);
 
-    $month = $request->query('month', 'all');
+    $month = $request->query('month', null);
+    $dateFrom = $request->query('date_from');
+    $dateTo   = $request->query('date_to');
 
     try {
         // base query (tickets)
         $tickets = \App\Models\Ticket::query();
 
-        // filter by month (kualifikasi kolom supaya tidak ambiguous saat join)
-        if ($month !== 'all') {
+        // filter by date range if provided (date_from/date_to), else fallback to month format 'YYYY-MM'
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) {
+                try { $df = Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay(); } catch (\Exception $e) { return response()->json(['message' => 'Format date_from tidak valid'], 422); }
+                $tickets->where('tickets.created_at', '>=', $df);
+            }
+            if ($dateTo) {
+                try { $dt = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay(); } catch (\Exception $e) { return response()->json(['message' => 'Format date_to tidak valid'], 422); }
+                $tickets->where('tickets.created_at', '<=', $dt);
+            }
+        } elseif ($month) {
             try {
                 $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
                 $end   = (clone $start)->endOfMonth();
+                $tickets->whereBetween('tickets.created_at', [$start, $end]);
             } catch (\Exception $e) {
                 Log::warning('Invalid month format in stats request', ['month' => $month]);
                 return response()->json(['message' => 'Format bulan tidak valid'], 422);
             }
-            $tickets->whereBetween('tickets.created_at', [$start, $end]);
         }
 
         //

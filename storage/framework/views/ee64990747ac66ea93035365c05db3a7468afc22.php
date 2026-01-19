@@ -25,6 +25,7 @@
       ['label'=>'Dashboard',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
       ['label'=>'Tiket Saya',  'route'=>'it.my',          'icon'=>'user',   'active'=>$is('it.my')],
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
+      ['label'=>'Parameter',   'route'=>'it.parameters',  'icon'=>'settings','active'=>$is('it.parameters*')],
       ['label'=>'Manajemen User', 'route'=>'it.users.index', 'icon'=>'settings', 'active'=>$is('it.users.*')],
       ['label'=>'Profil',      'route'=>'profile.edit',   'icon'=>'user',   'active'=>$is('profile.edit')],
     ];
