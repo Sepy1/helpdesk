@@ -987,13 +987,9 @@ public function subcategories($id)
     {
         if (auth()->user()->role !== 'VENDOR') abort(403);
 
-        // Show tickets that are escalated to vendor or already closed (so vendor can see closed tickets)
+        // Only show tickets assigned to this vendor (vendor_id == current user)
         $tickets = Ticket::with(['user','it','vendor'])
-            ->whereIn('status', ['ESKALASI_VENDOR', 'CLOSED'])
-            ->where(function($q){
-                $q->whereNull('vendor_id')
-                  ->orWhere('vendor_id', auth()->id());
-            })
+            ->where('vendor_id', auth()->id())
             ->when($request->filled('kategori'), fn ($q) => $q->where('kategori', $request->kategori))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $v = trim($request->q);
