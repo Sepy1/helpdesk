@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class ParameterController extends Controller
@@ -16,8 +17,9 @@ class ParameterController extends Controller
 
         $categories = Category::with('subcategories')->orderBy('name')->get();
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
+        $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
 
-        return view('it.parameters', compact('categories','rootCauses'));
+        return view('it.parameters', compact('categories','rootCauses','vendors'));
     }
 
     public function storeCategory(Request $request)

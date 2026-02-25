@@ -18,7 +18,7 @@
   </h1>
    
   <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-    Sistem Penyampaian Bantuan Tiketing Operasional
+    Sistem Aplikasi Manajemen Bantuan Dan Hambatan Operasional
   </p>
 </div>
 

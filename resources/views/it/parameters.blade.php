@@ -107,44 +107,80 @@
       </div>
     </div>
 
-    {{-- Root Causes full width under the row --}}
-    <div class="bg-white rounded shadow overflow-hidden">
-      <div class="flex items-center justify-between p-4 border-b">
-        <div class="text-lg font-medium">Root Causes</div>
-        <form method="POST" action="{{ route('it.parameters.rootcause.store') }}" class="flex items-center gap-2">
-          @csrf
-          <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Root cause" />
-          <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
-        </form>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded shadow overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b">
+          <div class="text-lg font-medium">Root Causes</div>
+          <form method="POST" action="{{ route('it.parameters.rootcause.store') }}" class="flex items-center gap-2">
+            @csrf
+            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Root cause" />
+            <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
+          </form>
+        </div>
+
+        <div class="p-4 overflow-x-auto max-h-52 overflow-y-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs text-gray-500 border-b">
+              <tr>
+                <th class="py-2">#</th>
+                <th class="py-2">Root Cause</th>
+                <th class="py-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y">
+              @foreach($rootCauses as $i => $rc)
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">{{ $i + 1 }}</td>
+                  <td class="py-2">{{ $rc->name }}</td>
+                  <td class="py-2">
+                    <form method="POST" action="{{ route('it.parameters.rootcause.delete', $rc->id) }}" onsubmit="return confirm('Hapus root cause?');">
+                      @csrf
+                      <button class="text-red-600 text-sm">Hapus</button>
+                    </form>
+                  </td>
+                </tr>
+              @endforeach
+              @if(count($rootCauses) === 0)
+                <tr><td colspan="3" class="py-4 text-center text-gray-500">Belum ada root cause</td></tr>
+              @endif
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="p-4 overflow-x-auto max-h-52 overflow-y-auto">
-        <table class="w-full text-sm">
-          <thead class="text-left text-xs text-gray-500 border-b">
-            <tr>
-              <th class="py-2">#</th>
-              <th class="py-2">Root Cause</th>
-              <th class="py-2">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y">
-            @foreach($rootCauses as $i => $rc)
-              <tr class="hover:bg-gray-50">
-                <td class="py-2">{{ $i + 1 }}</td>
-                <td class="py-2">{{ $rc->name }}</td>
-                <td class="py-2">
-                  <form method="POST" action="{{ route('it.parameters.rootcause.delete', $rc->id) }}" onsubmit="return confirm('Hapus root cause?');">
-                    @csrf
-                    <button class="text-red-600 text-sm">Hapus</button>
-                  </form>
-                </td>
+      <div class="bg-white rounded shadow overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b">
+          <div class="text-lg font-medium">Daftar Vendor</div>
+          <a href="{{ route('it.users.index') }}" class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Kelola Vendor</a>
+        </div>
+
+        <div class="p-4 overflow-x-auto max-h-52 overflow-y-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs text-gray-500 border-b">
+              <tr>
+                <th class="py-2">#</th>
+                <th class="py-2">Nama</th>
+                <th class="py-2">Email</th>
+                <th class="py-2">Aksi</th>
               </tr>
-            @endforeach
-            @if(count($rootCauses) === 0)
-              <tr><td colspan="3" class="py-4 text-center text-gray-500">Belum ada root cause</td></tr>
-            @endif
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y">
+              @foreach($vendors as $i => $v)
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">{{ $i + 1 }}</td>
+                  <td class="py-2 font-medium">{{ $v->name }}</td>
+                  <td class="py-2">{{ $v->email }}</td>
+                  <td class="py-2">
+                    <a href="{{ route('it.users.edit', $v->id) }}" class="text-sky-600 text-sm">Edit</a>
+                  </td>
+                </tr>
+              @endforeach
+              @if(count($vendors) === 0)
+                <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada vendor</td></tr>
+              @endif
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
