@@ -17,7 +17,20 @@ class TicketActivity extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        // send both database notification and email
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $d = $this->data;
+
+        $mail = (new MailMessage)
+            ->subject($d['title'] ?? 'Notifikasi Tiket')
+            ->line($d['body'] ?? '')
+            ->action('Lihat Tiket', $d['url'] ?? url('/'));
+
+        return $mail;
     }
 
     public function toArray(object $notifiable): array
