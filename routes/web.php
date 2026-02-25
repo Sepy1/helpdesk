@@ -104,9 +104,12 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 
     // ===== VENDOR =====
     Route::middleware(['role:VENDOR'])->group(function () {
-        Route::get('/vendor/dashboard', [TicketController::class, 'vendorTickets'])->name('vendor.dashboard');
+        Route::get('/vendor/dashboard', [TicketController::class, 'vendorDashboard'])->name('vendor.dashboard');
         Route::get('/vendor/tickets',   [TicketController::class, 'vendorTickets'])->name('vendor.tickets');
         Route::post('/vendor/ticket/{ticket}/followup', [TicketController::class, 'vendorFollowup'])->name('vendor.ticket.followup');
+        // Vendor profile
+        Route::get('/vendor/profile', [\App\Http\Controllers\ProfileController::class, 'vendorEdit'])->name('vendor.profile.edit');
+        Route::patch('/vendor/profile', [\App\Http\Controllers\ProfileController::class, 'vendorUpdate'])->name('vendor.profile.update');
     });
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])

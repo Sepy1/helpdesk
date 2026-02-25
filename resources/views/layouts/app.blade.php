@@ -104,6 +104,16 @@
         <span class="hidden sm:inline text-white/80 truncate max-w-[40ch]">
           {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
         </span>
+
+        {{-- Profile link for vendor or regular users --}}
+        <div class="hidden sm:inline-block mr-2">
+            @if(auth()->user()->role === 'VENDOR')
+                <a href="{{ route('vendor.profile.edit') }}" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+            @else
+                <a href="{{ route('profile.edit') }}" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+            @endif
+        </div>
+
         <form method="POST" action="{{ route('logout') }}" class="shrink-0">
           @csrf
           <button type="submit"

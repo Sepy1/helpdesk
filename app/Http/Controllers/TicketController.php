@@ -982,6 +982,36 @@ public function subcategories($id)
     /* =========================
      * VENDOR
      * ========================= */
+    /** Dashboard vendor: tiket yang dieskalasi ke vendor ini */
+    public function vendorDashboard(Request $request)
+    {
+        if (auth()->user()->role !== 'VENDOR') abort(403);
+
+        // Show tickets that are escalated to vendor or already closed (so vendor can see closed tickets)
+        $tickets = Ticket::with(['user','it','vendor'])
+            ->whereIn('status', ['ESKALASI_VENDOR', 'CLOSED'])
+            ->where(function($q){
+                $q->whereNull('vendor_id')
+                  ->orWhere('vendor_id', auth()->id());
+            })
+            ->when($request->filled('kategori'), fn ($q) => $q->where('kategori', $request->kategori))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $v = trim($request->q);
+                $q->where(function ($qq) use ($v) {
+                    $qq->where('nomor_tiket', 'like', "%$v%")
+                       ->orWhere('deskripsi', 'like', "%$v%");
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->appends($request->query());
+
+        return view('vendor.dashboard', [
+            'tickets' => $tickets,
+            'kategori' => self::KATEGORI,
+            'status' => self::STATUS,
+        ]);
+    }
     /** Daftar tiket yang di-assign ke vendor ini */
     public function vendorTickets(Request $request)
     {

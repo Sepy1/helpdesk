@@ -104,6 +104,16 @@
         <span class="hidden sm:inline text-white/80 truncate max-w-[40ch]">
           <?php echo e(auth()->user()->name); ?> — <span class="uppercase"><?php echo e(auth()->user()->role); ?></span>
         </span>
+
+        
+        <div class="hidden sm:inline-block mr-2">
+            <?php if(auth()->user()->role === 'VENDOR'): ?>
+                <a href="<?php echo e(route('vendor.profile.edit')); ?>" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+            <?php else: ?>
+                <a href="<?php echo e(route('profile.edit')); ?>" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+            <?php endif; ?>
+        </div>
+
         <form method="POST" action="<?php echo e(route('logout')); ?>" class="shrink-0">
           <?php echo csrf_field(); ?>
           <button type="submit"

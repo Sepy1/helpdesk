@@ -81,4 +81,54 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Display vendor profile form.
+     */
+    public function vendorEdit(Request $request): View
+    {
+        if ($request->user()->role !== 'VENDOR') abort(403);
+
+        return view('vendor.profile', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Update vendor profile information.
+     */
+    public function vendorUpdate(ProfileUpdateRequest $request): RedirectResponse
+    {
+        if ($request->user()->role !== 'VENDOR') abort(403);
+
+        $data = $request->validated();
+
+        if (array_key_exists('no_hp', $data)) {
+            $raw = trim($data['no_hp'] ?? '');
+            $digits = preg_replace('/\D+/', '', $raw);
+            if ($digits === '') {
+                $data['no_hp'] = null;
+            } else {
+                if (str_starts_with($digits, '0')) {
+                    $data['no_hp'] = '62' . substr($digits, 1);
+                } elseif (str_starts_with($digits, '62')) {
+                    $data['no_hp'] = $digits;
+                } elseif (str_starts_with($digits, '8')) {
+                    $data['no_hp'] = '62' . $digits;
+                } else {
+                    $data['no_hp'] = $digits;
+                }
+            }
+        }
+
+        $request->user()->fill($data);
+
+        if ($request->user()->isDirty('email')) {
+            $request->user()->email_verified_at = null;
+        }
+
+        $request->user()->save();
+
+        return Redirect::route('vendor.profile.edit')->with('status', 'profile-updated');
+    }
 }
