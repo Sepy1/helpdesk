@@ -25,12 +25,12 @@ class TicketActivity extends Notification implements ShouldQueue
     {
         $d = $this->data;
 
-        $mail = (new MailMessage)
+        return (new MailMessage)
             ->subject($d['title'] ?? 'Notifikasi Tiket')
-            ->line($d['body'] ?? '')
-            ->action('Lihat Tiket', $d['url'] ?? url('/'));
-
-        return $mail;
+            ->markdown('emails.notifications.ticket_activity', [
+                'data' => $d,
+                'notifiable' => $notifiable,
+            ]);
     }
 
     public function toArray(object $notifiable): array
