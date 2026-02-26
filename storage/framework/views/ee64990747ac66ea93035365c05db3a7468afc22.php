@@ -22,7 +22,7 @@
   // Menu per role
   if ($role === 'IT') {
     $menu = [
-      ['label'=>'Dashboard',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
+      ['label'=>'All Tiket',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
       ['label'=>'Tiket Saya',  'route'=>'it.my',          'icon'=>'user',   'active'=>$is('it.my')],
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
       ['label'=>'Parameter',   'route'=>'it.parameters',  'icon'=>'settings','active'=>$is('it.parameters*')],

@@ -1,14 +1,6 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            <?php echo e(__('Profile Information')); ?>
-
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            <?php echo e(__("Update your account's profile information and email address.")); ?>
-
-        </p>
+      
     </header>
 
     <form id="send-verification" method="post" action="<?php echo e(route('verification.send')); ?>">

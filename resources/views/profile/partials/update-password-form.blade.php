@@ -1,11 +1,9 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
-        </h2>
+
 
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
+            {{ __('Gunakan password yang kuat dan unik untuk menjaga keamanan akun Anda.') }}
         </p>
     </header>
 
@@ -14,19 +12,19 @@
         @method('put')
 
         <div>
-            <label for="current_password" class="text-sm font-medium text-gray-700">{{ __('Current Password') }}</label>
+            <label for="current_password" class="text-sm font-medium text-gray-700">{{ __('Password Saat Ini') }}</label>
             <input id="current_password" name="current_password" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="current-password" />
             <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
         </div>
 
         <div>
-            <label for="password" class="text-sm font-medium text-gray-700">{{ __('New Password') }}</label>
+            <label for="password" class="text-sm font-medium text-gray-700">{{ __('Password Baru') }}</label>
             <input id="password" name="password" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="new-password" />
             <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
         </div>
 
         <div>
-            <label for="password_confirmation" class="text-sm font-medium text-gray-700">{{ __('Confirm Password') }}</label>
+            <label for="password_confirmation" class="text-sm font-medium text-gray-700">{{ __('Konfirmasi Password Baru') }}</label>
             <input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="new-password" />
             <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
         </div>

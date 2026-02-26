@@ -29,7 +29,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/>
           </svg>
-          <span>Dashboard</span>
+          <span>All Tiket</span>
         </a>
       @else
         @php
@@ -54,7 +54,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"/>
           </svg>
-          <span>Tiket</span>
+          <span>Tiket Saya</span>
         </a>
       @elseif(!$isVendor)
         <a href="{{ route('cabang.tickets') }}"

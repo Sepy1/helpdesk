@@ -15,9 +15,9 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Kategori</div>
-          <form method="POST" action="{{ route('it.parameters.category.store') }}" class="flex items-center gap-2">
+          <form method="POST" action="{{ route('it.parameters.category.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
             @csrf
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Nama kategori" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama kategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -36,7 +36,7 @@
               @foreach($categories as $i => $c)
                 <tr class="hover:bg-gray-50">
                   <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2 font-medium">{{ $c->name }}</td>
+                  <td class="py-2 font-medium max-w-xs truncate">{{ $c->name }}</td>
                   <td class="py-2">{{ $c->subcategories->count() }}</td>
                   <td class="py-2">
                     <div class="flex gap-2">
@@ -57,15 +57,15 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Sub</div>
-          <form method="POST" action="{{ route('it.parameters.subcategory.store') }}" class="flex items-center gap-2">
+          <form method="POST" action="{{ route('it.parameters.subcategory.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
             @csrf
-            <select name="category_id" required class="rounded border px-3 py-1 text-sm">
+            <select name="category_id" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0">
               <option value="">Pilih Kategori</option>
               @foreach($categories as $c)
                 <option value="{{ $c->id }}">{{ $c->name }}</option>
               @endforeach
             </select>
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Nama subkategori" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama subkategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -87,8 +87,8 @@
                   @php $count++; @endphp
                   <tr class="hover:bg-gray-50">
                     <td class="py-2">{{ $count }}</td>
-                    <td class="py-2">{{ $s->name }}</td>
-                    <td class="py-2">{{ $c->name }}</td>
+                    <td class="py-2 max-w-xs truncate">{{ $s->name }}</td>
+                    <td class="py-2 max-w-xs truncate">{{ $c->name }}</td>
                     <td class="py-2">
                       <form method="POST" action="{{ route('it.parameters.subcategory.delete', $s->id) }}" onsubmit="return confirm('Hapus subkategori?');">
                         @csrf
@@ -111,9 +111,9 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Root Causes</div>
-          <form method="POST" action="{{ route('it.parameters.rootcause.store') }}" class="flex items-center gap-2">
+          <form method="POST" action="{{ route('it.parameters.rootcause.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
             @csrf
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Root cause" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Root cause" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -131,7 +131,7 @@
               @foreach($rootCauses as $i => $rc)
                 <tr class="hover:bg-gray-50">
                   <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2">{{ $rc->name }}</td>
+                  <td class="py-2 max-w-xs truncate">{{ $rc->name }}</td>
                   <td class="py-2">
                     <form method="POST" action="{{ route('it.parameters.rootcause.delete', $rc->id) }}" onsubmit="return confirm('Hapus root cause?');">
                       @csrf
@@ -168,8 +168,8 @@
               @foreach($vendors as $i => $v)
                 <tr class="hover:bg-gray-50">
                   <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2 font-medium">{{ $v->name }}</td>
-                  <td class="py-2">{{ $v->email }}</td>
+                  <td class="py-2 font-medium max-w-xs truncate">{{ $v->name }}</td>
+                  <td class="py-2 max-w-xs truncate">{{ $v->email }}</td>
                   <td class="py-2">
                     <a href="{{ route('it.users.edit', $v->id) }}" class="text-sky-600 text-sm">Edit</a>
                   </td>

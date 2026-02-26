@@ -25,7 +25,7 @@
       <select name="category_id" id="category-select"
               required
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">-- Pilih Kategori --</option>
+        <option value="">-</option>
         <?php $list = $categories ?? collect(); ?>
         <?php $__currentLoopData = $list; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
           <option value="<?php echo e($cat->id); ?>" <?php if(old('category_id') == $cat->id): echo 'selected'; endif; ?>><?php echo e($cat->name); ?></option>
@@ -46,7 +46,7 @@ unset($__errorArgs, $__bag); ?>
       <label class="block text-sm font-medium text-gray-700 mb-1">Subkategori</label>
       <select name="subcategory_id" id="subcategory-select"
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">-- Pilih Subkategori --</option>
+        <option value="">-</option>
         
       </select>
       <?php $__errorArgs = ['subcategory_id'];
@@ -81,7 +81,7 @@ unset($__errorArgs, $__bag); ?>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
         <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">-- Pilih Penanggung Jawab TI (opsional) --</option>
+          <option value="">-</option>
           <?php $itsList = $its ?? collect(); ?>
           <?php $__currentLoopData = $itsList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <option value="<?php echo e($it->id); ?>" <?php if(old('it_id') == $it->id): echo 'selected'; endif; ?>><?php echo e($it->name); ?></option>

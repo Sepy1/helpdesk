@@ -18,7 +18,7 @@
   </h1>
    
   <p class="mt-2 text-sm text-gray-600 leading-relaxed">
-    Sistem Aplikasi Manajemen Bantuan Dan Hambatan Operasional
+    Sistem Aplikasi Manajemen Bantuan Operasional
   </p>
 </div>
 

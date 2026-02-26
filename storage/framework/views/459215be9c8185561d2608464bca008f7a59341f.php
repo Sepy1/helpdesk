@@ -15,9 +15,9 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Kategori</div>
-          <form method="POST" action="<?php echo e(route('it.parameters.category.store')); ?>" class="flex items-center gap-2">
+          <form method="POST" action="<?php echo e(route('it.parameters.category.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
             <?php echo csrf_field(); ?>
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Nama kategori" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama kategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -36,7 +36,7 @@
               <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
                   <td class="py-2"><?php echo e($i + 1); ?></td>
-                  <td class="py-2 font-medium"><?php echo e($c->name); ?></td>
+                  <td class="py-2 font-medium max-w-xs truncate"><?php echo e($c->name); ?></td>
                   <td class="py-2"><?php echo e($c->subcategories->count()); ?></td>
                   <td class="py-2">
                     <div class="flex gap-2">
@@ -57,15 +57,15 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Sub</div>
-          <form method="POST" action="<?php echo e(route('it.parameters.subcategory.store')); ?>" class="flex items-center gap-2">
+          <form method="POST" action="<?php echo e(route('it.parameters.subcategory.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
             <?php echo csrf_field(); ?>
-            <select name="category_id" required class="rounded border px-3 py-1 text-sm">
+            <select name="category_id" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0">
               <option value="">Pilih Kategori</option>
               <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <option value="<?php echo e($c->id); ?>"><?php echo e($c->name); ?></option>
               <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Nama subkategori" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama subkategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -87,8 +87,8 @@
                   <?php $count++; ?>
                   <tr class="hover:bg-gray-50">
                     <td class="py-2"><?php echo e($count); ?></td>
-                    <td class="py-2"><?php echo e($s->name); ?></td>
-                    <td class="py-2"><?php echo e($c->name); ?></td>
+                    <td class="py-2 max-w-xs truncate"><?php echo e($s->name); ?></td>
+                    <td class="py-2 max-w-xs truncate"><?php echo e($c->name); ?></td>
                     <td class="py-2">
                       <form method="POST" action="<?php echo e(route('it.parameters.subcategory.delete', $s->id)); ?>" onsubmit="return confirm('Hapus subkategori?');">
                         <?php echo csrf_field(); ?>
@@ -111,9 +111,9 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Root Causes</div>
-          <form method="POST" action="<?php echo e(route('it.parameters.rootcause.store')); ?>" class="flex items-center gap-2">
+          <form method="POST" action="<?php echo e(route('it.parameters.rootcause.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
             <?php echo csrf_field(); ?>
-            <input name="name" required class="rounded border px-3 py-1 text-sm" placeholder="Root cause" />
+            <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Root cause" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
         </div>
@@ -131,7 +131,7 @@
               <?php $__currentLoopData = $rootCauses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $rc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
                   <td class="py-2"><?php echo e($i + 1); ?></td>
-                  <td class="py-2"><?php echo e($rc->name); ?></td>
+                  <td class="py-2 max-w-xs truncate"><?php echo e($rc->name); ?></td>
                   <td class="py-2">
                     <form method="POST" action="<?php echo e(route('it.parameters.rootcause.delete', $rc->id)); ?>" onsubmit="return confirm('Hapus root cause?');">
                       <?php echo csrf_field(); ?>
@@ -168,8 +168,8 @@
               <?php $__currentLoopData = $vendors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
                   <td class="py-2"><?php echo e($i + 1); ?></td>
-                  <td class="py-2 font-medium"><?php echo e($v->name); ?></td>
-                  <td class="py-2"><?php echo e($v->email); ?></td>
+                  <td class="py-2 font-medium max-w-xs truncate"><?php echo e($v->name); ?></td>
+                  <td class="py-2 max-w-xs truncate"><?php echo e($v->email); ?></td>
                   <td class="py-2">
                     <a href="<?php echo e(route('it.users.edit', $v->id)); ?>" class="text-sky-600 text-sm">Edit</a>
                   </td>

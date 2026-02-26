@@ -25,7 +25,7 @@
       <select name="category_id" id="category-select"
               required
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">-- Pilih Kategori --</option>
+        <option value="">-</option>
         @php $list = $categories ?? collect(); @endphp
         @foreach($list as $cat)
           <option value="{{ $cat->id }}" @selected(old('category_id') == $cat->id)>{{ $cat->name }}</option>
@@ -39,7 +39,7 @@
       <label class="block text-sm font-medium text-gray-700 mb-1">Subkategori</label>
       <select name="subcategory_id" id="subcategory-select"
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">-- Pilih Subkategori --</option>
+        <option value="">-</option>
         {{-- Jika ada old value dan kategori terpilih, server-side create() bisa mengirim initial subkategori; 
             tapi kita handle juga via JS pada page load --}}
       </select>
@@ -61,7 +61,7 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
         <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">-- Pilih Penanggung Jawab TI (opsional) --</option>
+          <option value="">-</option>
           @php $itsList = $its ?? collect(); @endphp
           @foreach($itsList as $it)
             <option value="{{ $it->id }}" @selected(old('it_id') == $it->id)>{{ $it->name }}</option>

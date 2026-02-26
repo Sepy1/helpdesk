@@ -1,12 +1,9 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            <?php echo e(__('Update Password')); ?>
 
-        </h2>
 
         <p class="mt-1 text-sm text-gray-600">
-            <?php echo e(__('Ensure your account is using a long, random password to stay secure.')); ?>
+            <?php echo e(__('Gunakan password yang kuat dan unik untuk menjaga keamanan akun Anda.')); ?>
 
         </p>
     </header>
@@ -16,7 +13,7 @@
         <?php echo method_field('put'); ?>
 
         <div>
-            <label for="current_password" class="text-sm font-medium text-gray-700"><?php echo e(__('Current Password')); ?></label>
+            <label for="current_password" class="text-sm font-medium text-gray-700"><?php echo e(__('Password Saat Ini')); ?></label>
             <input id="current_password" name="current_password" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="current-password" />
             <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->updatePassword->get('current_password'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
@@ -36,7 +33,7 @@
         </div>
 
         <div>
-            <label for="password" class="text-sm font-medium text-gray-700"><?php echo e(__('New Password')); ?></label>
+            <label for="password" class="text-sm font-medium text-gray-700"><?php echo e(__('Password Baru')); ?></label>
             <input id="password" name="password" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="new-password" />
             <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->updatePassword->get('password'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
@@ -56,7 +53,7 @@
         </div>
 
         <div>
-            <label for="password_confirmation" class="text-sm font-medium text-gray-700"><?php echo e(__('Confirm Password')); ?></label>
+            <label for="password_confirmation" class="text-sm font-medium text-gray-700"><?php echo e(__('Konfirmasi Password Baru')); ?></label>
             <input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900" autocomplete="new-password" />
             <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->updatePassword->get('password_confirmation'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>

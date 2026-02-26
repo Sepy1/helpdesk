@@ -6,7 +6,7 @@
   <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-4">
   <div>
     <h2 class="text-lg font-semibold text-gray-800">Tiket yang Saya Tangani</h2>
-    <p class="text-sm text-gray-500">Hanya tiket dengan <span class="font-medium">it_id = <?php echo e(auth()->id()); ?></span>.</p>
+    
   </div>
 <form method="GET" class="space-y-3 md:space-y-0 md:flex md:flex-wrap md:items-end md:gap-2" id="filter-form">
       <div class="w-full md:w-auto md:flex-1">
