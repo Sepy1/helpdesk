@@ -2,7 +2,7 @@
 @section('title','Edit User')
 
 @section('content')
-<div class="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
+<div class="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
   <h2 class="text-lg font-semibold text-gray-800 mb-4">Edit User</h2>
 
   <form method="POST" action="{{ route('it.users.update', $user) }}" class="space-y-4">

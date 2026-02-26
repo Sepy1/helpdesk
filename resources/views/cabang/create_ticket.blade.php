@@ -93,7 +93,7 @@
 <div x-data="{ open: true }" x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
   <div class="absolute inset-0 bg-black/40" @click="open=false"></div>
 
-  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-6">
+  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-3 sm:p-5 text-xs sm:text-sm">
     <div class="flex items-start gap-3">
       <div class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">✅</div>
       <div class="flex-1">

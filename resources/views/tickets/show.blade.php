@@ -26,7 +26,7 @@
   }
 
   /* Small helper for status badge */
-  .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:6px 10px;font-size:12px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
+  .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:5px 8px;font-size:11px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
 </style>
 @endpush
 
@@ -39,12 +39,12 @@
     {{-- =========================
          CARD UTAMA: Nomor + Kategori + Handler + Deskripsi + Lampiran + Aksi
          ========================= --}}
-    <div class="mt-6 bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-6">
+    <div class="mt-6 bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
       {{-- Header: nomor tiket + created info --}}
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div class="min-w-0">
-          <h2 class="text-xl font-semibold text-gray-800">#{{ $ticket->nomor_tiket }}</h2>
-          <div class="text-sm text-gray-500 mt-1">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-gray-800">#{{ $ticket->nomor_tiket }}</h2>
+            <div class="text-xs text-gray-500 mt-1">
             Dibuat oleh: <span class="font-medium text-gray-700">{{ $ticket->user->name ?? '—' }}</span>
             @if(isset($ticket->cabang))
               · {{ $ticket->cabang }}
@@ -70,21 +70,21 @@
       </div>
 
       {{-- Dua kolom: Kategori | IT Handler --}}
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div class="text-xs text-gray-500 mb-1">Kategori</div>
-          <div class="text-lg font-medium text-gray-800">{{ $ticket->kategori }}</div>
+          <div class="text-sm font-medium text-gray-800">{{ $ticket->kategori }}</div>
         </div>
         <div>
           <div class="text-xs text-gray-500 mb-1">IT Handler</div>
-          <div class="text-lg font-medium text-gray-800">{{ $ticket->it->name ?? '-' }}</div>
+          <div class="text-sm font-medium text-gray-800">{{ $ticket->it->name ?? '-' }}</div>
         </div>
       </div>
 
       {{-- Deskripsi --}}
       <div class="mt-6">
         <div class="text-xs text-gray-500 mb-1">Deskripsi</div>
-        <div class="text-gray-800 whitespace-pre-line">{{ $ticket->deskripsi }}</div>
+        <div class="text-sm text-gray-800 whitespace-pre-line">{{ $ticket->deskripsi }}</div>
       </div>
 
       {{-- Lampiran + Aksi di bawah --}}
@@ -92,11 +92,11 @@
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
           @if($ticket->lampiran)
-            <a href="{{ route('ticket.download',$ticket->id) }}" class="inline-flex items-center rounded-md px-3 py-2 text-sm ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600" download data-noloader="1">
+            <a href="{{ route('ticket.download',$ticket->id) }}" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600" download data-noloader="1">
               Unduh lampiran
             </a>
           @else
-            <div class="text-sm text-gray-400">-</div>
+            <div class="text-xs text-gray-400">-</div>
           @endif
         </div>
 
@@ -118,13 +118,13 @@
             @endif
           @endauth
 
-          <button type="button" x-data @click="$dispatch('open-history')" class="relative rounded-lg bg-blue-500 px-3 py-2 text-white text-sm hover:bg-blue-600">
+          <button type="button" x-data @click="$dispatch('open-history')" class="relative rounded-md bg-blue-500 px-2 py-1 text-white text-xs hover:bg-blue-600">
             History
             <span id="history-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold hidden"></span>
           </button>
           @auth
             @if(auth()->user()->role === 'IT' || (auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id()))
-              <button type="button" x-data @click="$dispatch('open-update')" class="rounded-lg bg-emerald-600 px-3 py-2 text-white text-sm hover:bg-emerald-700">
+              <button type="button" x-data @click="$dispatch('open-update')" class="rounded-md bg-emerald-600 px-2 py-1 text-white text-xs hover:bg-emerald-700">
                 Update
               </button>
             @endif
@@ -135,7 +135,7 @@
     {{-- ========================= END CARD UTAMA ========================= --}}
 
     {{-- Ringkasan (dipindah ke kiri agar komentar bisa lebih leluasa di kanan) --}}
-    <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-4 grow">
+    <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm grow">
       <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
       <dl class="text-[13px] text-gray-700 space-y-1">
         <div class="flex justify-between"><dt>Nomor</dt><dd class="font-medium">{{ $ticket->nomor_tiket }}</dd></div>
@@ -156,7 +156,7 @@
 
   {{-- Komentar kanan --}}
   <aside class="space-y-4 lg:mt-6 h-full">
-    <div class="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-4 h-full flex flex-col min-h-0">
+    <div class="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm h-full flex flex-col min-h-0">
       <div class="shrink-0 flex items-center justify-between">
         <div class="flex items-center">
           <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
@@ -165,15 +165,15 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 flex-1 overflow-auto max-h-[50vh] sm:max-h-[56vh] pr-1 space-y-3">
+      <div id="chat-list" class="mt-3 flex-1 overflow-auto max-h-[48vh] sm:max-h-[54vh] pr-1 space-y-2">
         @forelse($ticket->comments->sortBy('created_at') as $c)
           @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
           <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">
             <div class="max-w-[85%] sm:max-w-[78%]">
-              <div class="text-[11px] text-gray-500 leading-4 {{ $mine ? 'text-right' : '' }}">
+              <div class="text-[10px] text-gray-500 leading-4 {{ $mine ? 'text-right' : '' }}">
                 {{ $c->user->name ?? 'User' }} · {{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}
               </div>
-              <div class="mt-1 inline-block rounded-2xl px-3 py-2 text-sm leading-relaxed break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
+              <div class="mt-1 inline-block rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
                 {{ $c->body }}
                 @if($c->attachment)
                   <div class="mt-2">
@@ -186,7 +186,7 @@
                   @if($ticket->status !== 'CLOSED' && auth()->id() === $c->user_id)
                     <form method="POST" action="{{ route('comment.delete', $c->id) }}" onsubmit="return confirm('Hapus komentar ini?')">
                       @csrf @method('DELETE')
-                      <button class="text-[11px] text-red-500/80 hover:text-red-600 hover:underline">Hapus</button>
+                      <button class="text-[10px] text-red-500/80 hover:text-red-600 hover:underline">Hapus</button>
                     </form>
                   @endif
                 @endauth
@@ -231,7 +231,7 @@
   <div class="absolute inset-0 bg-black/10 backdrop-blur-sm" x-transition.opacity @click="open=false" aria-hidden="true"></div>
 
   {{-- Panel modal --}}
-  <div id="history-panel" class="relative w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-6"
+  <div id="history-panel" class="relative w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-3 sm:p-5 text-xs sm:text-sm"
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -318,7 +318,7 @@
 
   <div class="absolute inset-0 bg-black/10 backdrop-blur-sm" x-transition.opacity @click="open=false" aria-hidden="true"></div>
 
-  <div class="relative w-full max-w-2xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-6"
+  <div class="relative w-full max-w-2xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-3 sm:p-5 text-xs sm:text-sm"
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
        x-transition:enter-end="opacity-100 scale-100 translate-y-0"

@@ -2,7 +2,7 @@
 @section('title','Profil')
 
 @section('content')
-<div class="max-w-xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
+<div class="max-w-xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
   <h2 class="text-lg font-semibold text-gray-800 mb-2">Profil</h2>
   <p class="text-sm text-gray-600 mb-6">Ubah password akun Anda.</p>
 

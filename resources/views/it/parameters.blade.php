@@ -2,7 +2,7 @@
 @section('title','Parameter')
 
 @section('content')
-<div class="max-w-6xl mx-auto p-6">
+<div class="max-w-6xl mx-auto p-3 sm:p-5 text-xs sm:text-sm">
   <h1 class="text-2xl font-semibold mb-4">Parameter</h1>
 
   @if(session('success'))

@@ -2,7 +2,7 @@
 <?php $__env->startSection('title','Tiket Saya'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
+<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
   
   <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4">
     <div>
