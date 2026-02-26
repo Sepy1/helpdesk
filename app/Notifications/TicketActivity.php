@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Services\FcmService;
 
 class TicketActivity extends Notification implements ShouldQueue
@@ -54,9 +55,10 @@ class TicketActivity extends Notification implements ShouldQueue
                 $body = is_string($this->data['body']) ? $this->data['body'] : null;
                 foreach ($tokens as $token) {
                     try {
-                        FcmService::sendToToken($token, $title, $body);
+                        $res = FcmService::sendToToken($token, $title, $body);
+                        Log::info('FCM send result', ['user_id' => $notifiable->id, 'token' => $token, 'result' => $res]);
                     } catch (\Throwable $e) {
-                        // ignore individual token errors
+                        Log::error('FCM send error', ['user_id' => $notifiable->id, 'token' => $token, 'error' => $e->getMessage()]);
                     }
                 }
             }
