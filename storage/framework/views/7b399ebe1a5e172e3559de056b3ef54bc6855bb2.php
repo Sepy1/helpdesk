@@ -2,7 +2,7 @@
 <?php $__env->startSection('title','Buat Tiket'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6 max-w-3xl">
+<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4 sm:p-6 max-w-3xl mx-4 sm:mx-0 text-sm sm:text-base">
   <h2 class="text-lg font-semibold text-gray-800 mb-6">Buat Tiket Helpdesk</h2>
 
   
@@ -16,15 +16,15 @@
     </div>
   <?php endif; ?>
 
-  <form method="POST" action="<?php echo e(route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-5">
+  <form method="POST" action="<?php echo e(route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-4">
     <?php echo csrf_field(); ?>
 
     
    <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-      <select name="category_id" id="category-select"
+            <select name="category_id" id="category-select"
               required
-              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2">
         <option value="">-</option>
         <?php $list = $categories ?? collect(); ?>
         <?php $__currentLoopData = $list; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -44,8 +44,8 @@ unset($__errorArgs, $__bag); ?>
     
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Subkategori</label>
-      <select name="subcategory_id" id="subcategory-select"
-              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+            <select name="subcategory_id" id="subcategory-select"
+              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2">
         <option value="">-</option>
         
       </select>
@@ -62,9 +62,9 @@ unset($__errorArgs, $__bag); ?>
     
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Permintaan</label>
-      <textarea name="deskripsi" rows="5" required
-                class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                placeholder="Jelaskan masalah/permintaan secara singkat dan jelas..."><?php echo e(old('deskripsi')); ?></textarea>
+      <textarea name="deskripsi" rows="4" required
+            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 h-24 sm:h-32 resize-none"
+            placeholder="Jelaskan masalah/permintaan secara singkat dan jelas..."><?php echo e(old('deskripsi')); ?></textarea>
       <?php $__errorArgs = ['deskripsi'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -80,7 +80,7 @@ unset($__errorArgs, $__bag); ?>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
-        <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+        <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2">
           <option value="">-</option>
           <?php $itsList = $its ?? collect(); ?>
           <?php $__currentLoopData = $itsList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -99,9 +99,9 @@ unset($__errorArgs, $__bag); ?>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran (opsional)</label>
-        <input type="file" name="lampiran"
-               class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
-        />
+         <input type="file" name="lampiran"
+           class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
+         />
         <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
         <?php $__errorArgs = ['lampiran'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -115,7 +115,7 @@ unset($__errorArgs, $__bag); ?>
     </div>
 
     <div class="pt-2">
-      <button class="block w-full items-center rounded-lg bg-brand-50 px-10 py-2 text-white hover:bg-indigo-700">
+      <button class="block w-full items-center rounded-lg bg-brand-50 px-6 sm:px-10 py-2 text-white hover:bg-indigo-700">
         Kirim Tiket
       </button>
     </div>
