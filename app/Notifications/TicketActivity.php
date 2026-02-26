@@ -6,6 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\DB;
+use App\Services\FcmService;
 
 class TicketActivity extends Notification implements ShouldQueue
 {
@@ -37,6 +39,31 @@ class TicketActivity extends Notification implements ShouldQueue
     {
         // Expected keys in $data:
         // 'ticket_id','ticket_no','kind' => 'comment'|'history', 'title','body','url','actor_id','actor_name','comment_id'|'history_id','created_at'
+        // send push notifications (FCM) to user's registered devices (if any)
+        try {
+            $tokens = DB::table('user_devices')
+                ->where('user_id', $notifiable->id)
+                ->pluck('fcm_token')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (!empty($tokens)) {
+                $title = $this->data['title'] ?? 'Notifikasi Tiket';
+                $body = is_string($this->data['body']) ? $this->data['body'] : null;
+                foreach ($tokens as $token) {
+                    try {
+                        FcmService::sendToToken($token, $title, $body);
+                    } catch (\Throwable $e) {
+                        // ignore individual token errors
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore push errors so it won't break notification flow
+        }
+
         return $this->data;
     }
 }

@@ -17,6 +17,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketCommentController;
 use App\Http\Controllers\StatsController;
+use App\Services\FcmService;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -29,9 +30,27 @@ use App\Http\Controllers\StatsController;
 |--------------------------------------------------------------------------
 */
 
+
+Route::get('/test-fcm', function () {
+
+    $token = "fHf9Da5-SMuFkBpWMJrZVl:APA91bFUJbGfWhjfQ1cp7Ygljm7W3aAHl5Md3W9ijlla34EW1-EJUNnbm9FOnUaM5YQEIsj2u4RXzpdSxdf13spwo4Wa2LT7PW_ie0_qZhuFGBbmCH68uQc";
+
+    return FcmService::sendToToken(
+        $token,
+        "Test dari Laravel",
+        "Ini notifikasi via HTTP v1"
+    );
+    });
 Route::get('/', fn () => redirect()->route('login'))->name('home');
 
 Route::middleware(['auth'])->group(function () {
+
+  Route::post('/fcm/register', [\App\Http\Controllers\FcmController::class, 'register'])
+        ->name('fcm.register');
+
+    Route::post('/fcm/remove', [\App\Http\Controllers\FcmController::class, 'remove'])
+        ->name('fcm.remove');
+
         // ===== Notifications (server-side)
         Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.readAll');
