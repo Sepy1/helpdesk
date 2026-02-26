@@ -76,13 +76,18 @@ unset($__errorArgs, $__bag); ?>
     </div>
 
     
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran (opsional)</label>
-      <input type="file" name="lampiran"
-             class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
-      />
-      <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
-      <?php $__errorArgs = ['lampiran'];
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
+        <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+          <option value="">-- Pilih Penanggung Jawab TI (opsional) --</option>
+          <?php $itsList = $its ?? collect(); ?>
+          <?php $__currentLoopData = $itsList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <option value="<?php echo e($it->id); ?>" <?php if(old('it_id') == $it->id): echo 'selected'; endif; ?>><?php echo e($it->name); ?></option>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </select>
+        <?php $__errorArgs = ['it_id'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -90,6 +95,23 @@ $message = $__bag->first($__errorArgs[0]); ?> <p class="text-sm text-red-600 mt-
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran (opsional)</label>
+        <input type="file" name="lampiran"
+               class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
+        />
+        <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
+        <?php $__errorArgs = ['lampiran'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="text-sm text-red-600 mt-1"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+      </div>
     </div>
 
     <div class="pt-2">

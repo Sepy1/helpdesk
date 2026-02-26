@@ -13,6 +13,7 @@ use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use App\Mail\TicketSubmitted;
 use Illuminate\Support\Facades\Schema;
 use App\Mail\TicketClosed;
@@ -104,7 +105,10 @@ public function create()
         $q->select('id', 'category_id', 'name')->orderBy('name');
     }])->orderBy('name')->get(['id', 'name']);
 
-    return view('cabang.create_ticket', compact('categories'));
+    // Ambil daftar user TI untuk opsi assign (opsional)
+    $its = User::where('role', 'IT')->orderBy('name')->get(['id', 'name']);
+
+    return view('cabang.create_ticket', compact('categories', 'its'));
 }
 
 /** Simpan tiket baru */
@@ -116,6 +120,7 @@ public function store(Request $request)
     $data = $request->validate([
         'category_id'   => 'required|exists:categories,id',
         'subcategory_id'=> 'nullable|exists:subcategories,id',
+        'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
         'lampiran'      => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
     ], [], [
@@ -171,6 +176,7 @@ public function store(Request $request)
                 'user_id'        => auth()->id(),
                 'category_id'    => $data['category_id'],
                 'subcategory_id' => $data['subcategory_id'] ?? null,
+                'it_id'          => $data['it_id'] ?? null,
                 'deskripsi'      => $data['deskripsi'],
                 'lampiran'       => $lampiranPath,
                 'status'         => 'OPEN',
@@ -245,6 +251,34 @@ public function store(Request $request)
             'ticket_id' => $ticket->id,
             'exception' => $e,
         ]);
+    }
+
+    // Jika tiket di-assign ke IT, kirim notifikasi in-app (database) dan email via Notification
+    try {
+        if (!empty($ticket->it_id)) {
+            $ticket->loadMissing(['user','it']);
+            $itUser = $ticket->it;
+            if ($itUser) {
+                $actor = auth()->user();
+                $url = route('ticket.show', $ticket->id);
+                $payload = [
+                    'ticket_id'  => $ticket->id,
+                    'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                    'kind'       => 'assigned',
+                    'title'      => 'Tiket ditugaskan kepada Anda',
+                    'body'       => ($actor?->name ? $actor->name . ' ' : '') . 'telah menugaskan tiket kepada Anda.',
+                    'url'        => $url,
+                    'actor_id'   => $actor?->id,
+                    'actor_name' => $actor?->name,
+                    'created_at' => now()->toIso8601String(),
+                ];
+
+                $itUser->notify(new \App\Notifications\TicketActivity($payload));
+                Log::info('TicketStore: notifikasi dikirim ke IT yang ditugaskan', ['it_id' => $itUser->id, 'ticket_id' => $ticket->id]);
+            }
+        }
+    } catch (\Throwable $e) {
+        Log::error('TicketStore: gagal mengirim notifikasi ke IT yang ditugaskan: ' . $e->getMessage(), ['ticket_id' => $ticket->id]);
     }
 
     // session flash untuk modal sukses & redirect
@@ -746,6 +780,50 @@ public function store(Request $request)
         return back()->with('success', $isIT ? 'Tindak lanjut disimpan dan tiket ditutup.' : 'Tindak lanjut vendor disimpan.');
     }
 
+    /** Change ticket status (IT) */
+    public function changeStatus(Request $request, Ticket $ticket)
+    {
+        if (Auth::user()->role !== 'IT') abort(403);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(self::STATUS)],
+        ]);
+
+        $old = $ticket->status;
+        $new = $data['status'];
+
+        // discourage closing via this quick status change (use Close Ticket form instead)
+        if ($new === 'CLOSED') {
+            return back()->with('error', 'Untuk menutup tiket, gunakan form Close Ticket agar root cause dan catatan penyelesaian dicatat.');
+        }
+
+        // handle basic transitions
+        if ($new === 'ON_PROGRESS') {
+            $ticket->status = 'ON_PROGRESS';
+            $ticket->it_id = $ticket->it_id ?: Auth::id();
+            $ticket->taken_at = $ticket->taken_at ?: now();
+        } elseif ($new === 'OPEN') {
+            $ticket->status = 'OPEN';
+            $ticket->it_id = null;
+        } else {
+            $ticket->status = $new;
+        }
+
+        $ticket->save();
+
+        $h = \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'status_changed',
+            'note'      => "Status diubah dari {$old} menjadi {$new}",
+            'meta'      => ['from' => $old, 'to' => $new],
+        ]);
+
+        $this->notifyHistory($ticket, $h, 'Status tiket diubah', "Status berubah dari {$old} menjadi {$new}");
+
+        return back()->with('success', 'Status tiket diperbarui.');
+    }
+
     /** Assign ticket ke vendor (role VENDOR) */
     public function assignVendor(Request $request, Ticket $ticket)
     {
@@ -815,7 +893,8 @@ public function store(Request $request)
 
         $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
-        return view('tickets.show', compact('ticket','vendors','rootCauses'));
+        $statuses = self::STATUS;
+        return view('tickets.show', compact('ticket','vendors','rootCauses','statuses'));
     }
 
     /** Tambah komentar */

@@ -338,6 +338,18 @@
       <?php if(auth()->user()->role === 'IT'): ?>
         <div class="space-y-6">
           <div>
+            <h4 class="text-sm font-semibold text-gray-800 mb-2">Ubah Status Tiket</h4>
+            <form method="POST" action="<?php echo e(route('it.ticket.status', $ticket->id)); ?>" class="flex items-center gap-2">
+              <?php echo csrf_field(); ?>
+              <select name="status" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                <?php $__currentLoopData = ($statuses ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($s); ?>" <?php if($ticket->status === $s): echo 'selected'; endif; ?>><?php echo e($s); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              </select>
+              <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Ubah Status</button>
+            </form>
+          </div>
+          <div>
             <h4 class="text-sm font-semibold text-gray-800 mb-2">Assign ke Vendor</h4>
             <form method="POST" action="<?php echo e(route('it.ticket.assign_vendor', $ticket->id)); ?>" class="flex flex-wrap items-center gap-2">
               <?php echo csrf_field(); ?>

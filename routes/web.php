@@ -97,6 +97,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/ticket/{ticket}/eskalasi',        [TicketController::class, 'setEskalasi'])->name('it.ticket.eskalasi');
         Route::post('/it/ticket/{ticket}/vendor-followup', [TicketController::class, 'vendorFollowup'])->name('it.ticket.vendor_followup');
         Route::post('/it/ticket/{ticket}/assign-vendor',   [TicketController::class, 'assignVendor'])->name('it.ticket.assign_vendor');
+        Route::post('/it/ticket/{ticket}/status',          [TicketController::class, 'changeStatus'])->name('it.ticket.status');
         Route::post('/it/ticket/{ticket}/progress', [TicketController::class, 'saveProgress'])
      ->name('it.ticket.progress');
   
