@@ -114,13 +114,27 @@
             <?php endif; ?>
         </div>
 
-        <form method="POST" action="<?php echo e(route('logout')); ?>" class="shrink-0">
-          <?php echo csrf_field(); ?>
-          <button type="submit"
-            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50">
-            Logout
-          </button>
-        </form>
+        <form id="logout-form" method="POST" action="<?php echo e(route('logout')); ?>" class="shrink-0">
+    <?php echo csrf_field(); ?>
+
+    <button type="button"
+        onclick="logoutMobile()"
+        class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50">
+        Logout
+    </button>
+</form>
+
+<script>
+function logoutMobile() {
+    if (typeof AndroidApp !== "undefined") {
+        // Jika di Android WebView
+        AndroidApp.logoutFromApp();
+    } else {
+        // Jika di browser biasa
+        document.getElementById('logout-form').submit();
+    }
+}
+</script>
       <?php endif; ?>
     </nav>
   </div>

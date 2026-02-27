@@ -2,7 +2,7 @@
 <?php $__env->startSection('title','Daftar Tiket'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
+<div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
   
   <div class="flex flex-col gap-3 md:gap-4">
     <div class="flex items-center justify-center text-center">

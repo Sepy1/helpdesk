@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\UserDevice;
+
 
 // ===== IT: user management
 Route::middleware(['auth'])->group(function(){
@@ -29,7 +33,27 @@ use App\Services\FcmService;
 | - Keduanya: lihat detail & komentar, unduh lampiran
 |--------------------------------------------------------------------------
 */
+Route::post('/logout-mobile', function (Request $request) {
 
+    $request->validate([
+        'fcm_token' => 'required'
+    ]);
+
+    $user = $request->user();
+
+    if ($user) {
+        UserDevice::where('user_id', $user->id)
+            ->where('fcm_token', $request->fcm_token)
+            ->delete();
+    }
+
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return response()->json(['success' => true]);
+})->middleware('auth');
 
 Route::get('/test-fcm', function () {
 
