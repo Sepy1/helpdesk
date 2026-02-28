@@ -17,41 +17,43 @@ class FcmService
         return $token['access_token'];
     }
 
-    public static function sendToToken($token, $title, $body)
-    {
-        $accessToken = self::getAccessToken();
+   public static function sendToToken($token, $title, $body, $data = [])
+{
+    $accessToken = self::getAccessToken();
+    $projectId = env('FIREBASE_PROJECT_ID');
 
-        $projectId = env('FIREBASE_PROJECT_ID');
+    $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-        $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+    $message = [
+        "message" => [
+            "token" => $token,
+            "notification" => [
+                "title" => $title,
+                "body" => $body
+            ],
+            "data" => array_merge([
+                "click_action" => "OPEN_TICKET"
+            ], $data)
+        ]
+    ];
 
-        $message = [
-            "message" => [
-                "token" => $token,
-                "notification" => [
-                    "title" => $title,
-                    "body" => $body
-                ]
-            ]
-        ];
+    $headers = [
+        "Authorization: Bearer {$accessToken}",
+        "Content-Type: application/json"
+    ];
 
-        $headers = [
-            "Authorization: Bearer {$accessToken}",
-            "Content-Type: application/json"
-        ];
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($message));
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($message));
+    $result = curl_exec($ch);
+    curl_close($ch);
 
-        $result = curl_exec($ch);
-        curl_close($ch);
-
-        return $result;
-    }
+    return $result;
+}
 
     
 }
