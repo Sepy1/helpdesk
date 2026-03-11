@@ -2,7 +2,7 @@
 <?php $__env->startSection('title','Parameter'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="max-w-6xl mx-auto p-6">
+<div class="max-w-6xl mx-auto p-3 sm:p-5 text-xs sm:text-sm">
   <h1 class="text-2xl font-semibold mb-4">Parameter</h1>
 
   <?php if(session('success')): ?>

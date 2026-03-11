@@ -62,9 +62,10 @@
         <label class="block text-xs font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
         <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
           <option value="">-</option>
-          @php $itsList = $its ?? collect(); @endphp
+          @php $itsList = $its ?? collect(); $itCounts = $itCounts ?? []; @endphp
           @foreach($itsList as $it)
-            <option value="{{ $it->id }}" @selected(old('it_id') == $it->id)>{{ $it->name }}</option>
+            @php $count = $itCounts[$it->id] ?? 0; @endphp
+            <option value="{{ $it->id }}" @selected(old('it_id') == $it->id)>{{ $it->name }} ( {{ $count }} Tiket )</option>
           @endforeach
         </select>
         @error('it_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -75,7 +76,7 @@
          <input type="file" name="lampiran"
            class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
          />
-         <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
+         <p class="text-xs text-gray-500 mt-1">(maks 3 MB), jika lebih dari 1 dokumen, dapat diupload pada komentar tiket setelah tiket dibuat</p>
         @error('lampiran') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
     </div>

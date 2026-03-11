@@ -49,7 +49,7 @@
       <input type="file" name="lampiran"
              class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
       />
-      <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
+      <p class="text-xs text-gray-500 mt-1">(maks 3 MB), jika lebih dari 1 dokumen bisa diupload di komentar setelah tiket dibuat</p>
       @error('lampiran') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
 

@@ -82,9 +82,10 @@ unset($__errorArgs, $__bag); ?>
         <label class="block text-xs font-medium text-gray-700 mb-1">Ditugaskan ke (TI) (opsional)</label>
         <select name="it_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
           <option value="">-</option>
-          <?php $itsList = $its ?? collect(); ?>
+          <?php $itsList = $its ?? collect(); $itCounts = $itCounts ?? []; ?>
           <?php $__currentLoopData = $itsList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <option value="<?php echo e($it->id); ?>" <?php if(old('it_id') == $it->id): echo 'selected'; endif; ?>><?php echo e($it->name); ?></option>
+            <?php $count = $itCounts[$it->id] ?? 0; ?>
+            <option value="<?php echo e($it->id); ?>" <?php if(old('it_id') == $it->id): echo 'selected'; endif; ?>><?php echo e($it->name); ?> ( <?php echo e($count); ?> Tiket )</option>
           <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </select>
         <?php $__errorArgs = ['it_id'];
@@ -102,7 +103,7 @@ unset($__errorArgs, $__bag); ?>
          <input type="file" name="lampiran"
            class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
          />
-         <p class="text-xs text-gray-500 mt-1">jpg, jpeg, png, pdf, doc, docx (maks 3 MB)</p>
+         <p class="text-xs text-gray-500 mt-1">(maks 3 MB), jika lebih dari 1 dokumen, dapat diupload pada komentar tiket setelah tiket dibuat</p>
         <?php $__errorArgs = ['lampiran'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -127,7 +128,7 @@ unset($__errorArgs, $__bag); ?>
 <div x-data="{ open: true }" x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
   <div class="absolute inset-0 bg-black/40" @click="open=false"></div>
 
-  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-6">
+  <div class="relative bg-white w-full max-w-md mx-auto rounded-2xl shadow-xl p-3 sm:p-5 text-xs sm:text-sm">
     <div class="flex items-start gap-3">
       <div class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">✅</div>
       <div class="flex-1">

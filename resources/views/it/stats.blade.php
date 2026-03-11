@@ -138,10 +138,38 @@
 
   const dataLabelCommon = {
     color: '#111827',
-    anchor: 'end',
-    align: 'top',
-    offset: 2,
-    font: { weight: '600', size: 10 },
+    anchor: 'center',
+    align: 'center',
+    offset: 0,
+    font: { weight: '700', size: 14 },
+    backgroundColor: '#ffffff',
+    // keep a very large radius; we'll make the box square via padding so it becomes circular
+    borderRadius: 9999,
+    // compute padding so label box width ~= height => circle
+    padding: function(ctx) {
+      try {
+        const chartCtx = ctx.chart.ctx;
+        const fontObj = ctx.font || { size: 14, weight: '700', family: '' };
+        const fontSize = fontObj.size || 14;
+        chartCtx.save();
+        // set canvas font for measurement
+        chartCtx.font = `${fontObj.weight} ${fontSize}px ${fontObj.family || 'sans-serif'}`;
+        const value = ctx.dataset && ctx.dataset.data ? String(ctx.dataset.data[ctx.dataIndex] ?? '') : String(ctx.formattedValue ?? '');
+        const textWidth = Math.max(0, chartCtx.measureText(value).width || 0);
+        chartCtx.restore();
+
+        // target square side: at least fontSize + vertical padding*2
+        const minSide = fontSize + 12; // heuristic minimum
+        const side = Math.max(minSide, Math.ceil(textWidth + 12));
+
+        // compute horizontal padding so total width ~= side
+        const horiz = Math.max(6, Math.round((side - textWidth) / 2));
+        const vert = Math.max(6, Math.round((side - fontSize) / 2));
+        return { top: vert, bottom: vert, left: horiz, right: horiz };
+      } catch (e) {
+        return 6;
+      }
+    },
     formatter: v => v
   };
 
@@ -190,7 +218,7 @@
     data: { labels: [], datasets: [{ data: [], borderRadius: 6 }] },
     options: {
       indexAxis: 'y',
-      plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, align: 'right', anchor: 'end' } },
+      plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
       scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
     }
   });
@@ -249,7 +277,7 @@
         type: 'bar',
         data: { labels: json.kategoriLabels, datasets: [{ data: json.kategoriData, borderRadius: 6 }] },
         options: {
-          plugins: { legend: { display: false }, datalabels: dataLabelCommon },
+          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
           scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
         }
       });
@@ -267,7 +295,7 @@
         data: { labels: json.topLabels, datasets: [{ data: json.topData, borderRadius: 6 }] },
         options: {
           indexAxis: 'y',
-          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, align: 'right', anchor: 'end' } },
+          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
           scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
         }
       });
@@ -276,7 +304,7 @@
         type: 'bar',
         data: { labels: json.rootLabels, datasets: [{ data: json.rootData, borderRadius: 6 }] },
         options: {
-          plugins: { legend: { display: false }, datalabels: dataLabelCommon },
+          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
           scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
         }
       });

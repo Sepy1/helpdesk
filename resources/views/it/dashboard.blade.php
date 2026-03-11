@@ -19,6 +19,17 @@
                class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" />
       </div>
 
+      {{-- Root Cause filter (di sebelah kanan kolom pencarian) --}}
+      <div class="order-2 md:order-none shrink-0 w-full md:w-[220px]">
+        <label class="sr-only">Root Cause</label>
+        <select name="root_cause" class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500">
+          <option value="">Root Cause</option>
+          @foreach($rootCauses ?? [] as $rc)
+            <option value="{{ $rc }}" @selected(request('root_cause')===$rc)>{{ $rc }}</option>
+          @endforeach
+        </select>
+      </div>
+
       {{-- Status --}}
       <div class="order-4 md:order-none shrink-0 w-full md:w-[150px]">
         <label class="sr-only">Status</label>
@@ -67,12 +78,13 @@
     <table class="min-w-full text-sm table-fixed">
       <colgroup>
         <col style="width:4%">   <!-- # -->
-        <col style="width:12%">  <!-- Dibuat -->
-        <col style="width:18%">  <!-- Nomor -->
-        <col style="width:18%">  <!-- Kategori -->
-        <col style="width:20%">  <!-- Pembuat -->
-        <col style="width:12%">  <!-- Status -->
-        <col style="width:18%">  <!-- IT Handler -->
+        <col style="width:11%">  <!-- Dibuat -->
+        <col style="width:16%">  <!-- Nomor -->
+        <col style="width:14%">  <!-- Kategori -->
+        <col style="width:12%">  <!-- Root Cause -->
+        <col style="width:18%">  <!-- Pembuat -->
+        <col style="width:10%">  <!-- Status -->
+        <col style="width:15%">  <!-- IT Handler -->
         <col style="width:10%">  <!-- Aksi -->
       </colgroup>
       <thead class="bg-gray-50 text-gray-600">
@@ -81,6 +93,7 @@
           <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
+          <th class="py-3 px-4 text-left whitespace-nowrap">Root Cause</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Pembuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Status</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">IT Handler</th>
@@ -96,6 +109,7 @@
             <a href="{{ route('ticket.show',$t->id) }}" class="text-indigo-600 hover:underline block truncate">{{ $t->nomor_tiket }}</a>
           </td>
           <td class="py-3 px-4 truncate">{{ $t->kategori }}</td>
+          <td class="py-3 px-4 truncate">{{ $t->root_cause ?? '-' }}</td>
           <td class="py-3 px-4 truncate">{{ $t->user->name ?? '-' }}</td>
           <td class="py-3 px-4">
             @php
@@ -158,8 +172,9 @@
           <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 {{ $badge }}">{{ $t->status }}</span>
         </div>
 
-        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div class="text-gray-500">Kategori</div><div class="font-medium truncate">{{ $t->kategori }}</div>
+          <div class="text-gray-500">Root Cause</div><div class="font-medium truncate">{{ $t->root_cause ?? '-' }}</div>
           <div class="text-gray-500">Pembuat</div><div class="font-medium truncate">{{ $t->user->name ?? '-' }}</div>
           <div class="text-gray-500">Handler</div><div class="font-medium truncate">{{ $t->it->name ?? '-' }}</div>
         </div>

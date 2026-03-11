@@ -108,7 +108,19 @@ public function create()
     // Ambil daftar user TI untuk opsi assign (opsional)
     $its = User::where('role', 'IT')->orderBy('name')->get(['id', 'name']);
 
-    return view('cabang.create_ticket', compact('categories', 'its'));
+    // Hitung jumlah tiket yang sedang ditangani tiap IT (status selain CLOSED)
+    $itCounts = [];
+    $itIds = $its->pluck('id')->filter()->all();
+    if (!empty($itIds)) {
+        $itCounts = Ticket::whereIn('it_id', $itIds)
+            ->where('status', '!=', 'CLOSED')
+            ->groupBy('it_id')
+            ->select('it_id', DB::raw('count(*) as cnt'))
+            ->pluck('cnt', 'it_id')
+            ->toArray();
+    }
+
+    return view('cabang.create_ticket', compact('categories', 'its', 'itCounts'));
 }
 
 /** Simpan tiket baru */
@@ -373,13 +385,18 @@ public function store(Request $request)
         // filter by created_at date range if provided
         ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
         ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+        // filter by root cause if provided
+        ->when($request->filled('root_cause'), fn($q) => $q->where('root_cause', $request->root_cause))
 
         ->latest()
         ->paginate(10)
         ->withQueryString();
 
+    // root cause options
+    $rootCauses = self::ROOT_CAUSES;
+
     // kirim semua data ke view agar select bisa di-render
-    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId'));
+    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses'));
     }
 
     /** Export daftar tiket sesuai filter ke CSV (dibuka Excel) */
