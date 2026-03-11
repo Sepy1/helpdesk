@@ -342,6 +342,10 @@ public function store(Request $request)
     $hasCategoryId = Schema::hasColumn('tickets', 'category_id');
     $hasSubcategoryId = Schema::hasColumn('tickets', 'subcategory_id');
 
+    // Range tanggal filter (format: YYYY-MM-DD dari form di view)
+    $dateFrom = $request->query('date_from');
+    $dateTo   = $request->query('date_to');
+
     $tickets = Ticket::with(['user','it'])
         // filter status
         ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
@@ -365,6 +369,10 @@ public function store(Request $request)
                    ->orWhere('kategori', 'like', "%{$v}%");
             });
         })
+
+        // filter by created_at date range if provided
+        ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+        ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
 
         ->latest()
         ->paginate(10)

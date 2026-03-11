@@ -70,7 +70,8 @@
         <col style="width:18%">
         <col style="width:18%">
         <col style="width:20%">
-        <col style="width:12%">
+        <col style="width:12%"> <!-- Pembuat -->
+        <col style="width:12%"> <!-- Dibuat -->
         <col style="width:18%">
         <col style="width:10%">
       </colgroup>
@@ -80,6 +81,7 @@
           <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Pembuat</th>
+          <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Status</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">IT Handler</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Aksi</th>
@@ -94,6 +96,7 @@
           </td>
           <td class="py-3 px-4 truncate">{{ $t->kategori }}</td>
           <td class="py-3 px-4 truncate">{{ $t->user->name ?? '-' }}</td>
+          <td class="py-3 px-4 whitespace-nowrap">{{ $t->created_at->format('d M Y H:i') }}</td>
           <td class="py-3 px-4">
             @php
               $badge = match($t->status){
