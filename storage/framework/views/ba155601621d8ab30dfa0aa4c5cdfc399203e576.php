@@ -66,22 +66,22 @@
   <div class="hidden md:block overflow-x-auto">
     <table class="min-w-full text-sm table-fixed">
       <colgroup>
-        <col style="width:4%">
-        <col style="width:18%">
-        <col style="width:18%">
-        <col style="width:20%">
-        <col style="width:12%"> <!-- Pembuat -->
-        <col style="width:12%"> <!-- Dibuat -->
-        <col style="width:18%">
-        <col style="width:10%">
+        <col style="width:4%">   <!-- # -->
+        <col style="width:12%">  <!-- Dibuat -->
+        <col style="width:18%">  <!-- Nomor -->
+        <col style="width:18%">  <!-- Kategori -->
+        <col style="width:20%">  <!-- Pembuat -->
+        <col style="width:12%">  <!-- Status -->
+        <col style="width:18%">  <!-- IT Handler -->
+        <col style="width:10%">  <!-- Aksi -->
       </colgroup>
       <thead class="bg-gray-50 text-gray-600">
         <tr>
           <th class="py-3 px-4 text-left whitespace-nowrap">#</th>
+          <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Pembuat</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Status</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">IT Handler</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Aksi</th>
@@ -91,12 +91,12 @@
         <?php $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <tr class="hover:bg-gray-50">
           <td class="py-3 px-4 text-gray-500"><?php echo e($tickets->firstItem()+$i); ?></td>
+          <td class="py-3 px-4 whitespace-nowrap"><?php echo e(optional($t->created_at)->format('d M Y H:i') ?? '-'); ?></td>
           <td class="py-3 px-4 font-medium truncate">
             <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="text-indigo-600 hover:underline block truncate"><?php echo e($t->nomor_tiket); ?></a>
           </td>
           <td class="py-3 px-4 truncate"><?php echo e($t->kategori); ?></td>
           <td class="py-3 px-4 truncate"><?php echo e($t->user->name ?? '-'); ?></td>
-          <td class="py-3 px-4 whitespace-nowrap"><?php echo e($t->created_at->format('d M Y H:i')); ?></td>
           <td class="py-3 px-4">
             <?php
               $badge = match($t->status){
