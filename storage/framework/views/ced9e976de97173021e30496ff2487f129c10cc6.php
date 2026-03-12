@@ -365,6 +365,25 @@
             </form>
           </div>
 
+          <div>
+            <h4 class="text-sm font-semibold text-gray-800 mb-2">Override Kategori / Subkategori</h4>
+            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="flex items-center gap-2">
+              <?php echo csrf_field(); ?>
+              <select id="override-category-select" name="category_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                <option value="">-- Tidak (kosong) --</option>
+                <?php $__currentLoopData = ($categories ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <option value="<?php echo e($c->id); ?>" <?php if($ticket->category_id == $c->id): echo 'selected'; endif; ?>><?php echo e($c->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              </select>
+              <select id="override-subcategory-select" name="subcategory_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                <option value="">-- Pilih Subkategori --</option>
+              </select>
+              <div class="ml-auto">
+                <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
+              </div>
+            </form>
+          </div>
+
           <?php if(!empty($ticket->vendor_followup)): ?>
             <div class="rounded-xl border border-gray-200 bg-white p-4">
               <div class="text-xs font-semibold text-gray-700">Tindak Lanjut Vendor</div>
@@ -580,6 +599,38 @@
 
       // Mark history seen when opening the history modal (listen to Alpine custom event)
       window.addEventListener('open-history', markHistorySeen);
+
+      // ===== Override kategori/subkategori (IT modal) =====
+      try{
+        const overrideCategorySelect = document.getElementById('override-category-select');
+        const overrideSubcategorySelect = document.getElementById('override-subcategory-select');
+        const categoryBaseUrl = '<?php echo e(url('/categories')); ?>';
+        const initCat = '<?php echo e($ticket->category_id ?? ''); ?>';
+        const initSub = '<?php echo e($ticket->subcategory_id ?? ''); ?>';
+
+        async function loadOverrideSubcategories(categoryId, toSelect = null){
+          if(!overrideSubcategorySelect) return;
+          overrideSubcategorySelect.innerHTML = '<option value="">-- Pilih Subkategori --</option>';
+          if(!categoryId) return;
+          try{
+            const res = await fetch(`${categoryBaseUrl}/${categoryId}/subcategories`);
+            if(!res.ok){ console.error('Gagal memuat subkategori', res.status); return; }
+            const data = await res.json();
+            if(!Array.isArray(data) || data.length === 0){
+              const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— Tidak ada subkategori —'; overrideSubcategorySelect.appendChild(opt); return;
+            }
+            data.forEach(s => {
+              const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; overrideSubcategorySelect.appendChild(opt);
+            });
+            if(toSelect) overrideSubcategorySelect.value = toSelect;
+          }catch(err){ console.error('Error saat memuat subkategori', err); }
+        }
+
+        if(overrideCategorySelect){
+          overrideCategorySelect.addEventListener('change', function(){ loadOverrideSubcategories(this.value, null); });
+        }
+        if(initCat){ loadOverrideSubcategories(initCat, initSub); }
+      }catch(_){ }
     });
   </script>
   <?php $__env->stopPush(); ?>

@@ -919,7 +919,51 @@ public function store(Request $request)
         $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $statuses = self::STATUS;
-        return view('tickets.show', compact('ticket','vendors','rootCauses','statuses'));
+        $categories = \App\Models\Category::orderBy('name')->get(['id','name']);
+        return view('tickets.show', compact('ticket','vendors','rootCauses','statuses','categories'));
+    }
+
+    /** Override kategori / subkategori oleh IT */
+    public function overrideCategory(Request $request, Ticket $ticket)
+    {
+        if (! auth()->check() || auth()->user()->role !== 'IT') {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'category_id' => 'nullable|exists:categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+        ]);
+
+        $old = [
+            'category_id' => $ticket->category_id,
+            'subcategory_id' => $ticket->subcategory_id,
+            'kategori' => $ticket->kategori,
+        ];
+
+        $ticket->category_id = $data['category_id'] ?? null;
+        $ticket->subcategory_id = $data['subcategory_id'] ?? null;
+        // keep legacy `kategori` string in sync (use category name if present)
+        $ticket->kategori = $ticket->category_id ? optional(\App\Models\Category::find($ticket->category_id))->name : $ticket->kategori;
+        $ticket->save();
+
+        $new = [
+            'category_id' => $ticket->category_id,
+            'subcategory_id' => $ticket->subcategory_id,
+            'kategori' => $ticket->kategori,
+        ];
+
+        $h = \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => auth()->id(),
+            'action' => 'category_override',
+            'note' => 'Override kategori/subkategori',
+            'meta' => ['old' => $old, 'new' => $new],
+        ]);
+
+        $this->notifyHistory($ticket, $h, 'Override Kategori', 'Kategori/subkategori diubah oleh IT');
+
+        return back()->with('success', 'Kategori dan subkategori berhasil diperbarui.');
     }
 
     /** Tambah komentar */
