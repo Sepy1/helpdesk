@@ -67,6 +67,10 @@
             <div class="text-xs text-gray-500">Rata-rata Penyelesaian</div>
             <div id="kpiAvg" class="text-lg font-semibold text-gray-800 mt-1">—</div>
           </div>
+          <div class="p-3 bg-gray-50 rounded-lg">
+            <div class="text-xs text-gray-500">Respon Time TI</div>
+            <div id="kpiResponse" class="text-lg font-semibold text-gray-800 mt-1">—</div>
+          </div>
         </div>
 
         <div class="mt-3 text-xs text-gray-500">Tip: ubah periode untuk melihat KPI per bulan.</div>
@@ -243,6 +247,9 @@
       document.getElementById('kpiOpen').textContent   = json.kpi?.open ?? '—';
       document.getElementById('kpiClosed').textContent = json.kpi?.closed ?? '—';
       document.getElementById('kpiAvg').textContent    = json.kpi?.avg_resolution ?? '—';
+      if (document.getElementById('kpiResponse')) {
+        document.getElementById('kpiResponse').textContent = json.kpi?.avg_response ?? '—';
+      }
 
       // update charts
       upsertChart('chartKategori', {

@@ -70,6 +70,12 @@ class StatsController extends Controller
             ->select(DB::raw('AVG(TIMESTAMPDIFF(SECOND, tickets.created_at, tickets.closed_at)) as avg_seconds'))
             ->value('avg_seconds');
 
+        // rata-rata response time (detik) dari created -> taken_at (ON_PROGRESS)
+        $avgResponseSeconds = (clone $tickets)
+            ->whereNotNull('taken_at')
+            ->select(DB::raw('AVG(TIMESTAMPDIFF(SECOND, tickets.created_at, tickets.taken_at)) as avg_response_seconds'))
+            ->value('avg_response_seconds');
+
         // format human readable: jika null -> '-'
         $avgResolutionHuman = '-';
         $avgResolutionHours = null;
@@ -93,6 +99,27 @@ class StatsController extends Controller
                 $days = floor($avgSeconds / 86400);
                 $hours = floor(($avgSeconds % 86400) / 3600);
                 $avgResolutionHuman = $days . ' hari' . ($hours ? ' ' . $hours . ' jam' : '');
+            }
+        }
+
+        // format rata-rata response
+        $avgResponseHuman = '-';
+        $avgResponseHours = null;
+        if ($avgResponseSeconds !== null) {
+            $avgResponseSeconds = (float) $avgResponseSeconds;
+            $avgResponseHours = $avgResponseSeconds / 3600.0;
+            if ($avgResponseSeconds < 60) {
+                $avgResponseHuman = round($avgResponseSeconds) . ' detik';
+            } elseif ($avgResponseSeconds < 3600) {
+                $avgResponseHuman = round($avgResponseSeconds / 60) . ' menit';
+            } elseif ($avgResponseSeconds < 86400) {
+                $hours = floor($avgResponseSeconds / 3600);
+                $mins  = floor(($avgResponseSeconds % 3600) / 60);
+                $avgResponseHuman = $hours . ' jam' . ($mins ? ' ' . $mins . ' mnt' : '');
+            } else {
+                $days = floor($avgResponseSeconds / 86400);
+                $hours = floor(($avgResponseSeconds % 86400) / 3600);
+                $avgResponseHuman = $days . ' hari' . ($hours ? ' ' . $hours . ' jam' : '');
             }
         }
 
@@ -162,6 +189,8 @@ class StatsController extends Controller
                 'avg_resolution' => $avgResolutionHuman,
                 // tambahan numeric (jam) bila butuh export/komputasi lebih lanjut
                 'avg_resolution_hours' => $avgResolutionHours !== null ? round($avgResolutionHours, 2) : null,
+                'avg_response' => $avgResponseHuman,
+                'avg_response_hours' => $avgResponseHours !== null ? round($avgResponseHours, 2) : null,
             ],
             'kategoriLabels' => $kategoriLabels,
             'kategoriData'   => $kategoriData,
