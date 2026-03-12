@@ -364,19 +364,25 @@
 
           <div>
             <h4 class="text-sm font-semibold text-gray-800 mb-2">Override Kategori / Subkategori</h4>
-            <form method="POST" action="{{ route('it.ticket.override_category', $ticket->id) }}" class="flex items-center gap-2">
+            <form method="POST" action="{{ route('it.ticket.override_category', $ticket->id) }}" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               @csrf
-              <select id="override-category-select" name="category_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <option value="">-- Tidak (kosong) --</option>
-                @foreach(($categories ?? collect()) as $c)
-                  <option value="{{ $c->id }}" @selected($ticket->category_id == $c->id)>{{ $c->name }}</option>
-                @endforeach
-              </select>
-              <select id="override-subcategory-select" name="subcategory_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <option value="">-- Pilih Subkategori --</option>
-              </select>
-              <div class="ml-auto">
-                <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
+              <div class="w-full sm:w-auto">
+                <select id="override-category-select" name="category_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                  <option value="">-- Tidak (kosong) --</option>
+                  @foreach(($categories ?? collect()) as $c)
+                    <option value="{{ $c->id }}" @selected($ticket->category_id == $c->id)>{{ $c->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+
+              <div class="w-full sm:w-auto">
+                <select id="override-subcategory-select" name="subcategory_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                  <option value="">-- Pilih Subkategori --</option>
+                </select>
+              </div>
+
+              <div class="w-full sm:w-auto sm:ml-auto">
+                <button type="submit" class="w-full sm:w-auto rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
               </div>
             </form>
           </div>

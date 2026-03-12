@@ -367,19 +367,25 @@
 
           <div>
             <h4 class="text-sm font-semibold text-gray-800 mb-2">Override Kategori / Subkategori</h4>
-            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="flex items-center gap-2">
+            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <?php echo csrf_field(); ?>
-              <select id="override-category-select" name="category_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <option value="">-- Tidak (kosong) --</option>
-                <?php $__currentLoopData = ($categories ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <option value="<?php echo e($c->id); ?>" <?php if($ticket->category_id == $c->id): echo 'selected'; endif; ?>><?php echo e($c->name); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-              </select>
-              <select id="override-subcategory-select" name="subcategory_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <option value="">-- Pilih Subkategori --</option>
-              </select>
-              <div class="ml-auto">
-                <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
+              <div class="w-full sm:w-auto">
+                <select id="override-category-select" name="category_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                  <option value="">-- Tidak (kosong) --</option>
+                  <?php $__currentLoopData = ($categories ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($c->id); ?>" <?php if($ticket->category_id == $c->id): echo 'selected'; endif; ?>><?php echo e($c->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+              </div>
+
+              <div class="w-full sm:w-auto">
+                <select id="override-subcategory-select" name="subcategory_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                  <option value="">-- Pilih Subkategori --</option>
+                </select>
+              </div>
+
+              <div class="w-full sm:w-auto sm:ml-auto">
+                <button type="submit" class="w-full sm:w-auto rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
               </div>
             </form>
           </div>
