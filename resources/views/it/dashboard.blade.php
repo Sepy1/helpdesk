@@ -127,17 +127,17 @@
           <td class="py-3 px-4 truncate">{{ $t->it->name ?? '-' }}</td>
           <td class="py-3 px-4 space-x-1 whitespace-nowrap">
             <a href="{{ route('ticket.show',$t->id) }}" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
-            @if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id))
+            @if($t->status !== 'CLOSED')
               <form method="POST" class="inline" action="{{ route('it.ticket.take',$t->id) }}">@csrf
                 <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Take</button>
               </form>
-            @elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
-              <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
-                <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
-              </form>
-              
+              @if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
+                <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
+                  <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
+                </form>
+              @endif
             @else
-              <span class="text-xs text-gray-500">Sudah diambil</span>
+              <span class="text-xs text-gray-500">Tutup</span>
             @endif
           </td>
         </tr>
@@ -182,19 +182,20 @@
         <div class="mt-3 flex flex-wrap gap-2">
           <a href="{{ route('ticket.show',$t->id) }}" class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-2 text-tulisan-50 hover:bg-gray-800">Detail</a>
 
-          @if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id))
+          @if($t->status !== 'CLOSED')
             <form method="POST" action="{{ route('it.ticket.take',$t->id) }}">@csrf
               <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 w-full sm:w-auto">Ambil Alih</button>
             </form>
-          @elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
-            <form method="POST" action="{{ route('it.ticket.release',$t->id) }}">@csrf
-              <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
-            </form>
-            <form method="POST" action="{{ route('it.ticket.close',$t->id) }}">@csrf
-              <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>
-            </form>
+            @if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
+              <form method="POST" action="{{ route('it.ticket.release',$t->id) }}">@csrf
+                <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
+              </form>
+              <form method="POST" action="{{ route('it.ticket.close',$t->id) }}">@csrf
+                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>
+              </form>
+            @endif
           @else
-            <span class="text-xs text-gray-500 self-center">Sudah diambil</span>
+            <span class="text-xs text-gray-500 self-center">Tutup</span>
           @endif
         </div>
       </div>

@@ -127,17 +127,17 @@
           <td class="py-3 px-4 truncate"><?php echo e($t->it->name ?? '-'); ?></td>
           <td class="py-3 px-4 space-x-1 whitespace-nowrap">
             <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
-            <?php if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id)): ?>
+            <?php if($t->status !== 'CLOSED'): ?>
               <form method="POST" class="inline" action="<?php echo e(route('it.ticket.take',$t->id)); ?>"><?php echo csrf_field(); ?>
                 <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Take</button>
               </form>
-            <?php elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
-              <form method="POST" class="inline" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
-                <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
-              </form>
-              
+              <?php if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
+                <form method="POST" class="inline" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
+                  <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
+                </form>
+              <?php endif; ?>
             <?php else: ?>
-              <span class="text-xs text-gray-500">Sudah diambil</span>
+              <span class="text-xs text-gray-500">Tutup</span>
             <?php endif; ?>
           </td>
         </tr>
@@ -184,19 +184,20 @@
         <div class="mt-3 flex flex-wrap gap-2">
           <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-2 text-tulisan-50 hover:bg-gray-800">Detail</a>
 
-          <?php if($t->status==='OPEN' || ($t->status!=='CLOSED' && !$t->it_id)): ?>
+          <?php if($t->status !== 'CLOSED'): ?>
             <form method="POST" action="<?php echo e(route('it.ticket.take',$t->id)); ?>"><?php echo csrf_field(); ?>
               <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 w-full sm:w-auto">Ambil Alih</button>
             </form>
-          <?php elseif($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
-            <form method="POST" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
-              <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
-            </form>
-            <form method="POST" action="<?php echo e(route('it.ticket.close',$t->id)); ?>"><?php echo csrf_field(); ?>
-              <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>
-            </form>
+            <?php if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
+              <form method="POST" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
+                <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
+              </form>
+              <form method="POST" action="<?php echo e(route('it.ticket.close',$t->id)); ?>"><?php echo csrf_field(); ?>
+                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>
+              </form>
+            <?php endif; ?>
           <?php else: ?>
-            <span class="text-xs text-gray-500 self-center">Sudah diambil</span>
+            <span class="text-xs text-gray-500 self-center">Tutup</span>
           <?php endif; ?>
         </div>
       </div>
