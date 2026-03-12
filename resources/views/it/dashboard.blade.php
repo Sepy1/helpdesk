@@ -137,7 +137,6 @@
                 </form>
               @endif
             @else
-              <span class="text-xs text-gray-500">Tutup</span>
             @endif
           </td>
         </tr>
@@ -195,7 +194,6 @@
               </form>
             @endif
           @else
-            <span class="text-xs text-gray-500 self-center">Tutup</span>
           @endif
         </div>
       </div>

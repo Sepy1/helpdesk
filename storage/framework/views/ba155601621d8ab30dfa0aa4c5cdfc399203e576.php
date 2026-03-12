@@ -137,7 +137,6 @@
                 </form>
               <?php endif; ?>
             <?php else: ?>
-              <span class="text-xs text-gray-500">Tutup</span>
             <?php endif; ?>
           </td>
         </tr>
@@ -197,7 +196,6 @@
               </form>
             <?php endif; ?>
           <?php else: ?>
-            <span class="text-xs text-gray-500 self-center">Tutup</span>
           <?php endif; ?>
         </div>
       </div>
