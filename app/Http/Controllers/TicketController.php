@@ -916,6 +916,26 @@ public function store(Request $request)
             abort(403);
         }
 
+        // Update "seen" timestamps: mark reporter or IT as having seen the ticket
+        try {
+            $user = Auth::user();
+            $save = false;
+            if ($user) {
+                if ($user->role === 'CABANG' && $ticket->user_id === $user->id) {
+                    $ticket->seen_by_reporter_at = now();
+                    $save = true;
+                }
+                if ($user->role === 'IT') {
+                    $ticket->seen_by_it_at = now();
+                    $save = true;
+                }
+                if ($save) { $ticket->save(); }
+            }
+        } catch (\Throwable $e) {
+            // do not block page render for non-critical update
+            \Log::warning('Failed to update ticket seen timestamps: '.$e->getMessage());
+        }
+
         $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $statuses = self::STATUS;

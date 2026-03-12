@@ -170,8 +170,24 @@
           @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
           <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">
             <div class="max-w-[85%] sm:max-w-[78%]">
+              @php
+                $seenByReporter = isset($ticket->seen_by_reporter_at) && $ticket->seen_by_reporter_at && $c->created_at && $ticket->seen_by_reporter_at->gte($c->created_at);
+                $seenByIt = isset($ticket->seen_by_it_at) && $ticket->seen_by_it_at && $c->created_at && $ticket->seen_by_it_at->gte($c->created_at);
+              @endphp
               <div class="text-[10px] text-gray-500 leading-4 {{ $mine ? 'text-right' : '' }}">
                 {{ $c->user->name ?? 'User' }} · {{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}
+                @if($seenByReporter)
+                  <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 text-emerald-600 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" title="Dibaca oleh pelapor">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                @endif
+                @if($seenByIt)
+                  <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 text-sky-600 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" title="Dibaca oleh IT">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                @endif
               </div>
               <div class="mt-1 inline-block rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
                 {{ $c->body }}

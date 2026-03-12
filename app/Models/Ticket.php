@@ -24,6 +24,8 @@ class Ticket extends Model
         'closed_at'          => 'datetime',
         'root_cause',
         'closed_note',
+        'seen_by_reporter_at' => 'datetime',
+        'seen_by_it_at' => 'datetime',
 ];
 
     public function user() {        // pembuat (cabang)
