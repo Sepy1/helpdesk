@@ -92,8 +92,8 @@
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
           @if($ticket->lampiran)
-            <a href="{{ route('ticket.download',$ticket->id) }}" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600" download data-noloader="1">
-              Unduh lampiran
+            <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" class="attachment-view inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">
+              Lihat lampiran
             </a>
           @else
             <div class="text-xs text-gray-400">-</div>
@@ -193,7 +193,7 @@
                 {{ $c->body }}
                 @if($c->attachment)
                   <div class="mt-2">
-                    <a href="{{ route('comment.download', $c->id) }}" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}" download data-noloader="1">Lampiran</a>
+                    <a href="{{ route('comment.download', $c->id) }}?inline=1" class="attachment-view inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
                   </div>
                 @endif
               </div>
@@ -454,6 +454,22 @@
   </div>
 </div>
 {{-- =================== /MODAL UPDATE ====================== --}}
+  {{-- ===================== ATTACHMENT VIEWER MODAL ===================== --}}
+  <div id="attachment-modal" class="fixed inset-0 z-[130] hidden items-center justify-center">
+    <div id="attachment-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div class="relative z-10 w-full max-w-4xl mx-4">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="flex items-center justify-end p-2">
+          <button id="attachment-close" class="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100" aria-label="Tutup">✕</button>
+        </div>
+        <div id="attachment-content" class="p-3 sm:p-5">
+          <iframe id="attachment-iframe" class="w-full h-[70vh] hidden" frameborder="0" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+          <img id="attachment-img" class="max-h-[70vh] mx-auto hidden" alt="Lampiran" />
+          <div id="attachment-fallback" class="text-sm text-gray-600 hidden">Tidak dapat menampilkan file ini. <a id="attachment-open-new" class="text-indigo-600 underline">Buka di tab baru</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
   @push('scripts')
   <script>
     window.downloadHistoryPanel = async function(){
@@ -649,7 +665,64 @@
           overrideCategorySelect.addEventListener('change', function(){ loadOverrideSubcategories(this.value, null); });
         }
         if(initCat){ loadOverrideSubcategories(initCat, initSub); }
-      }catch(_){ }
+        }catch(_){ }
+
+        // ===== Attachment modal viewer =====
+        try{
+          const modal = document.getElementById('attachment-modal');
+          const backdrop = document.getElementById('attachment-backdrop');
+          const closeBtn = document.getElementById('attachment-close');
+          const iframe = document.getElementById('attachment-iframe');
+          const img = document.getElementById('attachment-img');
+          const fallback = document.getElementById('attachment-fallback');
+          const openNew = document.getElementById('attachment-open-new');
+
+          function showModal(url, type){
+            if(!modal) return;
+            iframe.classList.add('hidden'); iframe.src = '';
+            img.classList.add('hidden'); img.src = '';
+            fallback.classList.add('hidden'); if(openNew) openNew.href = url;
+
+            if(type === 'image'){
+              img.src = url; img.classList.remove('hidden');
+            } else if(type === 'pdf'){
+              iframe.src = url; iframe.classList.remove('hidden');
+            } else {
+              iframe.src = url; iframe.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+          }
+
+          function hideModal(){
+            if(!modal) return;
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+            if(iframe){ iframe.src = ''; }
+            if(img){ img.src = ''; }
+          }
+
+          document.addEventListener('click', function(e){
+            const a = e.target.closest && e.target.closest('a.attachment-view');
+            if(!a) return;
+            e.preventDefault();
+            const url = a.href;
+            const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+            const imageExt = ['png','jpg','jpeg','gif','webp','svg','bmp'];
+            if(imageExt.includes(ext)){
+              showModal(url, 'image');
+              return;
+            }
+            if(ext === 'pdf'){
+              showModal(url, 'pdf');
+              return;
+            }
+            showModal(url, 'other');
+          });
+
+          if(backdrop) backdrop.addEventListener('click', hideModal);
+          if(closeBtn) closeBtn.addEventListener('click', hideModal);
+          document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ hideModal(); } });
+        }catch(err){ console.error('Attachment viewer init failed', err); }
     });
   </script>
   @endpush

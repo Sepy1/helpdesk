@@ -2,7 +2,7 @@
 <?php $__env->startSection('title','Tambah User'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-6">
+<div class="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
   <h2 class="text-lg font-semibold text-gray-800 mb-4">Tambah User</h2>
 
   <form method="POST" action="<?php echo e(route('it.users.store')); ?>" class="space-y-4">

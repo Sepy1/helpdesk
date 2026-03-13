@@ -1068,7 +1068,13 @@ public function downloadCommentAttachment(TicketComment $comment)
     }
 
     // file tersimpan di disk 'public'
-    return Storage::disk('public')->download($comment->attachment);
+    $path = $comment->attachment;
+    if (request()->query('inline')) {
+        $full = Storage::disk('public')->path($path);
+        return response()->file($full);
+    }
+
+    return Storage::disk('public')->download($path);
 }
 
 
@@ -1081,7 +1087,13 @@ public function downloadCommentAttachment(TicketComment $comment)
             abort(403);
         }
 
-        return Storage::disk('public')->download($ticket->lampiran);
+        $path = $ticket->lampiran;
+        if (request()->query('inline')) {
+            $full = Storage::disk('public')->path($path);
+            return response()->file($full);
+        }
+
+        return Storage::disk('public')->download($path);
     }
 
     /* =========================
