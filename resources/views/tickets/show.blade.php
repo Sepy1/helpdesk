@@ -92,7 +92,7 @@
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
           @if($ticket->lampiran)
-            <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">
+            <a href="{{ route('ticket.view',$ticket->id) }}" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">
               Lihat lampiran
             </a>
           @else
@@ -193,7 +193,7 @@
                 {{ $c->body }}
                 @if($c->attachment)
                   <div class="mt-2">
-                    <a href="{{ route('comment.download', $c->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
+                    <a href="{{ route('comment.view', $c->id) }}" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
                   </div>
                 @endif
               </div>

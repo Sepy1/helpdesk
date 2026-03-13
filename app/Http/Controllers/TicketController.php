@@ -1096,6 +1096,45 @@ public function downloadCommentAttachment(TicketComment $comment)
         return Storage::disk('public')->download($path);
     }
 
+    /** Lihat lampiran komentar (responsive wrapper) */
+    public function viewCommentAttachment(TicketComment $comment)
+    {
+        $user = auth()->user();
+        $isOwnerComment = $user && $user->id === $comment->user_id;
+        $isTicketOwner  = $user && $user->id === $comment->ticket->user_id;
+        $isIT           = $user && $user->role === 'IT';
+
+        if (! ($isOwnerComment || $isTicketOwner || $isIT)) {
+            abort(403);
+        }
+
+        if (! $comment->attachment) {
+            abort(404);
+        }
+
+        $path = $comment->attachment;
+        $url = Storage::disk('public')->url($path);
+        $mime = Storage::disk('public')->mimeType($path) ?? 'application/octet-stream';
+
+        return view('attachments.preview', ['url' => $url, 'mime' => $mime]);
+    }
+
+    /** Lihat lampiran tiket (responsive wrapper) */
+    public function viewAttachment(Ticket $ticket)
+    {
+        if (! $ticket->lampiran) abort(404);
+
+        if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $path = $ticket->lampiran;
+        $url = Storage::disk('public')->url($path);
+        $mime = Storage::disk('public')->mimeType($path) ?? 'application/octet-stream';
+
+        return view('attachments.preview', ['url' => $url, 'mime' => $mime]);
+    }
+
     /* =========================
      * STATISTIK IT
      * ========================= */
