@@ -99,7 +99,6 @@ Route::middleware(['auth'])->group(function () {
     // ===== Shared: detail, komentar, lampiran =====
     
 Route::get('/ticket/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
-Route::get('/ticket/{ticket}/view', [TicketController::class, 'viewAttachment'])->name('ticket.view');
 Route::get('/ticket/{ticket}/download', [TicketController::class, 'downloadAttachment'])->name('ticket.download');
 
 // Komentar tiket
@@ -110,9 +109,6 @@ Route::delete('/comment/{comment}', [TicketController::class, 'deleteComment'])
 
 Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'downloadCommentAttachment'])
     ->name('comment.download');
-
-Route::get('/ticket/comment/{comment}/view', [TicketController::class, 'viewCommentAttachment'])
-    ->name('comment.view');
 
     
     // ===== CABANG =====
