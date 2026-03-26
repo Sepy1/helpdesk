@@ -1053,6 +1053,49 @@ public function store(Request $request)
     }
 
     \App\Models\TicketComment::create($data);
+    // Jika yang mengomentari adalah IT dan tiket masih OPEN, ubah status ke ON_PROGRESS
+    try {
+        $actor = $request->user();
+        if ($actor && ($actor->role === 'IT') && $ticket->status === 'OPEN') {
+            $ticket->status = 'ON_PROGRESS';
+            $ticket->it_id = $ticket->it_id ?: $actor->id;
+            $ticket->taken_at = $ticket->taken_at ?: now();
+            $ticket->save();
+
+            $h = \App\Models\TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => $actor->id,
+                'action'    => 'taken',
+                'note'      => 'Tiket diambil oleh IT (komentar)'
+            ]);
+
+            $recipients = collect([$ticket->user, $ticket->it, $ticket->vendor])
+                ->filter()
+                ->unique('id')
+                ->reject(fn($u) => $actor && $u->id === $actor->id);
+
+            $url = route('ticket.show', $ticket->id) . '#h-' . $h->id;
+            $payload = [
+                'ticket_id'  => $ticket->id,
+                'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                'kind'       => 'history',
+                'title'      => 'Tiket diambil oleh IT',
+                'body'       => 'Tiket sedang ditangani oleh ' . ($actor->name ?? 'IT'),
+                'url'        => $url,
+                'actor_id'   => $actor?->id,
+                'actor_name' => $actor?->name,
+                'history_id' => $h->id,
+                'action'     => $h->action,
+                'created_at' => now()->toIso8601String(),
+            ];
+
+            foreach ($recipients as $user) {
+                $user->notify(new \App\Notifications\TicketActivity($payload));
+            }
+        }
+    } catch (\Throwable $e) {
+        // ignore
+    }
 
     return back()->with('success','Komentar berhasil ditambahkan');
     }
@@ -1091,6 +1134,50 @@ public function store(Request $request)
         'comment' => $request->comment,
         'attachment' => $path,
     ]);
+
+    // Jika yang mengomentari adalah IT dan tiket masih OPEN, ubah status ke ON_PROGRESS
+    try {
+        $actor = auth()->user();
+        if ($actor && ($actor->role === 'IT') && $ticket->status === 'OPEN') {
+            $ticket->status = 'ON_PROGRESS';
+            $ticket->it_id = $ticket->it_id ?: $actor->id;
+            $ticket->taken_at = $ticket->taken_at ?: now();
+            $ticket->save();
+
+            $h = \App\Models\TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => $actor->id,
+                'action'    => 'taken',
+                'note'      => 'Tiket diambil oleh IT (komentar)'
+            ]);
+
+            $recipients = collect([$ticket->user, $ticket->it, $ticket->vendor])
+                ->filter()
+                ->unique('id')
+                ->reject(fn($u) => $actor && $u->id === $actor->id);
+
+            $url = route('ticket.show', $ticket->id) . '#h-' . $h->id;
+            $payload = [
+                'ticket_id'  => $ticket->id,
+                'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                'kind'       => 'history',
+                'title'      => 'Tiket diambil oleh IT',
+                'body'       => 'Tiket sedang ditangani oleh ' . ($actor->name ?? 'IT'),
+                'url'        => $url,
+                'actor_id'   => $actor?->id,
+                'actor_name' => $actor?->name,
+                'history_id' => $h->id,
+                'action'     => $h->action,
+                'created_at' => now()->toIso8601String(),
+            ];
+
+            foreach ($recipients as $user) {
+                $user->notify(new \App\Notifications\TicketActivity($payload));
+            }
+        }
+    } catch (\Throwable $e) {
+        // ignore
+    }
 
     return back()->with('success', 'Komentar berhasil ditambahkan.');
 }
