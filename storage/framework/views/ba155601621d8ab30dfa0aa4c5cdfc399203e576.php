@@ -73,158 +73,46 @@
     </form>
   </div>
 
-  
-  <div class="hidden md:block overflow-x-auto">
-    <table class="min-w-full text-sm table-fixed">
-      <colgroup>
-        <col style="width:4%">   <!-- # -->
-        <col style="width:11%">  <!-- Dibuat -->
-        <col style="width:16%">  <!-- Nomor -->
-        <col style="width:14%">  <!-- Kategori -->
-        <col style="width:12%">  <!-- Root Cause -->
-        <col style="width:18%">  <!-- Pembuat -->
-        <col style="width:10%">  <!-- Status -->
-        <col style="width:15%">  <!-- IT Handler -->
-        <col style="width:10%">  <!-- Aksi -->
-      </colgroup>
-      <thead class="bg-gray-50 text-gray-600">
-        <tr>
-          <th class="py-3 px-4 text-left whitespace-nowrap">#</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Root Cause</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Pembuat</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Status</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">IT Handler</th>
-          <th class="py-3 px-4 text-left whitespace-nowrap">Aksi</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <?php $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <tr class="hover:bg-gray-50">
-          <td class="py-3 px-4 text-gray-500"><?php echo e($tickets->firstItem()+$i); ?></td>
-          <td class="py-3 px-4 whitespace-nowrap"><?php echo e(optional($t->created_at)->format('d M Y H:i') ?? '-'); ?></td>
-          <td class="py-3 px-4 font-medium truncate">
-            <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="text-indigo-600 hover:underline block truncate"><?php echo e($t->nomor_tiket); ?></a>
-          </td>
-          <td class="py-3 px-4 truncate"><?php echo e($t->kategori); ?></td>
-          <td class="py-3 px-4 truncate"><?php echo e($t->root_cause ?? '-'); ?></td>
-          <td class="py-3 px-4 truncate"><?php echo e($t->user->name ?? '-'); ?></td>
-          <td class="py-3 px-4">
-            <?php
-              $badge = match($t->status){
-                'OPEN'             => 'bg-red-100 text-red-800 ring-red-200',
-                'ON_PROGRESS'      => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
-                'ESKALASI_VENDOR'  => 'bg-purple-100 text-purple-800 ring-purple-200',
-                'VENDOR_RESOLVED'  => 'bg-black text-white ring-black',
-                'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-                default            => 'bg-gray-100 text-gray-700 ring-gray-200',
-              };
-            ?>
-            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 <?php echo e($badge); ?>"><?php echo e($t->status); ?></span>
-          </td>
-          <td class="py-3 px-4 truncate"><?php echo e($t->it->name ?? '-'); ?></td>
-          <td class="py-3 px-4 space-x-1 whitespace-nowrap">
-            <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
-            <?php if($t->status !== 'CLOSED'): ?>
-              <form method="POST" class="inline" action="<?php echo e(route('it.ticket.take',$t->id)); ?>"><?php echo csrf_field(); ?>
-                <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Take</button>
-              </form>
-              <?php if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
-                <form method="POST" class="inline" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
-                  <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
-                </form>
-              <?php endif; ?>
-            <?php else: ?>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-      </tbody>
-    </table>
-  </div>
-   
-  <div class="block md:hidden space-y-3">
-    <?php $__empty_1 = true; $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="font-semibold text-indigo-600 hover:underline">
-              <?php echo e($t->nomor_tiket); ?>
-
-            </a>
-            <div class="mt-1 text-xs text-gray-500">
-              Dibuat: <?php echo e($t->created_at->format('d M Y H:i')); ?>
-
-            </div>
-          </div>
-
-          <?php
-            $badge = match($t->status){
-              'OPEN'             => 'bg-red-100 text-red-800 ring-red-200',
-              'ON_PROGRESS'      => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
-              'ESKALASI_VENDOR'  => 'bg-purple-100 text-purple-800 ring-purple-200',
-              'VENDOR_RESOLVED'  => 'bg-black text-white ring-black',
-              'CLOSED'           => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-              default            => 'bg-gray-100 text-gray-700 ring-gray-200',
-            };
-          ?>
-          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 <?php echo e($badge); ?>"><?php echo e($t->status); ?></span>
-        </div>
-
-          <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div class="text-gray-500">Kategori</div><div class="font-medium truncate"><?php echo e($t->kategori); ?></div>
-          <div class="text-gray-500">Root Cause</div><div class="font-medium truncate"><?php echo e($t->root_cause ?? '-'); ?></div>
-          <div class="text-gray-500">Pembuat</div><div class="font-medium truncate"><?php echo e($t->user->name ?? '-'); ?></div>
-          <div class="text-gray-500">Handler</div><div class="font-medium truncate"><?php echo e($t->it->name ?? '-'); ?></div>
-        </div>
-
-        <div class="mt-3 flex flex-wrap gap-2">
-          <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-2 text-tulisan-50 hover:bg-gray-800">Detail</a>
-
-          <?php if($t->status !== 'CLOSED'): ?>
-            <form method="POST" action="<?php echo e(route('it.ticket.take',$t->id)); ?>"><?php echo csrf_field(); ?>
-              <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 w-full sm:w-auto">Ambil Alih</button>
-            </form>
-            <?php if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS'): ?>
-              <form method="POST" action="<?php echo e(route('it.ticket.release',$t->id)); ?>"><?php echo csrf_field(); ?>
-                <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
-              </form>
-              <form method="POST" action="<?php echo e(route('it.ticket.close',$t->id)); ?>"><?php echo csrf_field(); ?>
-                <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>
-              </form>
-            <?php endif; ?>
-          <?php else: ?>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-      <div class="text-center text-gray-500 py-8">Tidak ada tiket.</div>
-    <?php endif; ?>
-  </div>
-
-<div class="mt-4">
-  <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-3">
-    
-    <div class="text-sm text-gray-500 text-center md:text-left min-w-0">
-      Tiket <?php echo e($tickets->firstItem()); ?> sampai <?php echo e($tickets->lastItem()); ?> dari total <?php echo e($tickets->total()); ?> Tiket
-    </div>
-
-    
-    <div class="flex justify-center">
-      <?php echo $tickets->appends(request()->except('page'))->links('pagination::tailwind'); ?>
-
-    </div>
-
-    
-    <div></div>
-  </div>
-</div>
+  <?php echo $__env->make('it._tickets', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
 
 <script>
 // Tidak perlu JS untuk subkategori; pencarian digabung dalam kolom q
+</script>
+<script>
+  // Polling: fetch tickets fragment and replace content if changed
+  (function(){
+    const intervalMs = 10000; // 10s
+    const fragmentUrl = '<?php echo e(route("it.tickets.fragment")); ?>' + window.location.search;
+    async function fetchFragment(){
+      try{
+        const res = await fetch(fragmentUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if(!res.ok) return;
+        const html = await res.text();
+        // create a container to parse returned HTML
+        const tmp = document.createElement('div'); tmp.innerHTML = html;
+        const newDesktop = tmp.querySelector('#tickets-fragment');
+        const newMobile = tmp.querySelector('#tickets-fragment-mobile');
+        const newPag = tmp.querySelector('#tickets-fragment-pagination');
+        if(newDesktop){
+          const oldDesktop = document.querySelector('#tickets-fragment');
+          oldDesktop?.replaceWith(newDesktop);
+        }
+        if(newMobile){
+          const oldMobile = document.querySelector('#tickets-fragment-mobile');
+          oldMobile?.replaceWith(newMobile);
+        }
+        if(newPag){
+          const oldPag = document.querySelector('#tickets-fragment-pagination');
+          oldPag?.replaceWith(newPag);
+        }
+      }catch(e){
+        // ignore errors
+      }
+    }
+    // start polling after small delay
+    setTimeout(() => { fetchFragment(); setInterval(fetchFragment, intervalMs); }, 3000);
+  })();
 </script>
 <?php $__env->stopSection(); ?>
 

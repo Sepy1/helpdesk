@@ -399,6 +399,53 @@ public function store(Request $request)
     return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses'));
     }
 
+    /**
+     * Return rendered HTML fragment for the tickets list (used by AJAX polling)
+     */
+    public function fragment(Request $request)
+    {
+        $selectedCategoryId = $request->query('category_id') ?? null;
+        $subcategories = collect();
+        if ($selectedCategoryId) {
+            $subcategories = Subcategory::where('category_id', $selectedCategoryId)
+                            ->orderBy('name')
+                            ->get(['id','name']);
+        }
+
+        $hasCategoryId = Schema::hasColumn('tickets', 'category_id');
+        $hasSubcategoryId = Schema::hasColumn('tickets', 'subcategory_id');
+
+        $dateFrom = $request->query('date_from');
+        $dateTo   = $request->query('date_to');
+
+        $tickets = Ticket::with(['user','it'])
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($hasCategoryId && $request->filled('category_id'),
+                   fn($q) => $q->where('category_id', $request->category_id))
+            ->when(!$hasCategoryId && $request->filled('kategori'),
+                   fn($q) => $q->where('kategori', $request->kategori))
+            ->when($hasSubcategoryId && $request->filled('subcategory_id'),
+                   fn($q) => $q->where('subcategory_id', $request->subcategory_id))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $v = trim($request->q);
+                $q->where(function ($qq) use ($v) {
+                    $qq->where('nomor_tiket', 'like', "%{$v}%")
+                       ->orWhere('deskripsi', 'like', "%{$v}%")
+                       ->orWhere('kategori', 'like', "%{$v}%");
+                });
+            })
+            ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($request->filled('root_cause'), fn($q) => $q->where('root_cause', $request->root_cause))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $rootCauses = self::ROOT_CAUSES;
+
+        return view('it._tickets', compact('tickets', 'subcategories', 'selectedCategoryId', 'rootCauses'));
+    }
+
     /** Export daftar tiket sesuai filter ke CSV (dibuka Excel) */
     /** Export daftar tiket sesuai filter ke XLSX (server-side) */
     public function export(Request $request)
