@@ -82,7 +82,7 @@
 <script>
   // Polling: fetch tickets fragment and replace content if changed
   (function(){
-    const intervalMs = 10000; // 10s
+    const intervalMs = 3000; // 10s
     const fragmentUrl = '{{ route("it.tickets.fragment") }}' + window.location.search;
     async function fetchFragment(){
       try{
