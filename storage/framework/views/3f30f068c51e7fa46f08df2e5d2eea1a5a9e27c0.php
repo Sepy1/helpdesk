@@ -82,7 +82,7 @@
 
             </a>
             <div class="mt-1 text-xs text-gray-500">
-              Dibuat: <?php echo e($t->created_at->format('d M Y H:i')); ?>
+              Dibuat: <?php echo e(optional($t->created_at)->format('d M Y H:i') ?? '-'); ?>
 
             </div>
           </div>
