@@ -214,4 +214,114 @@ class StatsController extends Controller
         return response()->json(['message' => 'Server error'], 500);
     }
 }
+
+    /** Generate PDF report for given date range */
+    public function report(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $dateFrom = $request->query('date_from');
+        $dateTo   = $request->query('date_to');
+
+        // reuse the data logic (basic filters)
+        $ticketsBase = \App\Models\Ticket::query();
+        if ($dateFrom) {
+            try { $df = Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay(); $ticketsBase->where('created_at', '>=', $df); } catch (\Exception $e) { /* ignore */ }
+        }
+        if ($dateTo) {
+            try { $dt = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay(); $ticketsBase->where('created_at', '<=', $dt); } catch (\Exception $e) { /* ignore */ }
+        }
+
+        // KPIs
+        $total = (clone $ticketsBase)->count();
+        $closed = (clone $ticketsBase)->where('status', 'CLOSED')->count();
+        $open = max(0, $total - $closed);
+
+        $eskCount = (clone $ticketsBase)
+            ->where(function($q){
+                $q->where('status', 'ESKALASI_VENDOR')
+                  ->orWhereHas('histories', fn($h) => $h->where('action', 'assigned_vendor'));
+            })->count();
+
+        $onProgress = (clone $ticketsBase)->where('status', 'ON_PROGRESS')->count();
+
+        // root cause frequency
+        $root = (clone $ticketsBase)
+            ->select('root_cause', DB::raw('count(*) as total'))
+            ->whereNotNull('root_cause')
+            ->groupBy('root_cause')
+            ->orderByDesc('total')
+            ->get();
+
+        // tickets list (for table)
+        $ticketsList = (clone $ticketsBase)
+            ->with(['user','it'])
+            ->orderByDesc('created_at')
+            ->get(['id','nomor_tiket','created_at','user_id','kategori','root_cause','status','it_id','closed_at']);
+
+        // eskalasi vendor tickets (separate list)
+        $eskalasiTickets = (clone $ticketsBase)
+            ->where(function($q){
+                $q->where('status', 'ESKALASI_VENDOR')
+                  ->orWhereHas('histories', fn($h) => $h->where('action', 'assigned_vendor'));
+            })
+            ->with(['user','it'])
+            ->orderByDesc('created_at')
+            ->get(['id','nomor_tiket','created_at','user_id','kategori','root_cause','status','it_id','closed_at']);
+
+        // prepare KPI chart via QuickChart (donut)
+        $kpiLabels = ['Open','Closed','Eskalasi Vendor','On Progress'];
+        $kpiValues = [$open, $closed, $eskCount, $onProgress];
+        $kpiColors = ['#ef4444','#10b981','#8b5cf6','#f59e0b'];
+        $chartConfig = [
+            'type' => 'doughnut',
+            'data' => [
+                'labels' => $kpiLabels,
+                'datasets' => [[
+                    'data' => $kpiValues,
+                    'backgroundColor' => $kpiColors,
+                ]]
+            ],
+            'options' => [
+                'plugins' => [
+                    'legend' => ['display' => true, 'position' => 'bottom'],
+                ],
+            ],
+        ];
+        $kpiChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig));
+
+        $html = view('it.stats_pdf', [
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'kpi' => [ 'total'=>$total, 'open'=>$open, 'closed'=>$closed, 'eskalasi'=>$eskCount, 'on_progress'=>$onProgress ],
+            'root' => $root,
+            'tickets' => $ticketsList,
+            'eskalasiTickets' => $eskalasiTickets,
+            'kpiChartUrl' => $kpiChartUrl,
+        ])->render();
+
+        // If Dompdf not installed, return HTML fallback so user can print to PDF from browser
+        if (! class_exists('\Dompdf\\Dompdf')) {
+            // include a small banner in the HTML to indicate server-side PDF not available
+            $html = str_replace('<body>', '<body><div style="padding:8px;background:#fee;border:1px solid #fca;margin-bottom:10px;font-size:12px;">
+                <strong>Server-side PDF generator tidak terpasang.</strong> Untuk mengunduh PDF dari server, jalankan: <code>composer require dompdf/dompdf</code> lalu coba lagi.
+              </div>', $html);
+
+            return response($html, 200, ['Content-Type' => 'text/html']);
+        }
+
+        // render PDF with Dompdf
+            // render PDF with Dompdf (enable remote images for chart URLs)
+            $options = new \Dompdf\Options();
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->loadHtml($html);
+            $dompdf->render();
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="laporan_tiket_' . now()->format('Ymd_His') . '.pdf"'
+        ]);
+    }
 }

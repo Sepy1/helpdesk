@@ -1,9 +1,9 @@
-@extends('layouts.app')
-@section('title','Statistik Tiket')
 
-@section('content')
+<?php $__env->startSection('title','Statistik Tiket'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  {{-- Header + Filter (sticky di mobile tidak berlebihan) --}}
+  
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
     <div>
       <h1 class="text-2xl font-semibold text-gray-800">Statistik Tiket</h1>
@@ -37,7 +37,7 @@
     </div>
   </div>
 
-  {{-- Loading overlay (hidden by default) --}}
+  
   <div id="loadingOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 hidden">
     <div class="bg-white rounded-lg p-4 flex items-center gap-3 shadow-lg">
       <svg class="animate-spin w-6 h-6 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
@@ -48,9 +48,9 @@
     </div>
   </div>
 
-  {{-- Grid utama: responsive: 1 col mobile, 2 col tablet, 3 col desktop --}}
+  
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {{-- KPI Card: Total, Open, Closed, Avg Res --}}
+    
     <div class="lg:col-span-1 col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 space-y-3 h-full">
         <h3 class="text-sm font-semibold text-gray-700">Ringkasan</h3>
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    {{-- Kategori Chart (besar) --}}
+    
     <div class="lg:col-span-2 md:col-span-1 col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full flex flex-col">
         <div class="flex items-center justify-between mb-3">
@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    {{-- Status Pie --}}
+    
     <div class="col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full">
         <div class="flex items-center justify-between mb-3">
@@ -110,7 +110,7 @@
       </div>
     </div>
 
-    {{-- Top Users --}}
+    
     <div class="lg:col-span-3 col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100">
         <div class="flex items-center justify-between mb-3">
@@ -123,7 +123,7 @@
       </div>
     </div>
 
-    {{-- Root Cause --}}
+    
     <div class="lg:col-span-3 col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100">
         <div class="flex items-center justify-between mb-3">
@@ -138,7 +138,7 @@
   </div>
 </div>
 
-{{-- Chart.js --}}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
@@ -228,7 +228,7 @@
       const params = new URLSearchParams();
       if (from) params.set('date_from', from);
       if (to) params.set('date_to', to);
-      const url = `{{ route('stats.data') }}?${params.toString()}`;
+      const url = `<?php echo e(route('stats.data')); ?>?${params.toString()}`;
       const res = await fetch(url, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
@@ -315,7 +315,7 @@
     const params = new URLSearchParams();
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
-    const url = `{{ route('it.tickets.export') }}?${params.toString()}`;
+    const url = `<?php echo e(route('it.tickets.export')); ?>?${params.toString()}`;
     window.location.href = url;
   });
 
@@ -326,7 +326,7 @@
     const params = new URLSearchParams();
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
-    const url = `{{ route('it.stats.report') }}?${params.toString()}`;
+    const url = `<?php echo e(route('it.stats.report')); ?>?${params.toString()}`;
     // open in new tab
     window.open(url, '_blank');
   });
@@ -342,4 +342,6 @@
     Object.values(charts).forEach(c => c.resize());
   });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/stats.blade.php ENDPATH**/ ?>
