@@ -136,7 +136,7 @@
     </div>
 
     <div class="flex justify-center">
-      {!! $tickets->appends(request()->except('page'))->links('pagination::tailwind') !!}
+      {!! $tickets->withPath(route('it.dashboard'))->appends(request()->except('page'))->links('pagination::tailwind') !!}
     </div>
 
     <div></div>
