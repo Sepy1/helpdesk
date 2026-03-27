@@ -18,8 +18,29 @@ class ParameterController extends Controller
         $categories = Category::with('subcategories')->orderBy('name')->get();
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
+        $its = User::where('role', 'IT')->orderBy('name')->get();
 
-        return view('it.parameters', compact('categories','rootCauses','vendors'));
+        return view('it.parameters', compact('categories','rootCauses','vendors','its'));
+    }
+
+    public function saveItVisibility(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $data = $request->validate([
+            'visible' => 'nullable|array',
+            'visible.*' => 'integer|exists:users,id'
+        ]);
+
+        $visible = $data['visible'] ?? [];
+
+        // Set all IT users to not visible, then enable selected ones
+        User::where('role', 'IT')->update(['visible_on_assign' => false]);
+        if (!empty($visible)) {
+            User::whereIn('id', $visible)->where('role', 'IT')->update(['visible_on_assign' => true]);
+        }
+
+        return back()->with('success', 'Pengaturan tampilan IT pada form pembuatan tiket disimpan.');
     }
 
     public function storeCategory(Request $request)

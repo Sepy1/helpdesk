@@ -1,22 +1,22 @@
-@extends('layouts.app')
-@section('title','Parameter')
 
-@section('content')
+<?php $__env->startSection('title','Parameter'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="max-w-6xl mx-auto p-3 sm:p-5 text-xs sm:text-sm">
   <h1 class="text-2xl font-semibold mb-4">Parameter</h1>
 
-  @if(session('success'))
-    <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800">{{ session('success') }}</div>
-  @endif
+  <?php if(session('success')): ?>
+    <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800"><?php echo e(session('success')); ?></div>
+  <?php endif; ?>
 
   <div class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {{-- Kategori --}}
+      
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Kategori</div>
-          <form method="POST" action="{{ route('it.parameters.category.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
-            @csrf
+          <form method="POST" action="<?php echo e(route('it.parameters.category.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
+            <?php echo csrf_field(); ?>
             <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama kategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
@@ -33,37 +33,37 @@
               </tr>
             </thead>
             <tbody class="divide-y">
-              @foreach($categories as $i => $c)
+              <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
-                  <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2 font-medium max-w-xs truncate">{{ $c->name }}</td>
-                  <td class="py-2">{{ $c->subcategories->count() }}</td>
+                  <td class="py-2"><?php echo e($i + 1); ?></td>
+                  <td class="py-2 font-medium max-w-xs truncate"><?php echo e($c->name); ?></td>
+                  <td class="py-2"><?php echo e($c->subcategories->count()); ?></td>
                   <td class="py-2">
                     <div class="flex gap-2">
-                      <form method="POST" action="{{ route('it.parameters.category.delete', $c->id) }}" onsubmit="return confirm('Hapus kategori?');">
-                        @csrf
+                      <form method="POST" action="<?php echo e(route('it.parameters.category.delete', $c->id)); ?>" onsubmit="return confirm('Hapus kategori?');">
+                        <?php echo csrf_field(); ?>
                         <button class="text-red-600 text-sm">Hapus</button>
                       </form>
                     </div>
                   </td>
                 </tr>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
           </table>
         </div>
       </div>
 
-      {{-- Subkategori --}}
+      
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Sub</div>
-          <form method="POST" action="{{ route('it.parameters.subcategory.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
-            @csrf
+          <form method="POST" action="<?php echo e(route('it.parameters.subcategory.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
+            <?php echo csrf_field(); ?>
             <select name="category_id" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0">
               <option value="">Pilih Kategori</option>
-              @foreach($categories as $c)
-                <option value="{{ $c->id }}">{{ $c->name }}</option>
-              @endforeach
+              <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($c->id); ?>"><?php echo e($c->name); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
             <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Nama subkategori" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
@@ -81,26 +81,26 @@
               </tr>
             </thead>
             <tbody class="divide-y">
-              @php $count = 0; @endphp
-              @foreach($categories as $c)
-                @foreach($c->subcategories as $s)
-                  @php $count++; @endphp
+              <?php $count = 0; ?>
+              <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $__currentLoopData = $c->subcategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                  <?php $count++; ?>
                   <tr class="hover:bg-gray-50">
-                    <td class="py-2">{{ $count }}</td>
-                    <td class="py-2 max-w-xs truncate">{{ $s->name }}</td>
-                    <td class="py-2 max-w-xs truncate">{{ $c->name }}</td>
+                    <td class="py-2"><?php echo e($count); ?></td>
+                    <td class="py-2 max-w-xs truncate"><?php echo e($s->name); ?></td>
+                    <td class="py-2 max-w-xs truncate"><?php echo e($c->name); ?></td>
                     <td class="py-2">
-                      <form method="POST" action="{{ route('it.parameters.subcategory.delete', $s->id) }}" onsubmit="return confirm('Hapus subkategori?');">
-                        @csrf
+                      <form method="POST" action="<?php echo e(route('it.parameters.subcategory.delete', $s->id)); ?>" onsubmit="return confirm('Hapus subkategori?');">
+                        <?php echo csrf_field(); ?>
                         <button class="text-red-600 text-sm">Hapus</button>
                       </form>
                     </td>
                   </tr>
-                @endforeach
-              @endforeach
-              @if($count === 0)
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              <?php if($count === 0): ?>
                 <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada subkategori</td></tr>
-              @endif
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -111,8 +111,8 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Root Causes</div>
-          <form method="POST" action="{{ route('it.parameters.rootcause.store') }}" class="flex flex-col sm:flex-row items-center gap-2">
-            @csrf
+          <form method="POST" action="<?php echo e(route('it.parameters.rootcause.store')); ?>" class="flex flex-col sm:flex-row items-center gap-2">
+            <?php echo csrf_field(); ?>
             <input name="name" required class="rounded border px-3 py-1 text-sm w-full sm:w-auto sm:flex-1 min-w-0" placeholder="Root cause" />
             <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Tambah</button>
           </form>
@@ -128,21 +128,21 @@
               </tr>
             </thead>
             <tbody class="divide-y">
-              @foreach($rootCauses as $i => $rc)
+              <?php $__currentLoopData = $rootCauses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $rc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
-                  <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2 max-w-xs truncate">{{ $rc->name }}</td>
+                  <td class="py-2"><?php echo e($i + 1); ?></td>
+                  <td class="py-2 max-w-xs truncate"><?php echo e($rc->name); ?></td>
                   <td class="py-2">
-                    <form method="POST" action="{{ route('it.parameters.rootcause.delete', $rc->id) }}" onsubmit="return confirm('Hapus root cause?');">
-                      @csrf
+                    <form method="POST" action="<?php echo e(route('it.parameters.rootcause.delete', $rc->id)); ?>" onsubmit="return confirm('Hapus root cause?');">
+                      <?php echo csrf_field(); ?>
                       <button class="text-red-600 text-sm">Hapus</button>
                     </form>
                   </td>
                 </tr>
-              @endforeach
-              @if(count($rootCauses) === 0)
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              <?php if(count($rootCauses) === 0): ?>
                 <tr><td colspan="3" class="py-4 text-center text-gray-500">Belum ada root cause</td></tr>
-              @endif
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
@@ -151,7 +151,7 @@
       <div class="bg-white rounded shadow overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b">
           <div class="text-lg font-medium">Daftar Vendor</div>
-          <a href="{{ route('it.users.index') }}" class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Kelola Vendor</a>
+          <a href="<?php echo e(route('it.users.index')); ?>" class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Kelola Vendor</a>
         </div>
 
         <div class="p-4 overflow-x-auto max-h-52 overflow-y-auto">
@@ -165,32 +165,32 @@
               </tr>
             </thead>
             <tbody class="divide-y">
-              @foreach($vendors as $i => $v)
+              <?php $__currentLoopData = $vendors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr class="hover:bg-gray-50">
-                  <td class="py-2">{{ $i + 1 }}</td>
-                  <td class="py-2 font-medium max-w-xs truncate">{{ $v->name }}</td>
-                  <td class="py-2 max-w-xs truncate">{{ $v->email }}</td>
+                  <td class="py-2"><?php echo e($i + 1); ?></td>
+                  <td class="py-2 font-medium max-w-xs truncate"><?php echo e($v->name); ?></td>
+                  <td class="py-2 max-w-xs truncate"><?php echo e($v->email); ?></td>
                   <td class="py-2">
-                    <a href="{{ route('it.users.edit', $v->id) }}" class="text-sky-600 text-sm">Edit</a>
+                    <a href="<?php echo e(route('it.users.edit', $v->id)); ?>" class="text-sky-600 text-sm">Edit</a>
                   </td>
                 </tr>
-              @endforeach
-              @if(count($vendors) === 0)
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+              <?php if(count($vendors) === 0): ?>
                 <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada vendor</td></tr>
-              @endif
+              <?php endif; ?>
             </tbody>
           </table>
         </div>
       </div>
       
-      {{-- IT Users visibility for "Assign to" dropdown --}}
+      
       <div class="bg-white rounded shadow overflow-hidden md:col-span-2">
-        <form method="POST" action="{{ route('it.parameters.it.visibility') }}">
-          @csrf
+        <form method="POST" action="<?php echo e(route('it.parameters.it.visibility')); ?>">
+          <?php echo csrf_field(); ?>
           <div class="flex items-center justify-between p-4 border-b">
             <div class="text-lg font-medium">Tampilkan di 'Ditugaskan ke (IT)'</div>
             <div class="flex items-center gap-2">
-              <a href="{{ route('it.users.index') }}" class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Kelola IT</a>
+              <a href="<?php echo e(route('it.users.index')); ?>" class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Kelola IT</a>
               <button class="px-3 py-1 bg-sky-600 text-white rounded text-sm">Simpan</button>
             </div>
           </div>
@@ -206,19 +206,19 @@
                 </tr>
               </thead>
               <tbody class="divide-y">
-                @foreach($its as $i => $it)
+                <?php $__currentLoopData = $its; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                   <tr class="hover:bg-gray-50">
-                    <td class="py-2">{{ $i + 1 }}</td>
-                    <td class="py-2 font-medium max-w-xs truncate">{{ $it->name }}</td>
-                    <td class="py-2 max-w-xs truncate">{{ $it->email }}</td>
+                    <td class="py-2"><?php echo e($i + 1); ?></td>
+                    <td class="py-2 font-medium max-w-xs truncate"><?php echo e($it->name); ?></td>
+                    <td class="py-2 max-w-xs truncate"><?php echo e($it->email); ?></td>
                     <td class="py-2">
-                      <input type="checkbox" name="visible[]" value="{{ $it->id }}" @checked($it->visible_on_assign) />
+                      <input type="checkbox" name="visible[]" value="<?php echo e($it->id); ?>" <?php if($it->visible_on_assign): echo 'checked'; endif; ?> />
                     </td>
                   </tr>
-                @endforeach
-                @if(count($its) === 0)
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php if(count($its) === 0): ?>
                   <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada user IT</td></tr>
-                @endif
+                <?php endif; ?>
               </tbody>
             </table>
           </div>
@@ -227,4 +227,6 @@
     </div>
   </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/parameters.blade.php ENDPATH**/ ?>

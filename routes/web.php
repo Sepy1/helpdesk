@@ -133,6 +133,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/subcategory/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteSubcategory'])->name('it.parameters.subcategory.delete');
         Route::post('/it/parameters/rootcause', [\App\Http\Controllers\ParameterController::class, 'storeRootCause'])->name('it.parameters.rootcause.store');
         Route::post('/it/parameters/rootcause/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCause'])->name('it.parameters.rootcause.delete');
+        Route::post('/it/parameters/it-visibility', [\App\Http\Controllers\ParameterController::class, 'saveItVisibility'])->name('it.parameters.it.visibility');
 
         Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
         Route::post('/it/ticket/{ticket}/release',         [TicketController::class, 'release'])->name('it.ticket.release');

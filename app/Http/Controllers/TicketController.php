@@ -106,7 +106,8 @@ public function create()
     }])->orderBy('name')->get(['id', 'name']);
 
     // Ambil daftar user TI untuk opsi assign (opsional)
-    $its = User::where('role', 'IT')->orderBy('name')->get(['id', 'name']);
+    // only show IT users that are configured to appear on the create-ticket assign dropdown
+    $its = User::where('role', 'IT')->where('visible_on_assign', true)->orderBy('name')->get(['id', 'name']);
 
     // Hitung jumlah tiket yang sedang ditangani tiap IT (status selain CLOSED)
     $itCounts = [];
@@ -392,8 +393,8 @@ public function store(Request $request)
         ->paginate(10)
         ->withQueryString();
 
-    // root cause options
-    $rootCauses = self::ROOT_CAUSES;
+    // root cause options (load from DB so admin can manage them)
+    $rootCauses = RootCause::orderBy('sort')->orderBy('name')->pluck('name')->toArray();
 
     // kirim semua data ke view agar select bisa di-render
     return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses'));
@@ -441,7 +442,7 @@ public function store(Request $request)
             ->paginate(10)
             ->withQueryString();
 
-        $rootCauses = self::ROOT_CAUSES;
+        $rootCauses = RootCause::orderBy('sort')->orderBy('name')->pluck('name')->toArray();
 
         return view('it._tickets', compact('tickets', 'subcategories', 'selectedCategoryId', 'rootCauses'));
     }

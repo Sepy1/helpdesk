@@ -21,6 +21,7 @@ class User extends Authenticatable
         'username',
         'email',
         'role',
+        'visible_on_assign',
         'no_hp',
         'password',
     ];
@@ -42,6 +43,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'visible_on_assign' => 'boolean',
     ];
 
     public function devices()
