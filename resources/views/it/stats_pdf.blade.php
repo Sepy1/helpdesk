@@ -148,12 +148,6 @@
           <div style="text-align:center;">Tidak ada data</div>
         @else
           <table class="table">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Root Cause</th>
-                <th style="text-align:right; width:80px;">Jumlah</th>
-              </tr>
-            </thead>
             <tbody>
               @foreach($root as $r)
               <tr>
@@ -170,12 +164,12 @@
   
   @if(!empty($eskalasiTickets) && count($eskalasiTickets) > 0)
     <div style="font-weight:bold; margin-top:12px; margin-bottom:8px;">Tiket Eskalasi Vendor</div>
-    <table class="table">
+          <table class="table">
       <thead>
         <tr>
           <th>#</th>
           <th>Dibuat</th>
-          <th>Nomor</th>
+                <th>Nomor</th>
           <th>Kategori</th>
           <th>Root Cause</th>
           <th>Status</th>
@@ -188,7 +182,7 @@
         <tr>
           <td style="width:4%;">{{ $i+1 }}</td>
           <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-          <td style="width:12%;">{{ $t->nomor_tiket }}</td>
+          <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
           <td style="width:15%;">{{ $t->kategori }}</td>
           <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
           <td style="width:10%;">{{ $t->status }}</td>
@@ -221,7 +215,7 @@
       <tr>
         <td style="width:4%;">{{ $i+1 }}</td>
         <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-        <td style="width:12%;">{{ $t->nomor_tiket }}</td>
+        <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
         <td style="width:15%;">{{ $t->kategori }}</td>
         <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
         <td style="width:10%;">{{ $t->status }}</td>

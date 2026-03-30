@@ -102,22 +102,12 @@
 
   <!-- HEADER -->
   <div class="header" style="border-bottom:1px solid #e6e9ef; padding-bottom:8px; margin-bottom:12px;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <div style="display:flex; flex-direction:row; align-items:baseline; gap:12px; white-space:nowrap;">
-          <div class="h1" style="margin:0; line-height:1;">Laporan Tiket Sambatan</div>
-          <div class="period" style="white-space:nowrap; margin:0; line-height:1; font-size:12px; color:#555;">Periode: <?php echo e($dateFrom ?? 'Semua'); ?> — <?php echo e($dateTo ?? 'Semua'); ?></div>
-        </div>
-        <div style="font-size:11px; color:#666;">Generated: <?php echo e(now()->format('d M Y H:i')); ?></div>
+    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+      <div style="display:flex; align-items:baseline; gap:12px; white-space:nowrap;">
+        <div class="h1" style="margin:0; line-height:1;">Laporan Tiket Sambatan</div>
+        <div class="period" style="white-space:nowrap; margin:0; line-height:1; font-size:12px; color:#555;">Periode: <?php echo e($dateFrom ?? 'Semua'); ?> — <?php echo e($dateTo ?? 'Semua'); ?></div>
       </div>
-
-      <div style="text-align:right;">
-        <?php if(file_exists(public_path('images/company-logo.png'))): ?>
-          <img src="<?php echo e(asset('images/company-logo.png')); ?>" alt="Logo" style="max-height:48px; object-fit:contain;">
-        <?php else: ?>
-          <div style="font-weight:bold; font-size:14px;">Nama Perusahaan</div>
-        <?php endif; ?>
-      </div>
+      <div style="text-align:right; font-size:11px; color:#666;">Generated: <?php echo e(now()->format('d M Y H:i')); ?></div>
     </div>
   </div>
 
@@ -158,12 +148,6 @@
           <div style="text-align:center;">Tidak ada data</div>
         <?php else: ?>
           <table class="table">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Root Cause</th>
-                <th style="text-align:right; width:80px;">Jumlah</th>
-              </tr>
-            </thead>
             <tbody>
               <?php $__currentLoopData = $root; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
               <tr>
@@ -180,12 +164,12 @@
   
   <?php if(!empty($eskalasiTickets) && count($eskalasiTickets) > 0): ?>
     <div style="font-weight:bold; margin-top:12px; margin-bottom:8px;">Tiket Eskalasi Vendor</div>
-    <table class="table">
+          <table class="table">
       <thead>
         <tr>
           <th>#</th>
           <th>Dibuat</th>
-          <th>Nomor</th>
+                <th>Nomor</th>
           <th>Kategori</th>
           <th>Root Cause</th>
           <th>Status</th>
@@ -198,7 +182,7 @@
         <tr>
           <td style="width:4%;"><?php echo e($i+1); ?></td>
           <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
-          <td style="width:12%;"><?php echo e($t->nomor_tiket); ?></td>
+          <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
           <td style="width:15%;"><?php echo e($t->kategori); ?></td>
           <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
           <td style="width:10%;"><?php echo e($t->status); ?></td>
@@ -231,7 +215,7 @@
       <tr>
         <td style="width:4%;"><?php echo e($i+1); ?></td>
         <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
-        <td style="width:12%;"><?php echo e($t->nomor_tiket); ?></td>
+        <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
         <td style="width:15%;"><?php echo e($t->kategori); ?></td>
         <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
         <td style="width:10%;"><?php echo e($t->status); ?></td>
