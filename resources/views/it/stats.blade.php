@@ -17,6 +17,14 @@
         <label for="filterTo" class="sr-only">Sampai</label>
         <input id="filterTo" name="date_to" type="date" class="w-full sm:w-40 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm" />
 
+        <label for="filterUser" class="sr-only">Pembuat</label>
+        <select id="filterUser" name="user_id" class="w-full sm:w-48 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm">
+          <option value="">Semua Pembuat</option>
+          @foreach(($users ?? []) as $u)
+            <option value="{{ $u->id }}">{{ $u->name }}</option>
+          @endforeach
+        </select>
+
         <div class="flex gap-2">
           <button id="btnRefresh" type="button" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-sky-600 text-white text-sm shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500" aria-label="Refresh statistik">
             <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-3-6.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -228,6 +236,8 @@
       const params = new URLSearchParams();
       if (from) params.set('date_from', from);
       if (to) params.set('date_to', to);
+      const user = document.getElementById('filterUser')?.value;
+      if (user) params.set('user_id', user);
       const url = `{{ route('stats.data') }}?${params.toString()}`;
       const res = await fetch(url, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -315,6 +325,8 @@
     const params = new URLSearchParams();
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
+    const user = document.getElementById('filterUser')?.value;
+    if (user) params.set('user_id', user);
     const url = `{{ route('it.tickets.export') }}?${params.toString()}`;
     window.location.href = url;
   });
@@ -326,6 +338,8 @@
     const params = new URLSearchParams();
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
+    const user = document.getElementById('filterUser')?.value;
+    if (user) params.set('user_id', user);
     const url = `{{ route('it.stats.report') }}?${params.toString()}`;
     // open in new tab
     window.open(url, '_blank');

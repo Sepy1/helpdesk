@@ -373,13 +373,16 @@ public function store(Request $request)
         ->when($hasSubcategoryId && $request->filled('subcategory_id'),
                fn($q) => $q->where('subcategory_id', $request->subcategory_id))
 
-        // pencarian teks di nomor_tiket, deskripsi, atau kategori (legacy kolom)
+        // pencarian teks di nomor_tiket, deskripsi, kategori (legacy), atau username pembuat
         ->when($request->filled('q'), function ($q) use ($request) {
             $v = trim($request->q);
             $q->where(function ($qq) use ($v) {
                 $qq->where('nomor_tiket', 'like', "%{$v}%")
                    ->orWhere('deskripsi', 'like', "%{$v}%")
-                   ->orWhere('kategori', 'like', "%{$v}%");
+                   ->orWhere('kategori', 'like', "%{$v}%")
+                   ->orWhereHas('user', function ($uq) use ($v) {
+                       $uq->where('username', 'like', "%{$v}%");
+                   });
             });
         })
 
@@ -1266,6 +1269,9 @@ public function downloadCommentAttachment(TicketComment $comment)
         $topLabels = $topUsers->pluck('name');
         $topData   = $topUsers->pluck('total');
 
+        // daftar user untuk pilihan filter laporan (pembuat tiket)
+        $users = User::orderBy('name')->get(['id','name']);
+
         return view('it.stats', [
             'kategoriLabels' => $kategoriLabels,
             'kategoriData'   => $kategoriData,
@@ -1273,6 +1279,7 @@ public function downloadCommentAttachment(TicketComment $comment)
             'statusData'     => $statusData,
             'topLabels'      => $topLabels,
             'topData'        => $topData,
+            'users' => $users,
         ]);
     }
 

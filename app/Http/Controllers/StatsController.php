@@ -28,6 +28,11 @@ class StatsController extends Controller
         // base query (tickets)
         $tickets = \App\Models\Ticket::query();
 
+        // filter by user (pembuat) jika diberikan
+        if ($request->filled('user_id')) {
+            $tickets->where('user_id', $request->query('user_id'));
+        }
+
         // filter by date range if provided (date_from/date_to), else fallback to month format 'YYYY-MM'
         if ($dateFrom || $dateTo) {
             if ($dateFrom) {
@@ -230,6 +235,11 @@ class StatsController extends Controller
         }
         if ($dateTo) {
             try { $dt = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay(); $ticketsBase->where('created_at', '<=', $dt); } catch (\Exception $e) { /* ignore */ }
+        }
+
+        // filter by user (pembuat) jika parameter disertakan
+        if ($request->filled('user_id')) {
+            $ticketsBase->where('user_id', $request->query('user_id'));
         }
 
         // KPIs
