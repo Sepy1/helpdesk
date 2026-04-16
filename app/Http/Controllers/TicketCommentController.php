@@ -23,7 +23,18 @@ class TicketCommentController extends Controller
         ];
 
         if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('attachments', 'public');
+            $f = $request->file('attachment');
+            $original = $f->getClientOriginalName();
+            $ext = $f->getClientOriginalExtension();
+            $name = pathinfo($original, PATHINFO_FILENAME);
+            $sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+            try {
+                $code = random_int(10000, 99999);
+            } catch (\Throwable $e) {
+                $code = mt_rand(10000, 99999);
+            }
+            $filename = $sanitized . '-' . $code . '.' . $ext;
+            $path = $f->storeAs('attachments', $filename, 'public');
             $data['attachment'] = $path;
         }
 

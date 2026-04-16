@@ -46,11 +46,53 @@
     {{-- Lampiran --}}
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran (opsional)</label>
-      <input type="file" name="lampiran"
-             class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300"
-      />
-      <p class="text-xs text-gray-500 mt-1">(maks 3 MB), jika lebih dari 1 dokumen bisa diupload di komentar setelah tiket dibuat</p>
+      <div id="attachments" class="space-y-2">
+        <div class="flex items-center gap-2">
+          <input type="file" name="lampiran[]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
+                 class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300" />
+          <button type="button" data-action="remove" class="text-sm text-red-600 hover:underline hidden">Hapus</button>
+        </div>
+      </div>
+      <div class="mt-2 flex items-center gap-2">
+        <button type="button" id="addAttachment" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm">Tambah lampiran</button>
+        <div class="text-xs text-gray-500">(maks 3 file, 3 MB per file)</div>
+      </div>
       @error('lampiran') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      @error('lampiran.*') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+
+      <script>
+        (function(){
+          const max = 3;
+          const container = document.getElementById('attachments');
+          const addBtn = document.getElementById('addAttachment');
+
+          function updateButtons(){
+            const items = container.querySelectorAll('div > input[type=file]');
+            const removeBtns = container.querySelectorAll('button[data-action="remove"]');
+            items.forEach((_,i)=> removeBtns[i].classList.toggle('hidden', items.length<=1));
+            addBtn.disabled = items.length >= max;
+          }
+
+          addBtn.addEventListener('click', ()=>{
+            const count = container.querySelectorAll('input[type=file]').length;
+            if(count >= max) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center gap-2';
+            wrapper.innerHTML = ` <input type="file" name="lampiran[]" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-white hover:file:bg-gray-800 rounded-lg border border-gray-300" /> <button type="button" data-action="remove" class="text-sm text-red-600 hover:underline">Hapus</button>`;
+            container.appendChild(wrapper);
+            wrapper.querySelector('button[data-action="remove"]').addEventListener('click', ()=>{ wrapper.remove(); updateButtons(); });
+            updateButtons();
+          });
+
+          // attach remove handler for initial row
+          container.querySelectorAll('button[data-action="remove"]').forEach(btn=>{
+            btn.addEventListener('click', ()=>{ btn.closest('div').remove(); updateButtons(); });
+          });
+
+          // initial state
+          updateButtons();
+        })();
+      </script>
     </div>
 
     <div class="pt-2">

@@ -129,13 +129,14 @@ public function store(Request $request)
 {
     Log::info('TicketStore: masuk ke store() oleh user_id=' . optional(Auth::user())->id);
 
-    // validasi
+    // validasi (dukungan hingga 3 lampiran)
     $data = $request->validate([
         'category_id'   => 'required|exists:categories,id',
         'subcategory_id'=> 'nullable|exists:subcategories,id',
         'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
-        'lampiran'      => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
+        'lampiran'      => 'nullable|array|max:3',
+        'lampiran.*'    => 'file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
     ], [], [
         'category_id' => 'kategori',
         'subcategory_id' => 'subkategori',
@@ -170,20 +171,36 @@ public function store(Request $request)
         ]);
     }
 
-    // simpan file jika ada
-    $lampiranPath = $request->hasFile('lampiran')
-        ? $request->file('lampiran')->store('lampiran', 'public')
-        : null;
+    // simpan file jika ada (dapat menerima beberapa file, maksimum 3)
+    $lampiranPaths = [];
+    if ($request->hasFile('lampiran')) {
+        foreach ($request->file('lampiran') as $f) {
+            if ($f && $f->isValid()) {
+                $original = $f->getClientOriginalName();
+                $ext = $f->getClientOriginalExtension();
+                $name = pathinfo($original, PATHINFO_FILENAME);
+                $sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+                try {
+                    $code = random_int(10000, 99999);
+                } catch (\Throwable $e) {
+                    $code = mt_rand(10000, 99999);
+                }
+                $filename = $sanitized . '-' . $code . '.' . $ext;
+                $path = $f->storeAs('lampiran', $filename, 'public');
+                if ($path) $lampiranPaths[] = $path;
+            }
+        }
+    }
 
-    if ($lampiranPath) {
-        Log::info('TicketStore: lampiran disimpan', ['path' => $lampiranPath]);
+    if (!empty($lampiranPaths)) {
+        Log::info('TicketStore: lampiran disimpan', ['paths' => $lampiranPaths]);
     } else {
         Log::info('TicketStore: tidak ada lampiran di request');
     }
 
     // buat tiket dalam transaction
     try {
-        $ticket = DB::transaction(function () use ($data, $lampiranPath) {
+        $ticket = DB::transaction(function () use ($data, $lampiranPaths) {
             $payload = [
                 'nomor_tiket'    => $this->generateTicketNumber(),
                 'user_id'        => auth()->id(),
@@ -191,7 +208,8 @@ public function store(Request $request)
                 'subcategory_id' => $data['subcategory_id'] ?? null,
                 'it_id'          => $data['it_id'] ?? null,
                 'deskripsi'      => $data['deskripsi'],
-                'lampiran'       => $lampiranPath,
+                // simpan lampiran pertama (jika ada) ke kolom tiket untuk kompatibilitas
+                'lampiran'       => $lampiranPaths[0] ?? null,
                 'status'         => 'OPEN',
                 'eskalasi'       => 'TIDAK',
             ];
@@ -218,6 +236,17 @@ public function store(Request $request)
                 'note'      => 'Ticket dibuat',
                 'meta'      => ['nomor_tiket' => $created->nomor_tiket],
             ]);
+            // jika ada lebih dari 1 lampiran, simpan sisanya sebagai komentar dengan attachment
+            if (!empty($lampiranPaths) && count($lampiranPaths) > 1) {
+                foreach (array_slice($lampiranPaths, 1) as $p) {
+                    \App\Models\TicketComment::create([
+                        'ticket_id' => $created->id,
+                        'user_id'   => auth()->id(),
+                        'body'      => 'Lampiran (dari pembuatan tiket)',
+                        'attachment'=> $p,
+                    ]);
+                }
+            }
             return $created;
         });
     } catch (\Throwable $e) {
@@ -1053,7 +1082,18 @@ public function store(Request $request)
     ];
 
     if ($request->hasFile('attachment')) {
-        $data['attachment'] = $request->file('attachment')->store('attachments', 'public');
+        $f = $request->file('attachment');
+        $original = $f->getClientOriginalName();
+        $ext = $f->getClientOriginalExtension();
+        $name = pathinfo($original, PATHINFO_FILENAME);
+        $sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+        try {
+            $code = random_int(10000, 99999);
+        } catch (\Throwable $e) {
+            $code = mt_rand(10000, 99999);
+        }
+        $filename = $sanitized . '-' . $code . '.' . $ext;
+        $data['attachment'] = $f->storeAs('attachments', $filename, 'public');
     }
 
     \App\Models\TicketComment::create($data);
@@ -1130,7 +1170,18 @@ public function store(Request $request)
 
     $path = null;
     if ($request->hasFile('attachment')) {
-        $path = $request->file('attachment')->store('attachments', 'public');
+        $f = $request->file('attachment');
+        $original = $f->getClientOriginalName();
+        $ext = $f->getClientOriginalExtension();
+        $name = pathinfo($original, PATHINFO_FILENAME);
+        $sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+        try {
+            $code = random_int(10000, 99999);
+        } catch (\Throwable $e) {
+            $code = mt_rand(10000, 99999);
+        }
+        $filename = $sanitized . '-' . $code . '.' . $ext;
+        $path = $f->storeAs('attachments', $filename, 'public');
     }
 
     $ticket->comments()->create([

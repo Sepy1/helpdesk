@@ -91,10 +91,27 @@
       <div class="mt-4 flex items-center justify-between">
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
-          <?php if($ticket->lampiran): ?>
-            <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">
-              Lihat lampiran
-            </a>
+          <?php
+            $commentAttachments = $ticket->comments->filter(fn($c) => !empty($c->attachment));
+            $hasAny = $ticket->lampiran || $commentAttachments->isNotEmpty();
+          ?>
+
+          <?php if($hasAny): ?>
+            <div class="space-y-1">
+              <?php if($ticket->lampiran): ?>
+                <div>
+                  <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
+                  <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+                </div>
+              <?php endif; ?>
+
+              <?php $__currentLoopData = $commentAttachments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div>
+                  <a href="<?php echo e(route('comment.download', $c->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lampiran: <?php echo e(basename($c->attachment)); ?></a>
+                  <a href="<?php echo e(route('comment.download', $c->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+                </div>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
           <?php else: ?>
             <div class="text-xs text-gray-400">-</div>
           <?php endif; ?>

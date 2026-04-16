@@ -91,10 +91,27 @@
       <div class="mt-4 flex items-center justify-between">
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
-          @if($ticket->lampiran)
-            <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">
-              Lihat lampiran
-            </a>
+          @php
+            $commentAttachments = $ticket->comments->filter(fn($c) => !empty($c->attachment));
+            $hasAny = $ticket->lampiran || $commentAttachments->isNotEmpty();
+          @endphp
+
+          @if($hasAny)
+            <div class="space-y-1">
+              @if($ticket->lampiran)
+                <div>
+                  <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: {{ basename($ticket->lampiran) }}</a>
+                  <a href="{{ route('ticket.download',$ticket->id) }}" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+                </div>
+              @endif
+
+              @foreach($commentAttachments as $c)
+                <div>
+                  <a href="{{ route('comment.download', $c->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lampiran: {{ basename($c->attachment) }}</a>
+                  <a href="{{ route('comment.download', $c->id) }}" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+                </div>
+              @endforeach
+            </div>
           @else
             <div class="text-xs text-gray-400">-</div>
           @endif
