@@ -60,5 +60,6 @@ class Kernel extends HttpKernel
 
         // >>> Tambahkan ini untuk dukungan role:IT / role:CABANG
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'allow.create.ticket' => \App\Http\Middleware\AllowCreateTicket::class,
     ];
 }

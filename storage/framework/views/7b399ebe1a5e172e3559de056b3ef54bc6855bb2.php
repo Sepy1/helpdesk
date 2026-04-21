@@ -16,7 +16,7 @@
     </div>
   <?php endif; ?>
 
-  <form method="POST" action="<?php echo e(route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-3">
+  <form method="POST" action="<?php echo e(auth()->user()->role === 'IT' ? route('cabang.ticket.store.it') : route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-3">
     <?php echo csrf_field(); ?>
 
     

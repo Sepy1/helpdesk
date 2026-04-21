@@ -332,8 +332,11 @@ public function store(Request $request)
         'nomor_tiket' => $ticket->nomor_tiket ?? null
     ]);
 
+    // If ticket created by IT, redirect back to the create form so the
+    // session flash (`new_ticket_no`) can be shown as a popup.
+    $redirectRoute = auth()->user()->role === 'IT' ? 'it.ticket.create' : 'cabang.dashboard';
     return redirect()
-        ->route('cabang.dashboard')
+        ->route($redirectRoute)
         ->with('success', 'Tiket berhasil dibuat.');
 }
 

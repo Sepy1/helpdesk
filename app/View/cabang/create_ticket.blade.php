@@ -16,7 +16,7 @@
     </div>
   @endif
 
-  <form method="POST" action="{{ route('cabang.ticket.store') }}" enctype="multipart/form-data" class="space-y-5">
+  <form method="POST" action="{{ auth()->user()->role === 'IT' ? route('cabang.ticket.store.it') : route('cabang.ticket.store') }}" enctype="multipart/form-data" class="space-y-5">
     @csrf
 
     {{-- Kategori --}}

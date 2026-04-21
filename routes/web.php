@@ -112,6 +112,11 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 
     
     // ===== CABANG =====
+    // Special POST route for ticket creation that allows both CABANG and IT (uses custom middleware)
+    Route::post('/cabang/ticket/it', [TicketController::class, 'store'])
+        ->name('cabang.ticket.store.it')
+        ->middleware('allow.create.ticket');
+
     Route::middleware(['role:CABANG'])->group(function () {
         Route::get('/cabang/dashboard', [TicketController::class, 'create'])->name('cabang.dashboard'); // form buat tiket
         Route::post('/cabang/ticket', [TicketController::class, 'store'])->name('cabang.ticket.store'); // simpan tiket
@@ -120,6 +125,9 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 
     // ===== IT =====
     Route::middleware(['role:IT'])->group(function () {
+        // Form create ticket untuk user IT (Input Tiket)
+        Route::get('/it/create', [TicketController::class, 'create'])->name('it.ticket.create');
+        Route::post('/it/ticket', [TicketController::class, 'store'])->name('it.ticket.store');
         Route::get('/it/dashboard', [TicketController::class, 'index'])->name('it.dashboard');           // semua tiket + filter
         Route::get('/it/tickets/fragment', [TicketController::class, 'fragment'])->name('it.tickets.fragment'); // fragment HTML untuk polling
         Route::get('/it/tickets/export', [TicketController::class, 'export'])->name('it.tickets.export'); // export XLS/CSV sesuai filter

@@ -22,6 +22,7 @@
   // Menu per role
   if ($role === 'IT') {
     $menu = [
+      ['label'=>'Input Tiket', 'route'=>'it.ticket.create', 'icon'=>'plus', 'active'=>$is('it.ticket.create')],
       ['label'=>'All Tiket',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
       ['label'=>'Tiket Saya',  'route'=>'it.my',          'icon'=>'user',   'active'=>$is('it.my')],
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
