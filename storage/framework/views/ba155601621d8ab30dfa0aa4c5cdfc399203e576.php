@@ -82,7 +82,17 @@
 <script>
   // Polling: fetch tickets fragment and replace content if changed
   (function(){
-    const intervalMs = 3000; // 10s
+    const intervalMs = 3000; // 3s
+    const activeFilterKeys = ['q', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
+    const queryParams = new URLSearchParams(window.location.search);
+    const hasActiveFilter = activeFilterKeys.some((key) => {
+      const value = queryParams.get(key);
+      return value !== null && String(value).trim() !== '';
+    });
+
+    // Saat filter aktif, jangan auto-refresh list agar hasil filter tidak ketimpa polling.
+    if (hasActiveFilter) return;
+
     const fragmentUrl = '<?php echo e(route("it.tickets.fragment")); ?>' + window.location.search;
     async function fetchFragment(){
       try{

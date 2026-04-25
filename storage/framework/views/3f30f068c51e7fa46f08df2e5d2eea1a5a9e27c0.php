@@ -7,12 +7,13 @@
         <col style="width:4%">   <!-- # -->
         <col style="width:11%">  <!-- Dibuat -->
         <col style="width:16%">  <!-- Nomor -->
-        <col style="width:14%">  <!-- Kategori -->
-        <col style="width:12%">  <!-- Root Cause -->
-        <col style="width:18%">  <!-- Pembuat -->
-        <col style="width:10%">  <!-- Status -->
-        <col style="width:15%">  <!-- IT Handler -->
-        <col style="width:10%">  <!-- Aksi -->
+        <col style="width:12%">  <!-- Kategori -->
+        <col style="width:12%">  <!-- Subkategori -->
+        <col style="width:10%">  <!-- Root Cause -->
+        <col style="width:14%">  <!-- Pembuat -->
+        <col style="width:9%">   <!-- Status -->
+        <col style="width:13%">  <!-- IT Handler -->
+        <col style="width:11%">  <!-- Aksi -->
       </colgroup>
       <thead class="bg-gray-50 text-gray-600">
         <tr>
@@ -20,6 +21,7 @@
           <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
+          <th class="py-3 px-4 text-left whitespace-nowrap">Subkategori</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Root Cause</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Pembuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Status</th>
@@ -36,6 +38,7 @@
             <a href="<?php echo e(route('ticket.show',$t->id)); ?>" class="text-indigo-600 hover:underline block truncate"><?php echo e($t->nomor_tiket); ?></a>
           </td>
           <td class="py-3 px-4 truncate"><?php echo e($t->kategori); ?></td>
+          <td class="py-3 px-4 truncate"><?php echo e(optional($t->subcategory)->name ?? '-'); ?></td>
           <td class="py-3 px-4 truncate"><?php echo e($t->root_cause ?? '-'); ?></td>
           <td class="py-3 px-4 truncate"><?php echo e($t->user->name ?? '-'); ?></td>
           <td class="py-3 px-4">
@@ -102,6 +105,7 @@
 
           <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div class="text-gray-500">Kategori</div><div class="font-medium truncate"><?php echo e($t->kategori); ?></div>
+          <div class="text-gray-500">Subkategori</div><div class="font-medium truncate"><?php echo e(optional($t->subcategory)->name ?? '-'); ?></div>
           <div class="text-gray-500">Root Cause</div><div class="font-medium truncate"><?php echo e($t->root_cause ?? '-'); ?></div>
           <div class="text-gray-500">Pembuat</div><div class="font-medium truncate"><?php echo e($t->user->name ?? '-'); ?></div>
           <div class="text-gray-500">Handler</div><div class="font-medium truncate"><?php echo e($t->it->name ?? '-'); ?></div>

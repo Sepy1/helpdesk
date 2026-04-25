@@ -391,7 +391,7 @@ public function store(Request $request)
     $dateFrom = $request->query('date_from');
     $dateTo   = $request->query('date_to');
 
-    $tickets = Ticket::with(['user','it'])
+    $tickets = Ticket::with(['user','it','subcategory'])
         // filter status
         ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
 
@@ -454,7 +454,7 @@ public function store(Request $request)
         $dateFrom = $request->query('date_from');
         $dateTo   = $request->query('date_to');
 
-        $tickets = Ticket::with(['user','it'])
+        $tickets = Ticket::with(['user','it','subcategory'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($hasCategoryId && $request->filled('category_id'),
                    fn($q) => $q->where('category_id', $request->category_id))
