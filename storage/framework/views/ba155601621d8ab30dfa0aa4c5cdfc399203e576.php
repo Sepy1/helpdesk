@@ -65,16 +65,14 @@
       <div class="w-full xl:flex-1 flex flex-wrap xl:flex-nowrap gap-2 justify-start xl:justify-end">
         <button type="submit" class="w-full md:w-auto h-10 rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4">Filter</button>
 
-        <?php if(request()->hasAny(['q','username','status','date_from','date_to','root_cause','category_id','subcategory_id','kategori'])): ?>
-          <a href="<?php echo e(route('it.dashboard')); ?>"
-             class="shrink-0 h-10 inline-block text-center rounded-lg border border-gray-200 px-4 text-sm text-gray-700 hover:underline leading-10">
-             Reset
-           </a>
-            <a href="<?php echo e(route('it.tickets.export', request()->query())); ?>"
-              class="shrink-0 h-10 inline-block text-center rounded-lg bg-emerald-600 px-4 text-white hover:bg-emerald-700 leading-10">
-             Export Result
-           </a>
-        <?php endif; ?>
+        <a href="<?php echo e(route('it.dashboard')); ?>"
+           class="shrink-0 h-10 inline-block text-center rounded-lg border border-gray-200 px-4 text-sm text-gray-700 hover:underline leading-10">
+           Reset
+         </a>
+        <a href="<?php echo e(route('it.tickets.export', request()->query())); ?>"
+            class="shrink-0 h-10 inline-block text-center rounded-lg bg-emerald-600 px-4 text-white hover:bg-emerald-700 leading-10">
+           Export Result
+         </a>
       </div>
     </form>
   </div>
