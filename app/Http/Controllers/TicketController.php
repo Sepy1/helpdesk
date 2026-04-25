@@ -417,6 +417,13 @@ public function store(Request $request)
                    });
             });
         })
+        // filter username pembuat tiket
+        ->when($request->filled('username'), function ($q) use ($request) {
+            $username = trim($request->username);
+            $q->whereHas('user', function ($uq) use ($username) {
+                $uq->where('username', 'like', "%{$username}%");
+            });
+        })
 
         // filter by created_at date range if provided
         ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
@@ -470,6 +477,12 @@ public function store(Request $request)
                        ->orWhere('kategori', 'like', "%{$v}%");
                 });
             })
+            ->when($request->filled('username'), function ($q) use ($request) {
+                $username = trim($request->username);
+                $q->whereHas('user', function ($uq) use ($username) {
+                    $uq->where('username', 'like', "%{$username}%");
+                });
+            })
             ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->when($request->filled('root_cause'), fn($q) => $q->where('root_cause', $request->root_cause))
@@ -505,6 +518,12 @@ public function store(Request $request)
                     $qq->where('nomor_tiket', 'like', "%{$v}%")
                        ->orWhere('deskripsi', 'like', "%{$v}%")
                        ->orWhere('kategori', 'like', "%{$v}%");
+                });
+            })
+            ->when($request->filled('username'), function ($q) use ($request) {
+                $username = trim($request->username);
+                $q->whereHas('user', function ($uq) use ($username) {
+                    $uq->where('username', 'like', "%{$username}%");
                 });
             })
             ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))

@@ -20,6 +20,12 @@
       </div>
 
       
+      <div class="order-1 md:order-none shrink-0 w-full md:w-[220px]">
+        <input type="text" name="username" value="<?php echo e(request('username')); ?>" placeholder="Username pembuat"
+               class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" />
+      </div>
+
+      
       <div class="order-2 md:order-none shrink-0 w-full md:w-[220px]">
         <label class="sr-only">Root Cause</label>
         <select name="root_cause" class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500">
@@ -59,7 +65,7 @@
       <div class="order-5 md:order-none shrink-0 flex gap-2 justify-center w-full md:w-auto">
         <button type="submit" class="w-full md:w-auto h-10 rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4">Filter</button>
 
-        <?php if(request()->hasAny(['q','status','date_from','date_to'])): ?>
+        <?php if(request()->hasAny(['q','username','status','date_from','date_to','root_cause','category_id','subcategory_id','kategori'])): ?>
           <a href="<?php echo e(route('it.dashboard')); ?>"
              class="shrink-0 h-10 inline-block text-center rounded-lg border border-gray-200 px-4 text-sm text-gray-700 hover:underline leading-10">
              Reset
@@ -83,7 +89,7 @@
   // Polling: fetch tickets fragment and replace content if changed
   (function(){
     const intervalMs = 3000; // 3s
-    const activeFilterKeys = ['q', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
+    const activeFilterKeys = ['q', 'username', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
     const queryParams = new URLSearchParams(window.location.search);
     const hasActiveFilter = activeFilterKeys.some((key) => {
       const value = queryParams.get(key);
