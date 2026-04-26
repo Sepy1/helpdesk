@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\ExecutiveSummaryService;
 
 class StatsController extends Controller
 {
@@ -231,10 +232,10 @@ class StatsController extends Controller
         // reuse the data logic (basic filters)
         $ticketsBase = \App\Models\Ticket::query();
         if ($dateFrom) {
-            try { $df = Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay(); $ticketsBase->where('created_at', '>=', $df); } catch (\Exception $e) { /* ignore */ }
+            try { $df = Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay(); $ticketsBase->where('tickets.created_at', '>=', $df); } catch (\Exception $e) { /* ignore */ }
         }
         if ($dateTo) {
-            try { $dt = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay(); $ticketsBase->where('created_at', '<=', $dt); } catch (\Exception $e) { /* ignore */ }
+            try { $dt = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay(); $ticketsBase->where('tickets.created_at', '<=', $dt); } catch (\Exception $e) { /* ignore */ }
         }
 
         // filter by user (pembuat) jika parameter disertakan
@@ -263,11 +264,37 @@ class StatsController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        $kategoriStats = (clone $ticketsBase)
+            ->select('kategori', DB::raw('count(*) as total'))
+            ->whereNotNull('kategori')
+            ->groupBy('kategori')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'kategori' => $row->kategori,
+                'jumlah' => (int) $row->total,
+            ])
+            ->values()
+            ->all();
+
+        $subKategoriStats = (clone $ticketsBase)
+            ->leftJoin('subcategories', 'tickets.subcategory_id', '=', 'subcategories.id')
+            ->select(DB::raw('COALESCE(subcategories.name, "Tidak Ditentukan") as sub_kategori'), DB::raw('count(tickets.id) as total'))
+            ->groupBy('sub_kategori')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'sub_kategori' => $row->sub_kategori,
+                'jumlah' => (int) $row->total,
+            ])
+            ->values()
+            ->all();
+
         // tickets list (for table)
         $ticketsList = (clone $ticketsBase)
-            ->with(['user','it'])
+            ->with(['user','it','subcategory'])
             ->orderByDesc('created_at')
-            ->get(['id','nomor_tiket','created_at','user_id','kategori','root_cause','status','it_id','closed_at']);
+            ->get(['id','nomor_tiket','created_at','user_id','kategori','subcategory_id','root_cause','status','it_id','closed_at','closed_note','taken_at']);
 
         // eskalasi vendor tickets (separate list)
         $eskalasiTickets = (clone $ticketsBase)
@@ -275,9 +302,47 @@ class StatsController extends Controller
                 $q->where('status', 'ESKALASI_VENDOR')
                   ->orWhereHas('histories', fn($h) => $h->where('action', 'assigned_vendor'));
             })
-            ->with(['user','it'])
+            ->with(['user','it','subcategory'])
             ->orderByDesc('created_at')
-            ->get(['id','nomor_tiket','created_at','user_id','kategori','root_cause','status','it_id','closed_at']);
+            ->get(['id','nomor_tiket','created_at','user_id','kategori','subcategory_id','root_cause','status','it_id','closed_at','closed_note','taken_at']);
+
+        // AI Executive Summary payload
+        $ticketPayload = $ticketsList->map(function ($t) {
+            $responseMinutes = null;
+            if (!empty($t->taken_at) && !empty($t->created_at)) {
+                $responseMinutes = $t->created_at->diffInMinutes($t->taken_at);
+            }
+
+            return [
+                'pembuat_tiket' => optional($t->user)->name ?? 'tidak tersedia',
+                'kategori_tiket' => $t->kategori ?? 'tidak tersedia',
+                'sub_kategori_tiket' => optional($t->subcategory)->name ?? 'tidak tersedia',
+                'closed_note' => $t->closed_note ?? 'tidak tersedia',
+                'response_time_ti_menit' => $responseMinutes ?? 'tidak tersedia',
+            ];
+        })->values()->all();
+
+        $summaryPayload = [
+            'periode' => [
+                'date_from' => $dateFrom ?? 'Semua',
+                'date_to' => $dateTo ?? 'Semua',
+            ],
+            'statistik_jumlah_tiket' => [
+                'total' => $total,
+                'closed' => $closed,
+                'open' => $open,
+                'on_progress' => $onProgress,
+                'eskalasi_vendor' => $eskCount,
+            ],
+            'statistik_kategori' => $kategoriStats,
+            'statistik_sub_kategori' => $subKategoriStats,
+            'data_tiket' => $ticketPayload,
+        ];
+
+        $executiveSummary = ExecutiveSummaryService::generate($summaryPayload);
+        if (empty($executiveSummary)) {
+            $executiveSummary = 'Ringkasan AI belum tersedia untuk laporan ini. Silakan cek konfigurasi OPENAI_API_KEY atau coba generate ulang.';
+        }
 
         // prepare KPI chart via QuickChart (donut)
         $kpiLabels = ['Open','Closed','Eskalasi Vendor','On Progress'];
@@ -308,6 +373,7 @@ class StatsController extends Controller
             'tickets' => $ticketsList,
             'eskalasiTickets' => $eskalasiTickets,
             'kpiChartUrl' => $kpiChartUrl,
+            'executiveSummary' => $executiveSummary,
         ])->render();
 
         // If Dompdf not installed, return HTML fallback so user can print to PDF from browser

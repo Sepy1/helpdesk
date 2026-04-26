@@ -105,9 +105,9 @@
     <div style="display:flex; justify-content:space-between; align-items:baseline;">
       <div style="display:flex; align-items:baseline; gap:12px; white-space:nowrap;">
         <div class="h1" style="margin:0; line-height:1;">Laporan Tiket Sambatan</div>
-        <div class="period" style="white-space:nowrap; margin:0; line-height:1; font-size:12px; color:#555;">Periode: {{ $dateFrom ?? 'Semua' }} — {{ $dateTo ?? 'Semua' }}</div>
+        <div class="period" style="white-space:nowrap; margin:0; line-height:1; font-size:12px; color:#555;">Periode: <?php echo e($dateFrom ?? 'Semua'); ?> — <?php echo e($dateTo ?? 'Semua'); ?></div>
       </div>
-      <div style="text-align:right; font-size:11px; color:#666;">Generated: {{ now()->format('d M Y H:i') }}</div>
+      <div style="text-align:right; font-size:11px; color:#666;">Generated: <?php echo e(now()->format('d M Y H:i')); ?></div>
     </div>
   </div>
 
@@ -124,19 +124,19 @@
           <tbody>
             <tr>
               <td style="padding:6px; color:#444;">Total Tiket</td>
-              <td style="padding:6px; text-align:right; font-weight:bold;">{{ $kpi['total'] ?? '-' }}</td>
+              <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($kpi['total'] ?? '-'); ?></td>
             </tr>
             <tr>
               <td style="padding:6px; color:#444;">Tiket Closed</td>
-              <td style="padding:6px; text-align:right; font-weight:bold;">{{ $kpi['closed'] ?? '-' }}</td>
+              <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($kpi['closed'] ?? '-'); ?></td>
             </tr>
             <tr>
               <td style="padding:6px; color:#444;">Tiket On Progress</td>
-              <td style="padding:6px; text-align:right; font-weight:bold;">{{ $kpi['on_progress'] ?? '-' }}</td>
+              <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($kpi['on_progress'] ?? '-'); ?></td>
             </tr>
             <tr>
               <td style="padding:6px; color:#444;">Tiket dengan history Eskalasi Vendor</td>
-              <td style="padding:6px; text-align:right; font-weight:bold;">{{ $kpi['eskalasi'] ?? '-' }}</td>
+              <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($kpi['eskalasi'] ?? '-'); ?></td>
             </tr>
           </tbody>
         </table>
@@ -144,20 +144,20 @@
 
       <td style="width:60%; vertical-align:top; padding-left:8px;">
         <div style="margin-bottom:6px; font-weight:bold;">Jumlah Tiket Berdasar Root Cause</div>
-        @if(count($root) === 0)
+        <?php if(count($root) === 0): ?>
           <div style="text-align:center;">Tidak ada data</div>
-        @else
+        <?php else: ?>
           <table class="table">
             <tbody>
-              @foreach($root as $r)
+              <?php $__currentLoopData = $root; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $r): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
               <tr>
-                <td style="padding:6px; font-size:11px;">{{ $r->root_cause ?? 'Tidak Ditentukan' }}</td>
-                <td style="padding:6px; font-size:11px; text-align:right;">{{ $r->total }}</td>
+                <td style="padding:6px; font-size:11px;"><?php echo e($r->root_cause ?? 'Tidak Ditentukan'); ?></td>
+                <td style="padding:6px; font-size:11px; text-align:right;"><?php echo e($r->total); ?></td>
               </tr>
-              @endforeach
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
           </table>
-        @endif
+        <?php endif; ?>
       </td>
     </tr>
   </table>
@@ -165,11 +165,12 @@
   <div style="margin-top:8px; margin-bottom:12px;">
     <div style="font-weight:bold; margin-bottom:6px;">Executive Summary</div>
     <div style="border:1px solid #ddd; background:#fafafa; padding:10px; border-radius:6px; white-space:pre-line; line-height:1.45;">
-      {{ $executiveSummary ?? 'Ringkasan AI belum tersedia.' }}
+      <?php echo e($executiveSummary ?? 'Ringkasan AI belum tersedia.'); ?>
+
     </div>
   </div>
   
-  @if(!empty($eskalasiTickets) && count($eskalasiTickets) > 0)
+  <?php if(!empty($eskalasiTickets) && count($eskalasiTickets) > 0): ?>
     <div style="font-weight:bold; margin-top:12px; margin-bottom:8px;">Tiket Eskalasi Vendor</div>
           <table class="table">
       <thead>
@@ -185,21 +186,21 @@
         </tr>
       </thead>
       <tbody>
-        @foreach($eskalasiTickets as $i => $t)
+        <?php $__currentLoopData = $eskalasiTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <tr>
-          <td style="width:4%;">{{ $i+1 }}</td>
-          <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-          <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-          <td style="width:15%;">{{ $t->kategori }}</td>
-          <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
-          <td style="width:10%;">{{ $t->status }}</td>
-          <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-          <td style="width:12%;">{{ optional($t->it)->name ?? '-' }}</td>
+          <td style="width:4%;"><?php echo e($i+1); ?></td>
+          <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
+          <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
+          <td style="width:15%;"><?php echo e($t->kategori); ?></td>
+          <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
+          <td style="width:10%;"><?php echo e($t->status); ?></td>
+          <td style="width:12%;"><?php echo e(optional($t->user)->name ?? '-'); ?></td>
+          <td style="width:12%;"><?php echo e(optional($t->it)->name ?? '-'); ?></td>
         </tr>
-        @endforeach
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </tbody>
     </table>
-  @endif
+  <?php endif; ?>
   <br></br>
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
 
@@ -218,21 +219,21 @@
     </thead>
 
     <tbody>
-      @foreach($tickets as $i => $t)
+      <?php $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <tr>
-        <td style="width:4%;">{{ $i+1 }}</td>
-        <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-        <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-        <td style="width:15%;">{{ $t->kategori }}</td>
-        <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
-        <td style="width:10%;">{{ $t->status }}</td>
-        <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-        <td style="width:12%;">{{ optional($t->it)->name ?? '-' }}</td>
+        <td style="width:4%;"><?php echo e($i+1); ?></td>
+        <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
+        <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
+        <td style="width:15%;"><?php echo e($t->kategori); ?></td>
+        <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
+        <td style="width:10%;"><?php echo e($t->status); ?></td>
+        <td style="width:12%;"><?php echo e(optional($t->user)->name ?? '-'); ?></td>
+        <td style="width:12%;"><?php echo e(optional($t->it)->name ?? '-'); ?></td>
       </tr>
-      @endforeach
+      <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </tbody>
   </table>
 
 
 </body>
-</html>
+</html><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/stats_pdf.blade.php ENDPATH**/ ?>
