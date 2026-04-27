@@ -147,6 +147,26 @@
 </div>
 
 
+<div id="reportModeModal" class="fixed inset-0 z-[59] hidden" role="dialog" aria-modal="true" aria-labelledby="reportModeModalTitle">
+  <div id="reportModeModalBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative z-[60] flex min-h-full items-center justify-center p-4 pointer-events-none">
+    <div class="pointer-events-auto bg-white rounded-xl shadow-xl max-w-md w-full ring-1 ring-gray-200">
+      <div class="px-4 py-3 border-b border-gray-100">
+        <h2 id="reportModeModalTitle" class="text-sm font-semibold text-gray-800">Pilih sumber ringkasan</h2>
+      </div>
+      <div class="px-4 py-3 text-sm text-gray-600">
+        Pilih apakah Executive Summary akan dibuat otomatis oleh AI atau Anda isi manual.
+      </div>
+      <div class="px-4 py-3 border-t border-gray-100 flex flex-wrap justify-end gap-2 bg-gray-50 rounded-b-xl">
+        <button type="button" id="reportModeCancel" class="px-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="button" id="reportModeManual" class="px-3 py-2 rounded-md border border-emerald-200 bg-white text-emerald-700 text-sm hover:bg-emerald-50">Tanpa AI</button>
+        <button type="button" id="reportModeAI" class="px-3 py-2 rounded-md bg-emerald-600 text-white text-sm shadow-sm hover:bg-emerald-700">Gunakan AI</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div id="reportSummaryModal" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="reportSummaryModalTitle">
   <div id="reportSummaryModalBackdrop" class="absolute inset-0 bg-black/40"></div>
   <div class="relative z-[61] flex min-h-full items-center justify-center p-4 pointer-events-none">
@@ -361,10 +381,19 @@
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   }
 
+  const reportModeModal = document.getElementById('reportModeModal');
   const reportSummaryModal = document.getElementById('reportSummaryModal');
   const reportSummaryLoading = document.getElementById('reportSummaryLoading');
   const reportSummaryTextarea = document.getElementById('reportSummaryTextarea');
   const reportSummaryConfirm = document.getElementById('reportSummaryConfirm');
+
+  function openReportModeModal() {
+    reportModeModal.classList.remove('hidden');
+  }
+
+  function closeReportModeModal() {
+    reportModeModal.classList.add('hidden');
+  }
 
   function openReportSummaryModal() {
     reportSummaryModal.classList.remove('hidden');
@@ -378,7 +407,7 @@
     reportSummaryModal.classList.add('hidden');
   }
 
-  document.getElementById('btnReport').addEventListener('click', async () => {
+  async function loadSummaryFromAI() {
     openReportSummaryModal();
     const from = document.getElementById('filterFrom').value;
     const to = document.getElementById('filterTo').value;
@@ -418,6 +447,31 @@
       reportSummaryConfirm.disabled = false;
       reportSummaryTextarea.focus();
     }
+  }
+
+  function openManualSummary() {
+    openReportSummaryModal();
+    reportSummaryLoading.classList.add('hidden');
+    reportSummaryTextarea.classList.remove('hidden');
+    reportSummaryTextarea.value = '';
+    reportSummaryTextarea.placeholder = 'Silakan tulis Executive Summary secara manual di sini.';
+    reportSummaryConfirm.disabled = false;
+    reportSummaryTextarea.focus();
+  }
+
+  document.getElementById('btnReport').addEventListener('click', () => {
+    openReportModeModal();
+  });
+
+  document.getElementById('reportModeCancel').addEventListener('click', closeReportModeModal);
+  document.getElementById('reportModeModalBackdrop').addEventListener('click', closeReportModeModal);
+  document.getElementById('reportModeManual').addEventListener('click', () => {
+    closeReportModeModal();
+    openManualSummary();
+  });
+  document.getElementById('reportModeAI').addEventListener('click', async () => {
+    closeReportModeModal();
+    await loadSummaryFromAI();
   });
 
   document.getElementById('reportSummaryCancel').addEventListener('click', closeReportSummaryModal);

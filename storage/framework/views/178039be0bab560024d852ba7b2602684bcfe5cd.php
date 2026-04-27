@@ -230,6 +230,31 @@
     </tr>
   </table>
 
+  <table class="chart-row">
+    <tr>
+      <td>
+        <div style="font-weight:bold; margin-bottom:8px;">Perbandingan Root Cause (12 Bulan)</div>
+        <?php if(!empty($rootCauseTrendChartUrl)): ?>
+          <div class="chart-frame">
+            <img src="<?php echo e($rootCauseTrendChartUrl); ?>" alt="Grafik tren root cause 12 bulan">
+          </div>
+        <?php else: ?>
+          <div class="muted">Data grafik root cause tidak tersedia.</div>
+        <?php endif; ?>
+      </td>
+      <td>
+        <div style="font-weight:bold; margin-bottom:8px;">User Pelapor Terbanyak (12 Bulan)</div>
+        <?php if(!empty($reporterTrendChartUrl)): ?>
+          <div class="chart-frame">
+            <img src="<?php echo e($reporterTrendChartUrl); ?>" alt="Grafik tren user pelapor 12 bulan">
+          </div>
+        <?php else: ?>
+          <div class="muted">Data grafik user pelapor tidak tersedia.</div>
+        <?php endif; ?>
+      </td>
+    </tr>
+  </table>
+
   <div style="margin-top:8px; margin-bottom:12px;">
     <div style="font-weight:bold; margin-bottom:6px;">Executive Summary</div>
     <div style="border:1px solid #ddd; background:#fafafa; padding:10px; border-radius:6px; white-space:pre-line; line-height:1.45;">
@@ -242,6 +267,9 @@
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
   <?php if(!empty($groupedTickets) && count($groupedTickets) > 0): ?>
     <?php $__currentLoopData = $groupedTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $userName => $userTickets): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+      <?php if(!$loop->first): ?>
+        <div class="page-break-before"></div>
+      <?php endif; ?>
       <?php
         $userTotal = count($userTickets);
         $userClosed = $userTickets->where('status', 'CLOSED')->count();

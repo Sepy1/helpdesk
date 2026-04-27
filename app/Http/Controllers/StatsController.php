@@ -268,6 +268,8 @@ class StatsController extends Controller
         $kpiChartUrl = $report['kpiChartUrl'];
         $categoryChartUrl = $report['categoryChartUrl'];
         $subcategoryTrendChartUrl = $report['subcategoryTrendChartUrl'];
+        $rootCauseTrendChartUrl = $report['rootCauseTrendChartUrl'];
+        $reporterTrendChartUrl = $report['reporterTrendChartUrl'];
 
         $html = view('it.stats_pdf', [
             'dateFrom' => $dateFrom,
@@ -279,6 +281,8 @@ class StatsController extends Controller
             'kpiChartUrl' => $kpiChartUrl,
             'categoryChartUrl' => $categoryChartUrl,
             'subcategoryTrendChartUrl' => $subcategoryTrendChartUrl,
+            'rootCauseTrendChartUrl' => $rootCauseTrendChartUrl,
+            'reporterTrendChartUrl' => $reporterTrendChartUrl,
             'executiveSummary' => $executiveSummary,
         ])->render();
 
@@ -322,7 +326,9 @@ class StatsController extends Controller
      *   summaryPayload: array,
      *   kpiChartUrl: string,
      *   categoryChartUrl: string,
-     *   subcategoryTrendChartUrl: string
+     *   subcategoryTrendChartUrl: string,
+     *   rootCauseTrendChartUrl: string,
+     *   reporterTrendChartUrl: string
      * }
      */
     private function buildReportViewData(Request $request): array
@@ -619,6 +625,139 @@ class StatsController extends Controller
         ];
         $subcategoryTrendChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($subcatTrendConfig));
 
+        $rootTrendQuery = \App\Models\Ticket::query()
+            ->select(
+                DB::raw('COALESCE(tickets.root_cause, "Tidak Ditentukan") as root_cause'),
+                DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m") as ym'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+            ->groupBy('root_cause', 'ym')
+            ->orderBy('ym');
+
+        if ($request->filled('user_id')) {
+            $rootTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
+        }
+
+        $rootTrendRows = $rootTrendQuery->get();
+        $topRootCauses = $rootTrendRows
+            ->groupBy('root_cause')
+            ->map(fn ($rows) => (int) $rows->sum('total'))
+            ->sortDesc()
+            ->take(5)
+            ->keys()
+            ->values();
+
+        $rootTrendDatasets = [];
+        foreach ($topRootCauses as $i => $rootCause) {
+            $monthlyMap = $rootTrendRows
+                ->where('root_cause', $rootCause)
+                ->pluck('total', 'ym');
+            $rootTrendDatasets[] = [
+                'label' => $rootCause,
+                'data' => collect($monthKeys)->map(fn ($ym) => (int) ($monthlyMap[$ym] ?? 0))->values()->all(),
+                'borderColor' => $palette[$i % count($palette)],
+                'backgroundColor' => $palette[$i % count($palette)] . '33',
+                'fill' => true,
+                'pointRadius' => 2,
+                'pointHoverRadius' => 4,
+                'borderWidth' => 2,
+                'tension' => 0.35,
+            ];
+        }
+
+        $rootTrendConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $monthLabels,
+                'datasets' => $rootTrendDatasets,
+            ],
+            'options' => [
+                'plugins' => [
+                    'legend' => ['display' => true, 'position' => 'bottom'],
+                ],
+                'scales' => [
+                    'y' => ['beginAtZero' => true, 'ticks' => ['precision' => 0]],
+                    'x' => [
+                        'ticks' => [
+                            'autoSkip' => false,
+                            'maxRotation' => 0,
+                            'minRotation' => 0,
+                            'font' => ['size' => 10],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $rootCauseTrendChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($rootTrendConfig));
+
+        $reporterTrendQuery = \App\Models\Ticket::query()
+            ->leftJoin('users', 'tickets.user_id', '=', 'users.id')
+            ->select(
+                DB::raw('COALESCE(users.name, CONCAT("User #", tickets.user_id)) as reporter'),
+                DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m") as ym'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+            ->groupBy('reporter', 'ym')
+            ->orderBy('ym');
+
+        if ($request->filled('user_id')) {
+            $reporterTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
+        }
+
+        $reporterTrendRows = $reporterTrendQuery->get();
+        $topReporters = $reporterTrendRows
+            ->groupBy('reporter')
+            ->map(fn ($rows) => (int) $rows->sum('total'))
+            ->sortDesc()
+            ->take(5)
+            ->keys()
+            ->values();
+
+        $reporterTrendDatasets = [];
+        foreach ($topReporters as $i => $reporter) {
+            $monthlyMap = $reporterTrendRows
+                ->where('reporter', $reporter)
+                ->pluck('total', 'ym');
+            $reporterTrendDatasets[] = [
+                'label' => $reporter,
+                'data' => collect($monthKeys)->map(fn ($ym) => (int) ($monthlyMap[$ym] ?? 0))->values()->all(),
+                'borderColor' => $palette[$i % count($palette)],
+                'backgroundColor' => $palette[$i % count($palette)] . '33',
+                'fill' => true,
+                'pointRadius' => 2,
+                'pointHoverRadius' => 4,
+                'borderWidth' => 2,
+                'tension' => 0.35,
+            ];
+        }
+
+        $reporterTrendConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $monthLabels,
+                'datasets' => $reporterTrendDatasets,
+            ],
+            'options' => [
+                'plugins' => [
+                    'legend' => ['display' => true, 'position' => 'bottom'],
+                ],
+                'scales' => [
+                    'y' => ['beginAtZero' => true, 'ticks' => ['precision' => 0]],
+                    'x' => [
+                        'ticks' => [
+                            'autoSkip' => false,
+                            'maxRotation' => 0,
+                            'minRotation' => 0,
+                            'font' => ['size' => 10],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $reporterTrendChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($reporterTrendConfig));
+
         return [
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
@@ -634,6 +773,8 @@ class StatsController extends Controller
             'kpiChartUrl' => $kpiChartUrl,
             'categoryChartUrl' => $categoryChartUrl,
             'subcategoryTrendChartUrl' => $subcategoryTrendChartUrl,
+            'rootCauseTrendChartUrl' => $rootCauseTrendChartUrl,
+            'reporterTrendChartUrl' => $reporterTrendChartUrl,
         ];
     }
 }
