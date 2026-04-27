@@ -264,8 +264,10 @@ class StatsController extends Controller
         $onProgress = $report['onProgress'];
         $root = $report['root'];
         $ticketsList = $report['ticketsList'];
-        $eskalasiTickets = $report['eskalasiTickets'];
+        $groupedTickets = $report['groupedTickets'];
         $kpiChartUrl = $report['kpiChartUrl'];
+        $categoryChartUrl = $report['categoryChartUrl'];
+        $subcategoryTrendChartUrl = $report['subcategoryTrendChartUrl'];
 
         $html = view('it.stats_pdf', [
             'dateFrom' => $dateFrom,
@@ -273,8 +275,10 @@ class StatsController extends Controller
             'kpi' => ['total' => $total, 'open' => $open, 'closed' => $closed, 'eskalasi' => $eskCount, 'on_progress' => $onProgress],
             'root' => $root,
             'tickets' => $ticketsList,
-            'eskalasiTickets' => $eskalasiTickets,
+            'groupedTickets' => $groupedTickets,
             'kpiChartUrl' => $kpiChartUrl,
+            'categoryChartUrl' => $categoryChartUrl,
+            'subcategoryTrendChartUrl' => $subcategoryTrendChartUrl,
             'executiveSummary' => $executiveSummary,
         ])->render();
 
@@ -314,9 +318,11 @@ class StatsController extends Controller
      *   onProgress: int,
      *   root: \Illuminate\Support\Collection,
      *   ticketsList: \Illuminate\Support\Collection,
-     *   eskalasiTickets: \Illuminate\Support\Collection,
+     *   groupedTickets: \Illuminate\Support\Collection,
      *   summaryPayload: array,
-     *   kpiChartUrl: string
+     *   kpiChartUrl: string,
+     *   categoryChartUrl: string,
+     *   subcategoryTrendChartUrl: string
      * }
      */
     private function buildReportViewData(Request $request): array
@@ -396,14 +402,9 @@ class StatsController extends Controller
             ->orderByDesc('created_at')
             ->get(['id', 'nomor_tiket', 'created_at', 'user_id', 'kategori', 'subcategory_id', 'root_cause', 'status', 'closed_at', 'closed_note', 'taken_at']);
 
-        $eskalasiTickets = (clone $ticketsBase)
-            ->where(function ($q) {
-                $q->where('status', 'ESKALASI_VENDOR')
-                    ->orWhereHas('histories', fn ($h) => $h->where('action', 'assigned_vendor'));
-            })
-            ->with(['user', 'subcategory'])
-            ->orderByDesc('created_at')
-            ->get(['id', 'nomor_tiket', 'created_at', 'user_id', 'kategori', 'subcategory_id', 'root_cause', 'status', 'closed_at', 'closed_note', 'taken_at']);
+        $groupedTickets = $ticketsList
+            ->groupBy(fn ($t) => optional($t->user)->name ?? 'Tidak diketahui')
+            ->sortKeys();
 
         $ticketPayload = $ticketsList->map(function ($t) {
             $responseMinutes = null;
@@ -457,6 +458,167 @@ class StatsController extends Controller
         ];
         $kpiChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($chartConfig));
 
+        // Rentang tren 12 bulan dipakai oleh chart kategori & sub kategori
+        $trendEnd = $dateTo
+            ? Carbon::createFromFormat('Y-m-d', $dateTo)->endOfMonth()
+            : now()->endOfMonth();
+        $trendStart = (clone $trendEnd)->subMonths(11)->startOfMonth();
+
+        $monthLabels = [];
+        $monthKeys = [];
+        $cursor = (clone $trendStart);
+        while ($cursor <= $trendEnd) {
+            $monthLabels[] = $cursor->translatedFormat('M y');
+            $monthKeys[] = $cursor->format('Y-m');
+            $cursor->addMonth();
+        }
+
+        $catTrendQuery = \App\Models\Ticket::query()
+            ->select(
+                DB::raw('COALESCE(tickets.kategori, "Tidak Ditentukan") as kategori'),
+                DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m") as ym'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+            ->groupBy('kategori', 'ym')
+            ->orderBy('ym');
+
+        if ($request->filled('user_id')) {
+            $catTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
+        }
+
+        $catTrendRows = $catTrendQuery->get();
+        $topCategories = $catTrendRows
+            ->groupBy('kategori')
+            ->map(fn ($rows) => (int) $rows->sum('total'))
+            ->sortDesc()
+            ->take(5)
+            ->keys()
+            ->values();
+
+        $palette = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444'];
+        $catTrendDatasets = [];
+        foreach ($topCategories as $i => $kategori) {
+            $monthlyMap = $catTrendRows
+                ->where('kategori', $kategori)
+                ->pluck('total', 'ym');
+            $catTrendDatasets[] = [
+                'label' => $kategori,
+                'data' => collect($monthKeys)->map(fn ($ym) => (int) ($monthlyMap[$ym] ?? 0))->values()->all(),
+                'borderColor' => $palette[$i % count($palette)],
+                'backgroundColor' => $palette[$i % count($palette)] . '33',
+                'fill' => true,
+                'pointRadius' => 2,
+                'pointHoverRadius' => 4,
+                'borderWidth' => 2,
+                'tension' => 0.35,
+            ];
+        }
+
+        $categoryChartConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $monthLabels,
+                'datasets' => $catTrendDatasets,
+            ],
+            'options' => [
+                'elements' => [
+                    'line' => ['capBezierPoints' => true],
+                ],
+                'plugins' => [
+                    'legend' => ['display' => true, 'position' => 'bottom'],
+                ],
+                'scales' => [
+                    'y' => ['beginAtZero' => true, 'ticks' => ['precision' => 0]],
+                    'x' => [
+                        'ticks' => [
+                            'autoSkip' => false,
+                            'maxRotation' => 0,
+                            'minRotation' => 0,
+                            'font' => ['size' => 10],
+                        ],
+                    ],
+                ],
+                'layout' => [
+                    'padding' => ['top' => 6, 'left' => 6, 'right' => 10, 'bottom' => 0],
+                ],
+            ],
+        ];
+        $categoryChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($categoryChartConfig));
+
+        $subcatTrendQuery = \App\Models\Ticket::query()
+            ->leftJoin('subcategories', 'tickets.subcategory_id', '=', 'subcategories.id')
+            ->select(
+                DB::raw('COALESCE(subcategories.name, "Tidak Ditentukan") as sub_kategori'),
+                DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m") as ym'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+            ->groupBy('sub_kategori', 'ym')
+            ->orderBy('ym');
+
+        if ($request->filled('user_id')) {
+            $subcatTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
+        }
+
+        $subcatTrendRows = $subcatTrendQuery->get();
+        $topSubcats = $subcatTrendRows
+            ->groupBy('sub_kategori')
+            ->map(fn ($rows) => (int) $rows->sum('total'))
+            ->sortDesc()
+            ->take(5)
+            ->keys()
+            ->values();
+
+        $trendDatasets = [];
+        foreach ($topSubcats as $i => $subcat) {
+            $monthlyMap = $subcatTrendRows
+                ->where('sub_kategori', $subcat)
+                ->pluck('total', 'ym');
+            $trendDatasets[] = [
+                'label' => $subcat,
+                'data' => collect($monthKeys)->map(fn ($ym) => (int) ($monthlyMap[$ym] ?? 0))->values()->all(),
+                'borderColor' => $palette[$i % count($palette)],
+                'backgroundColor' => $palette[$i % count($palette)] . '33',
+                'fill' => true,
+                'pointRadius' => 2,
+                'pointHoverRadius' => 4,
+                'borderWidth' => 2,
+                'tension' => 0.35,
+            ];
+        }
+
+        $subcatTrendConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $monthLabels,
+                'datasets' => $trendDatasets,
+            ],
+            'options' => [
+                'elements' => [
+                    'line' => ['capBezierPoints' => true],
+                ],
+                'plugins' => [
+                    'legend' => ['display' => true, 'position' => 'bottom'],
+                ],
+                'scales' => [
+                    'y' => ['beginAtZero' => true, 'ticks' => ['precision' => 0]],
+                    'x' => [
+                        'ticks' => [
+                            'autoSkip' => false,
+                            'maxRotation' => 0,
+                            'minRotation' => 0,
+                            'font' => ['size' => 10],
+                        ],
+                    ],
+                ],
+                'layout' => [
+                    'padding' => ['top' => 6, 'left' => 6, 'right' => 10, 'bottom' => 0],
+                ],
+            ],
+        ];
+        $subcategoryTrendChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($subcatTrendConfig));
+
         return [
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
@@ -467,9 +629,11 @@ class StatsController extends Controller
             'onProgress' => $onProgress,
             'root' => $root,
             'ticketsList' => $ticketsList,
-            'eskalasiTickets' => $eskalasiTickets,
+            'groupedTickets' => $groupedTickets,
             'summaryPayload' => $summaryPayload,
             'kpiChartUrl' => $kpiChartUrl,
+            'categoryChartUrl' => $categoryChartUrl,
+            'subcategoryTrendChartUrl' => $subcategoryTrendChartUrl,
         ];
     }
 }

@@ -95,6 +95,49 @@
       .table th, .table td { padding: 5px; font-size: 10px; }
     }
 
+    .chart-block {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chart-frame {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      min-height: 230px;
+      max-height: 230px;
+      overflow: hidden;
+    }
+
+    .chart-frame img {
+      width: 100%;
+      max-width: 700px;
+      height: 210px;
+      object-fit: contain;
+    }
+
+    .chart-row {
+      width: 100%;
+      border-collapse: collapse;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 12px;
+    }
+
+    .chart-row td {
+      width: 50%;
+      vertical-align: top;
+      padding: 0 6px;
+    }
+
+    .page-break-before {
+      page-break-before: always;
+      break-before: page;
+    }
+
   </style>
 </head>
 
@@ -162,76 +205,142 @@
     </tr>
   </table>
 
+  <table class="chart-row">
+    <tr>
+      <td>
+        <div style="font-weight:bold; margin-bottom:8px;">Perbandingan Tiket Kategori (12 Bulan)</div>
+        @if(!empty($categoryChartUrl))
+          <div class="chart-frame">
+            <img src="{{ $categoryChartUrl }}" alt="Grafik jumlah tiket per kategori">
+          </div>
+        @else
+          <div class="muted">Data grafik kategori tidak tersedia.</div>
+        @endif
+      </td>
+      <td>
+        <div style="font-weight:bold; margin-bottom:8px;">Perbandingan Tiket Sub Kategori (12 Bulan)</div>
+        @if(!empty($subcategoryTrendChartUrl))
+          <div class="chart-frame">
+            <img src="{{ $subcategoryTrendChartUrl }}" alt="Grafik tren sub kategori 12 bulan">
+          </div>
+        @else
+          <div class="muted">Data grafik sub kategori tidak tersedia.</div>
+        @endif
+      </td>
+    </tr>
+  </table>
+
   <div style="margin-top:8px; margin-bottom:12px;">
     <div style="font-weight:bold; margin-bottom:6px;">Executive Summary</div>
     <div style="border:1px solid #ddd; background:#fafafa; padding:10px; border-radius:6px; white-space:pre-line; line-height:1.45;">
       {{ $executiveSummary ?? 'Ringkasan AI belum tersedia.' }}
     </div>
   </div>
-  
-  @if(!empty($eskalasiTickets) && count($eskalasiTickets) > 0)
-    <div style="font-weight:bold; margin-top:12px; margin-bottom:8px;">Tiket Eskalasi Vendor</div>
-          <table class="table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Dibuat</th>
-          <th>Nomor</th>
-          <th>Kategori</th>
-          <th>Sub Kategori</th>
-          <th>Root Cause</th>
-          <th>Status</th>
-          <th>Pembuat</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($eskalasiTickets as $i => $t)
-        <tr>
-          <td style="width:4%;">{{ $i+1 }}</td>
-          <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-          <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-          <td style="width:12%;">{{ $t->kategori }}</td>
-          <td style="width:12%;">{{ optional($t->subcategory)->name ?? '-' }}</td>
-          <td style="width:20%;">{{ $t->root_cause ?? '-' }}</td>
-          <td style="width:10%;">{{ $t->status }}</td>
-          <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
-  @endif
-  <br></br>
+
+  <div class="page-break-before"></div>
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
+  @if(!empty($groupedTickets) && count($groupedTickets) > 0)
+    @foreach($groupedTickets as $userName => $userTickets)
+      @php
+        $userTotal = count($userTickets);
+        $userClosed = $userTickets->where('status', 'CLOSED')->count();
+        $userOnProgress = $userTickets->where('status', 'ON_PROGRESS')->count();
+        $userEskalasi = $userTickets->where('status', 'ESKALASI_VENDOR')->count();
+        $userOpen = max(0, $userTotal - $userClosed);
+        $userRootCauseStats = $userTickets
+          ->groupBy(fn($t) => $t->root_cause ?? 'Tidak Ditentukan')
+          ->map(fn($items) => count($items))
+          ->sortDesc();
+      @endphp
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Dibuat</th>
-        <th>Nomor</th>
-        <th>Kategori</th>
-        <th>Sub Kategori</th>
-        <th>Root Cause</th>
-        <th>Status</th>
-        <th>Pembuat</th>
-      </tr>
-    </thead>
+      <div style="margin-top:10px; margin-bottom:4px; font-weight:bold;">
+        {{ $userName }}
+        <span class="muted">({{ count($userTickets) }} tiket)</span>
+      </div>
 
-    <tbody>
-      @foreach($tickets as $i => $t)
-      <tr>
-        <td style="width:4%;">{{ $i+1 }}</td>
-        <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
-        <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-        <td style="width:12%;">{{ $t->kategori }}</td>
-        <td style="width:12%;">{{ optional($t->subcategory)->name ?? '-' }}</td>
-        <td style="width:20%;">{{ $t->root_cause ?? '-' }}</td>
-        <td style="width:10%;">{{ $t->status }}</td>
-        <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-      </tr>
-      @endforeach
-    </tbody>
-  </table>
+      <table style="width:100%; border-collapse:collapse; margin-top:4px; margin-bottom:8px;">
+        <tr>
+          <td style="width:50%; vertical-align:top; padding-right:6px;">
+            <table class="table" style="margin-top:0;">
+              <tbody>
+                <tr>
+                  <td style="padding:6px; color:#444; width:65%;">Total Tiket</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userTotal }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px; color:#444;">Tiket Closed</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userClosed }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px; color:#444;">Tiket On Progress</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userOnProgress }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px; color:#444;">Tiket Open</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userOpen }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px; color:#444;">Tiket Eskalasi Vendor</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userEskalasi }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+          <td style="width:50%; vertical-align:top; padding-left:6px;">
+            <table class="table" style="margin-top:0;">
+              <thead>
+                <tr>
+                  <th>Root Cause</th>
+                  <th style="text-align:right;">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse($userRootCauseStats as $rootCause => $rootTotal)
+                  <tr>
+                    <td style="padding:6px;">{{ $rootCause }}</td>
+                    <td style="padding:6px; text-align:right; font-weight:bold;">{{ $rootTotal }}</td>
+                  </tr>
+                @empty
+                  <tr>
+                    <td colspan="2" style="padding:6px; text-align:center; color:#666;">Tidak ada data root cause</td>
+                  </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table class="table" style="margin-top:4px; margin-bottom:12px;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Dibuat</th>
+            <th>Nomor</th>
+            <th>Kategori</th>
+            <th>Sub Kategori</th>
+            <th>Root Cause</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($userTickets as $i => $t)
+          <tr>
+            <td style="width:5%;">{{ $i+1 }}</td>
+            <td style="width:13%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
+            <td style="width:14%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
+            <td style="width:14%;">{{ $t->kategori }}</td>
+            <td style="width:14%;">{{ optional($t->subcategory)->name ?? '-' }}</td>
+            <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
+            <td style="width:16%;">{{ $t->status }}</td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    @endforeach
+  @else
+    <div class="muted">Tidak ada data tiket pada periode ini.</div>
+  @endif
 
 
 </body>
