@@ -105,17 +105,17 @@
     .chart-frame {
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 8px;
+      padding: 6px;
       text-align: center;
-      min-height: 230px;
-      max-height: 230px;
+      min-height: 170px;
+      max-height: 170px;
       overflow: hidden;
     }
 
     .chart-frame img {
       width: 100%;
-      max-width: 700px;
-      height: 210px;
+      max-width: 620px;
+      height: 150px;
       object-fit: contain;
     }
 
