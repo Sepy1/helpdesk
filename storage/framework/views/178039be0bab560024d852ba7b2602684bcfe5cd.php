@@ -177,12 +177,12 @@
         <tr>
           <th>#</th>
           <th>Dibuat</th>
-                <th>Nomor</th>
+          <th>Nomor</th>
           <th>Kategori</th>
+          <th>Sub Kategori</th>
           <th>Root Cause</th>
           <th>Status</th>
           <th>Pembuat</th>
-          <th>IT Handler</th>
         </tr>
       </thead>
       <tbody>
@@ -191,11 +191,11 @@
           <td style="width:4%;"><?php echo e($i+1); ?></td>
           <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
           <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
-          <td style="width:15%;"><?php echo e($t->kategori); ?></td>
-          <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
+          <td style="width:12%;"><?php echo e($t->kategori); ?></td>
+          <td style="width:12%;"><?php echo e(optional($t->subcategory)->name ?? '-'); ?></td>
+          <td style="width:20%;"><?php echo e($t->root_cause ?? '-'); ?></td>
           <td style="width:10%;"><?php echo e($t->status); ?></td>
           <td style="width:12%;"><?php echo e(optional($t->user)->name ?? '-'); ?></td>
-          <td style="width:12%;"><?php echo e(optional($t->it)->name ?? '-'); ?></td>
         </tr>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </tbody>
@@ -211,10 +211,10 @@
         <th>Dibuat</th>
         <th>Nomor</th>
         <th>Kategori</th>
+        <th>Sub Kategori</th>
         <th>Root Cause</th>
         <th>Status</th>
         <th>Pembuat</th>
-        <th>IT Handler</th>
       </tr>
     </thead>
 
@@ -224,11 +224,11 @@
         <td style="width:4%;"><?php echo e($i+1); ?></td>
         <td style="width:11%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>
         <td style="width:12%;"><a href="<?php echo e(route('ticket.show', $t->id)); ?>" style="color:#1a73e8; text-decoration:underline;"><?php echo e($t->nomor_tiket); ?></a></td>
-        <td style="width:15%;"><?php echo e($t->kategori); ?></td>
-        <td style="width:24%;"><?php echo e($t->root_cause ?? '-'); ?></td>
+        <td style="width:12%;"><?php echo e($t->kategori); ?></td>
+        <td style="width:12%;"><?php echo e(optional($t->subcategory)->name ?? '-'); ?></td>
+        <td style="width:20%;"><?php echo e($t->root_cause ?? '-'); ?></td>
         <td style="width:10%;"><?php echo e($t->status); ?></td>
         <td style="width:12%;"><?php echo e(optional($t->user)->name ?? '-'); ?></td>
-        <td style="width:12%;"><?php echo e(optional($t->it)->name ?? '-'); ?></td>
       </tr>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </tbody>

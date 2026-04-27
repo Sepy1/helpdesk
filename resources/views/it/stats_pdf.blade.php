@@ -176,12 +176,12 @@
         <tr>
           <th>#</th>
           <th>Dibuat</th>
-                <th>Nomor</th>
+          <th>Nomor</th>
           <th>Kategori</th>
+          <th>Sub Kategori</th>
           <th>Root Cause</th>
           <th>Status</th>
           <th>Pembuat</th>
-          <th>IT Handler</th>
         </tr>
       </thead>
       <tbody>
@@ -190,11 +190,11 @@
           <td style="width:4%;">{{ $i+1 }}</td>
           <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
           <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-          <td style="width:15%;">{{ $t->kategori }}</td>
-          <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
+          <td style="width:12%;">{{ $t->kategori }}</td>
+          <td style="width:12%;">{{ optional($t->subcategory)->name ?? '-' }}</td>
+          <td style="width:20%;">{{ $t->root_cause ?? '-' }}</td>
           <td style="width:10%;">{{ $t->status }}</td>
           <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-          <td style="width:12%;">{{ optional($t->it)->name ?? '-' }}</td>
         </tr>
         @endforeach
       </tbody>
@@ -210,10 +210,10 @@
         <th>Dibuat</th>
         <th>Nomor</th>
         <th>Kategori</th>
+        <th>Sub Kategori</th>
         <th>Root Cause</th>
         <th>Status</th>
         <th>Pembuat</th>
-        <th>IT Handler</th>
       </tr>
     </thead>
 
@@ -223,11 +223,11 @@
         <td style="width:4%;">{{ $i+1 }}</td>
         <td style="width:11%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>
         <td style="width:12%;"><a href="{{ route('ticket.show', $t->id) }}" style="color:#1a73e8; text-decoration:underline;">{{ $t->nomor_tiket }}</a></td>
-        <td style="width:15%;">{{ $t->kategori }}</td>
-        <td style="width:24%;">{{ $t->root_cause ?? '-' }}</td>
+        <td style="width:12%;">{{ $t->kategori }}</td>
+        <td style="width:12%;">{{ optional($t->subcategory)->name ?? '-' }}</td>
+        <td style="width:20%;">{{ $t->root_cause ?? '-' }}</td>
         <td style="width:10%;">{{ $t->status }}</td>
         <td style="width:12%;">{{ optional($t->user)->name ?? '-' }}</td>
-        <td style="width:12%;">{{ optional($t->it)->name ?? '-' }}</td>
       </tr>
       @endforeach
     </tbody>

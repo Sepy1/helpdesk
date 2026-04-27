@@ -133,7 +133,8 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::get('/it/tickets/export', [TicketController::class, 'export'])->name('it.tickets.export'); // export XLS/CSV sesuai filter
         Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');            // tiket saya (IT)
         Route::get('/it/stats', [TicketController::class, 'stats'])->name('it.stats');                   // statistik
-        Route::get('/it/stats/report', [\App\Http\Controllers\StatsController::class, 'report'])->name('it.stats.report');
+        Route::post('/it/stats/report/summary-preview', [\App\Http\Controllers\StatsController::class, 'reportSummaryPreview'])->name('it.stats.report.summary_preview');
+        Route::match(['get', 'post'], '/it/stats/report', [\App\Http\Controllers\StatsController::class, 'report'])->name('it.stats.report');
         // Parameter management (kategori, subkategori, root cause)
         Route::get('/it/parameters', [\App\Http\Controllers\ParameterController::class, 'index'])->name('it.parameters');
         Route::post('/it/parameters/category', [\App\Http\Controllers\ParameterController::class, 'storeCategory'])->name('it.parameters.category.store');

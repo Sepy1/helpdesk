@@ -36,10 +36,10 @@
             Export
           </button>
 
-          <a id="btnReport" href="#" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-emerald-600 text-white text-sm shadow-sm hover:bg-emerald-700" title="Generate Laporan PDF">
+          <button type="button" id="btnReport" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-emerald-600 text-white text-sm shadow-sm hover:bg-emerald-700" title="Generate Laporan PDF">
             <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v16H4z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 2v4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Generate Laporan
-          </a>
+          </button>
         </div>
       </form>
     </div>
@@ -141,6 +141,32 @@
         <div class="min-h-[160px]">
           <canvas id="chartRootCause" class="w-full h-40"></canvas>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- Modal pratinjau Executive Summary sebelum PDF --}}
+<div id="reportSummaryModal" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="reportSummaryModalTitle">
+  <div id="reportSummaryModalBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative z-[61] flex min-h-full items-center justify-center p-4 pointer-events-none">
+    <div class="pointer-events-auto bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col ring-1 ring-gray-200">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
+        <h2 id="reportSummaryModalTitle" class="text-sm font-semibold text-gray-800">Ringkasan eksekutif</h2>
+        <button type="button" id="reportSummaryCloseX" class="rounded p-1 text-gray-500 hover:bg-gray-100" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="px-4 py-3 flex-1 overflow-y-auto min-h-[200px]">
+        <p id="reportSummaryLoading" class="text-sm text-gray-600 flex items-center gap-2">
+          <svg class="animate-spin w-5 h-5 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+          Memuat ringkasan AI…
+        </p>
+        <label for="reportSummaryTextarea" class="sr-only">Edit ringkasan</label>
+        <textarea id="reportSummaryTextarea" class="hidden w-full min-h-[260px] rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" rows="14" placeholder="Ringkasan akan muncul di sini; Anda boleh mengubah teks sebelum mengunduh PDF."></textarea>
+        <p class="mt-2 text-xs text-gray-500">Sesuaikan teks jika perlu, lalu klik <strong>Generate PDF</strong> untuk mengunduh laporan.</p>
+      </div>
+      <div class="px-4 py-3 border-t border-gray-100 flex flex-wrap justify-end gap-2 bg-gray-50 rounded-b-xl">
+        <button type="button" id="reportSummaryCancel" class="px-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="button" id="reportSummaryConfirm" class="px-3 py-2 rounded-md bg-emerald-600 text-white text-sm shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">Generate PDF</button>
       </div>
     </div>
   </div>
@@ -331,18 +357,128 @@
     window.location.href = url;
   });
 
-  document.getElementById('btnReport').addEventListener('click', (e) => {
-    e.preventDefault();
+  function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  }
+
+  const reportSummaryModal = document.getElementById('reportSummaryModal');
+  const reportSummaryLoading = document.getElementById('reportSummaryLoading');
+  const reportSummaryTextarea = document.getElementById('reportSummaryTextarea');
+  const reportSummaryConfirm = document.getElementById('reportSummaryConfirm');
+
+  function openReportSummaryModal() {
+    reportSummaryModal.classList.remove('hidden');
+    reportSummaryLoading.classList.remove('hidden');
+    reportSummaryTextarea.classList.add('hidden');
+    reportSummaryTextarea.value = '';
+    reportSummaryConfirm.disabled = true;
+  }
+
+  function closeReportSummaryModal() {
+    reportSummaryModal.classList.add('hidden');
+  }
+
+  document.getElementById('btnReport').addEventListener('click', async () => {
+    openReportSummaryModal();
     const from = document.getElementById('filterFrom').value;
     const to = document.getElementById('filterTo').value;
-    const params = new URLSearchParams();
-    if (from) params.set('date_from', from);
-    if (to) params.set('date_to', to);
-    const user = document.getElementById('filterUser')?.value;
-    if (user) params.set('user_id', user);
-    const url = `{{ route('it.stats.report') }}?${params.toString()}`;
-    // open in new tab
-    window.open(url, '_blank');
+    const user = document.getElementById('filterUser')?.value || '';
+
+    try {
+      const res = await fetch(`{{ route('it.stats.report.summary_preview') }}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          date_from: from || null,
+          date_to: to || null,
+          user_id: user || null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.message || `HTTP ${res.status}`);
+      }
+      reportSummaryTextarea.value = (json.executive_summary || '').trim();
+      if (json.ai_unavailable && !reportSummaryTextarea.value) {
+        reportSummaryTextarea.value = 'Ringkasan otomatis tidak tersedia. Silakan tulis ringkasan eksekutif di sini, lalu klik Generate PDF.';
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal memuat ringkasan AI: ' + err.message);
+      reportSummaryTextarea.value = 'Silakan tulis ringkasan eksekutif di sini, lalu klik Generate PDF.';
+    } finally {
+      reportSummaryLoading.classList.add('hidden');
+      reportSummaryTextarea.classList.remove('hidden');
+      reportSummaryConfirm.disabled = false;
+      reportSummaryTextarea.focus();
+    }
+  });
+
+  document.getElementById('reportSummaryCancel').addEventListener('click', closeReportSummaryModal);
+  document.getElementById('reportSummaryCloseX').addEventListener('click', closeReportSummaryModal);
+  document.getElementById('reportSummaryModalBackdrop').addEventListener('click', closeReportSummaryModal);
+
+  reportSummaryConfirm.addEventListener('click', async () => {
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    const user = document.getElementById('filterUser')?.value || '';
+    const executiveSummary = reportSummaryTextarea.value;
+
+    reportSummaryConfirm.disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append('_token', csrfToken());
+      fd.append('date_from', from);
+      fd.append('date_to', to);
+      fd.append('user_id', user);
+      fd.append('executive_summary', executiveSummary);
+
+      const res = await fetch(`{{ route('it.stats.report') }}`, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'Accept': 'application/pdf, text/html',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+      });
+
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      const blob = await res.blob();
+
+      if (!res.ok) {
+        const t = await blob.text().catch(() => '');
+        throw new Error(t.slice(0, 240) || `HTTP ${res.status}`);
+      }
+
+      if (ct.includes('application/pdf')) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'laporan_tiket.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        closeReportSummaryModal();
+      } else {
+        const htmlUrl = URL.createObjectURL(blob);
+        window.open(htmlUrl, '_blank');
+        URL.revokeObjectURL(htmlUrl);
+        closeReportSummaryModal();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membuat laporan: ' + err.message);
+    } finally {
+      reportSummaryConfirm.disabled = false;
+    }
   });
 
   // initial load (no date range = all)
