@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
+use App\Models\RootCauseDetail;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -16,7 +17,7 @@ class ParameterController extends Controller
         if (auth()->user()->role !== 'IT') abort(403);
 
         $categories = Category::with('subcategories')->orderBy('name')->get();
-        $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
+        $rootCauses = RootCause::with('details')->orderBy('sort')->orderBy('name')->get();
         $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
         $its = User::where('role', 'IT')->orderBy('name')->get();
 
@@ -90,5 +91,46 @@ class ParameterController extends Controller
         $rc = RootCause::findOrFail($id);
         $rc->delete();
         return back()->with('success','Root cause dihapus.');
+    }
+
+    public function storeRootCauseDetail(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'root_cause_id' => 'required|exists:root_causes,id',
+            'label' => 'required|string|max:191',
+            'is_other' => 'nullable|boolean',
+        ]);
+
+        $isOther = $request->boolean('is_other');
+        if ($isOther) {
+            $exists = RootCauseDetail::where('root_cause_id', $data['root_cause_id'])->where('is_other', true)->exists();
+            if ($exists) {
+                return back()->with('error', 'Hanya satu opsi bertipe "Lainnya" per root cause.');
+            }
+        }
+
+        $max = RootCauseDetail::where('root_cause_id', $data['root_cause_id'])->max('sort') ?? 0;
+        RootCauseDetail::create([
+            'root_cause_id' => $data['root_cause_id'],
+            'label' => $data['label'],
+            'sort' => $max + 1,
+            'is_other' => $isOther,
+        ]);
+
+        return back()->with('success', 'Detail root cause ditambahkan.');
+    }
+
+    public function deleteRootCauseDetail(RootCauseDetail $detail)
+    {
+        if (auth()->user()->role !== 'IT') {
+            abort(403);
+        }
+        $detail->delete();
+
+        return back()->with('success', 'Detail root cause dihapus.');
     }
 }

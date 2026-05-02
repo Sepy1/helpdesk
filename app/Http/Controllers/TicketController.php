@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
+use App\Models\RootCauseDetail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use App\Mail\TicketSubmitted;
@@ -704,34 +705,80 @@ public function store(Request $request)
         abort(403);
     }
 
-    $data = $request->validate([
-        'root_cause'  => 'required|string|exists:root_causes,name',
-        'closed_note' => 'required|string|min:3',
+    $base = $request->validate([
+        'root_cause' => 'required|string|exists:root_causes,name',
     ]);
+
+    $rootCauseModel = RootCause::where('name', $base['root_cause'])->firstOrFail();
+    $detailCount = $rootCauseModel->details()->count();
+
+    $rootCauseDetailId = null;
+    $resolvedNote = '';
+    $detailLabelForMeta = null;
+
+    if ($detailCount > 0) {
+        $data = $request->validate([
+            'root_cause_detail_id' => 'required|integer|exists:root_cause_details,id',
+            'closed_note' => 'nullable|string|max:10000',
+        ]);
+
+        /** @var RootCauseDetail $detail */
+        $detail = RootCauseDetail::findOrFail($data['root_cause_detail_id']);
+        if ((int) $detail->root_cause_id !== (int) $rootCauseModel->id) {
+            return back()->withInput()->with('error', 'Detail root cause tidak sesuai root cause yang dipilih.');
+        }
+
+        $rootCauseDetailId = $detail->id;
+        $detailLabelForMeta = $detail->label;
+        $noteExtra = trim((string) ($data['closed_note'] ?? ''));
+
+        if ($detail->is_other) {
+            if (strlen($noteExtra) < 3) {
+                return back()->withInput()->with('error', 'Untuk opsi Lainnya, isi closed note minimal 3 karakter.');
+            }
+            $resolvedNote = $noteExtra;
+        } else {
+            $resolvedNote = $detail->label;
+            if ($noteExtra !== '') {
+                $resolvedNote .= "\n\n".$noteExtra;
+            }
+        }
+    } else {
+        $data = $request->validate([
+            'closed_note' => 'required|string|min:3|max:10000',
+        ]);
+        $resolvedNote = $data['closed_note'];
+    }
 
     Log::info('TicketClose: validasi berhasil', [
         'ticket_id' => $ticket->id,
-        'root_cause' => $data['root_cause']
+        'root_cause' => $base['root_cause'],
+        'root_cause_detail_id' => $rootCauseDetailId,
     ]);
 
     try {
         $ticket->update([
-            'status'      => 'CLOSED',
-            'it_id'       => $ticket->it_id ?: Auth::id(),
-            'closed_at'   => now(),
-            'root_cause'  => $data['root_cause'],
-            'closed_note' => $data['closed_note'],
+            'status' => 'CLOSED',
+            'it_id' => $ticket->it_id ?: Auth::id(),
+            'closed_at' => now(),
+            'root_cause' => $base['root_cause'],
+            'root_cause_detail_id' => $rootCauseDetailId,
+            'closed_note' => $resolvedNote,
         ]);
 
         // history close
         $h = \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
-            'user_id'   => Auth::id(),
-            'action'    => 'closed',
-            'note'      => $data['closed_note'],
-            'meta'      => ['root_cause' => $data['root_cause']],
+            'user_id' => Auth::id(),
+            'action' => 'closed',
+            'note' => $resolvedNote,
+            'meta' => array_filter([
+                'root_cause' => $base['root_cause'],
+                'root_cause_detail_id' => $rootCauseDetailId,
+                'root_cause_detail_label' => $detailLabelForMeta,
+            ]),
         ]);
-        $this->notifyHistory($ticket, $h, 'Tiket ditutup', $data['closed_note']);
+        $this->notifyHistory($ticket, $h, 'Tiket ditutup', $resolvedNote);
 
         Log::info('TicketClose: ticket diupdate', [
             'ticket_id' => $ticket->id,
@@ -1012,7 +1059,7 @@ public function store(Request $request)
     /** Detail tiket (IT & cabang-yang-bersangkutan) */
     public function show(Ticket $ticket)
     {
-        $ticket->load(['user', 'it', 'vendor', 'comments.user', 'histories.user']);
+        $ticket->load(['user', 'it', 'vendor', 'comments.user', 'histories.user', 'rootCauseDetail']);
 
         if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) {
             abort(403);
@@ -1042,7 +1089,24 @@ public function store(Request $request)
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $statuses = self::STATUS;
         $categories = \App\Models\Category::orderBy('name')->get(['id','name']);
-        return view('tickets.show', compact('ticket','vendors','rootCauses','statuses','categories'));
+        $rootCauseDetailsByRootName = RootCause::with('details')
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function ($rc) {
+                return [
+                    $rc->name => $rc->details->map(function ($d) {
+                        return [
+                            'id' => $d->id,
+                            'label' => $d->label,
+                            'is_other' => (bool) $d->is_other,
+                        ];
+                    })->values()->all(),
+                ];
+            })
+            ->all();
+
+        return view('tickets.show', compact('ticket', 'vendors', 'rootCauses', 'statuses', 'categories', 'rootCauseDetailsByRootName'));
     }
 
     /** Override kategori / subkategori oleh IT */

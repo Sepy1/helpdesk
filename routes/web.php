@@ -143,6 +143,8 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/subcategory/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteSubcategory'])->name('it.parameters.subcategory.delete');
         Route::post('/it/parameters/rootcause', [\App\Http\Controllers\ParameterController::class, 'storeRootCause'])->name('it.parameters.rootcause.store');
         Route::post('/it/parameters/rootcause/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCause'])->name('it.parameters.rootcause.delete');
+        Route::post('/it/parameters/rootcause/detail', [\App\Http\Controllers\ParameterController::class, 'storeRootCauseDetail'])->name('it.parameters.rootcause.detail.store');
+        Route::post('/it/parameters/rootcause/detail/{detail}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCauseDetail'])->name('it.parameters.rootcause.detail.delete');
         Route::post('/it/parameters/it-visibility', [\App\Http\Controllers\ParameterController::class, 'saveItVisibility'])->name('it.parameters.it.visibility');
 
         Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
@@ -168,6 +170,11 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::get('/vendor/profile', [\App\Http\Controllers\ProfileController::class, 'vendorEdit'])->name('vendor.profile.edit');
         Route::patch('/vendor/profile', [\App\Http\Controllers\ProfileController::class, 'vendorUpdate'])->name('vendor.profile.update');
     });
+
+    // Data statistik (JSON) — IT saja (sama cakupan dengan halaman /it/stats)
+    Route::get('/statistics/data', [StatsController::class, 'data'])
+        ->middleware('role:IT')
+        ->name('stats.data');
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])
     ->name('categories.subcategories');
@@ -177,7 +184,5 @@ Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketContro
 Route::get('/statistics', function(){
     return view('statistics');
 })->name('stats.view');
-
-Route::get('/statistics/data', [StatsController::class, 'data'])->name('stats.data');
 // Auth routes (Breeze/Fortify/Jetstream)
 require __DIR__ . '/auth.php';

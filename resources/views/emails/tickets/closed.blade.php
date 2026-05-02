@@ -3,11 +3,14 @@
 
 Halo {{ $ticket->user->name ?? 'Pengguna' }},
 
-Tiket Anda dengan nomor **{{ $ticket->nomor_tiket ?? $ticket->id }}** telah ditindak lanjuti dan ditutup oleh tim kami dengan keterangan sebagai berikut :
+Tiket Anda dengan nomor **{{ $ticket->nomor_tiket ?? $ticket->id }}** telah ditutup oleh tim kami dengan ringkasan berikut :
 
 - **Status:** Selesai
 - **Kategori:** {{ $ticket->kategori ?? optional($ticket->category)->name ?? '-' }}
-- **Tindak Lanjut:**
+@if(optional($ticket->rootCauseDetail)->label)
+- **Detail root cause:** {{ $ticket->rootCauseDetail->label }}
+@endif
+- **Closed note:**
 {!! nl2br(e($ticket->closed_note ?? '-')) !!}
 
 

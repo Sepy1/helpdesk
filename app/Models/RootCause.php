@@ -10,4 +10,9 @@ class RootCause extends Model
     use HasFactory;
 
     protected $fillable = ['name','sort'];
+
+    public function details()
+    {
+        return $this->hasMany(RootCauseDetail::class)->orderBy('sort')->orderBy('id');
+    }
 }

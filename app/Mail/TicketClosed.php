@@ -20,6 +20,8 @@ class TicketClosed extends Mailable
 
     public function build()
     {
+        $this->ticket->loadMissing('rootCauseDetail');
+
         return $this->subject('Tiket Anda telah ditutup')
                     ->markdown('emails.tickets.closed')
                     ->with(['ticket' => $this->ticket]);

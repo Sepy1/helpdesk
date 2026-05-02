@@ -12,21 +12,20 @@ class Ticket extends Model
         'nomor_tiket','user_id','kategori','deskripsi','lampiran','status',
         'it_id','vendor_id','taken_at','progress_note','progress_at','eskalasi',
         'vendor_followup','vendor_followup_at','closed_note','closed_at', 'root_cause',
+        'root_cause_detail_id',
         'category_id','subcategory_id',
     ];
 
     protected $casts = [
-    'created_at'         => 'datetime',
+        'created_at'         => 'datetime',
         'updated_at'         => 'datetime',
         'taken_at'           => 'datetime',
         'progress_at'        => 'datetime',
         'vendor_followup_at' => 'datetime',
         'closed_at'          => 'datetime',
-        'root_cause',
-        'closed_note',
         'seen_by_reporter_at' => 'datetime',
         'seen_by_it_at' => 'datetime',
-];
+    ];
 
     public function user() {        // pembuat (cabang)
         return $this->belongsTo(User::class, 'user_id');
@@ -56,5 +55,10 @@ public function subcategory()
 {
     return $this->belongsTo(Subcategory::class);
 }
+
+    public function rootCauseDetail()
+    {
+        return $this->belongsTo(RootCauseDetail::class, 'root_cause_detail_id');
+    }
 
 }

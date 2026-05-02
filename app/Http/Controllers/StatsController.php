@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Services\ExecutiveSummaryService;
 
 class StatsController extends Controller
@@ -404,15 +405,25 @@ class StatsController extends Controller
             ->all();
 
         $ticketsList = (clone $ticketsBase)
-            ->with(['user', 'subcategory'])
+            ->with(['user', 'subcategory', 'rootCauseDetail'])
             ->orderByDesc('created_at')
-            ->get(['id', 'nomor_tiket', 'created_at', 'user_id', 'kategori', 'subcategory_id', 'root_cause', 'status', 'closed_at', 'closed_note', 'taken_at']);
+            ->get([
+                'id', 'nomor_tiket', 'created_at', 'user_id', 'kategori', 'subcategory_id',
+                'root_cause', 'root_cause_detail_id', 'status', 'closed_at', 'closed_note',
+                'taken_at', 'progress_note', 'vendor_followup',
+            ]);
 
         $groupedTickets = $ticketsList
             ->groupBy(fn ($t) => optional($t->user)->name ?? 'Tidak diketahui')
             ->sortKeys();
 
-        $ticketPayload = $ticketsList->map(function ($t) {
+        $textForAi = static function (?string $value, int $max = 4000): string {
+            $v = trim((string) ($value ?? ''));
+
+            return $v === '' ? 'tidak tersedia' : Str::limit($v, $max, '…');
+        };
+
+        $ticketPayload = $ticketsList->map(function ($t) use ($textForAi) {
             $responseMinutes = null;
             if (! empty($t->taken_at) && ! empty($t->created_at)) {
                 $responseMinutes = $t->created_at->diffInMinutes($t->taken_at);
@@ -422,10 +433,34 @@ class StatsController extends Controller
                 'pembuat_tiket' => optional($t->user)->name ?? 'tidak tersedia',
                 'kategori_tiket' => $t->kategori ?? 'tidak tersedia',
                 'sub_kategori_tiket' => optional($t->subcategory)->name ?? 'tidak tersedia',
-                'closed_note' => $t->closed_note ?? 'tidak tersedia',
+                'root_cause' => $t->root_cause ?? 'tidak tersedia',
+                'detail_root_cause' => optional($t->rootCauseDetail)->label ?? 'tidak tersedia',
+                'closed_note' => $textForAi($t->closed_note),
+                'tindak_lanjut_progres_it' => $textForAi($t->progress_note),
+                'tindak_lanjut_vendor' => $textForAi($t->vendor_followup),
                 'response_time_ti_menit' => $responseMinutes ?? 'tidak tersedia',
             ];
         })->values()->all();
+
+        $detailRootStats = (clone $ticketsBase)
+            ->where('tickets.status', 'CLOSED')
+            ->whereNotNull('tickets.root_cause_detail_id')
+            ->join('root_cause_details', 'tickets.root_cause_detail_id', '=', 'root_cause_details.id')
+            ->select('root_cause_details.label', DB::raw('count(tickets.id) as total'))
+            ->groupBy('root_cause_details.label')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => $row->label,
+                'jumlah' => (int) $row->total,
+            ])
+            ->values()
+            ->all();
+
+        $closedTanpaDetailRoot = (clone $ticketsBase)
+            ->where('status', 'CLOSED')
+            ->whereNull('root_cause_detail_id')
+            ->count();
 
         $summaryPayload = [
             'periode' => [
@@ -441,6 +476,8 @@ class StatsController extends Controller
             ],
             'statistik_kategori' => $kategoriStats,
             'statistik_sub_kategori' => $subKategoriStats,
+            'statistik_detail_root_cause' => $detailRootStats,
+            'jumlah_tiket_tutup_tanpa_detail_root_cause' => $closedTanpaDetailRoot,
             'data_tiket' => $ticketPayload,
         ];
 

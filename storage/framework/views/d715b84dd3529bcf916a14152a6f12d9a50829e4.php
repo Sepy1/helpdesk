@@ -1,8 +1,7 @@
-
 <?php $__env->startSection('title','Statistik Tiket'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="w-full max-w-none py-6">
   
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
     <div>
@@ -86,60 +85,55 @@
           </div>
         </div>
 
+        <div class="mt-4 border-t border-gray-100 pt-4">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Status Tiket</h4>
+            <span class="text-[10px] text-gray-500 shrink-0">Distribusi</span>
+          </div>
+          <div class="flex w-full flex-col items-center gap-3 py-2">
+            <div class="relative h-56 w-56 shrink-0 sm:h-64 sm:w-64 md:h-72 md:w-72">
+              <canvas id="chartStatus" class="absolute inset-0 h-full w-full"></canvas>
+            </div>
+            <ul id="chartStatusLegend" class="flex w-full max-w-full flex-row flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm" role="list" aria-label="Legenda status tiket"></ul>
+          </div>
+        </div>
+
         <div class="mt-3 text-xs text-gray-500">Tip: ubah periode untuk melihat KPI per bulan.</div>
       </div>
     </div>
 
     
     <div class="lg:col-span-2 md:col-span-1 col-span-1">
-      <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full flex flex-col">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-700">Kategori Tiket Terbanyak</h3>
-          <span class="text-xs text-gray-500">Top 10</span>
-        </div>
-        <div class="flex-1 min-h-[180px]">
-          <div class="h-full">
-            <canvas id="chartKategori" class="w-full h-full"></canvas>
+      <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full flex flex-col gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-gray-700">Kategori Tiket Terbanyak</h3>
+            <span class="text-xs text-gray-500">Top 10</span>
+          </div>
+          <div class="relative h-32 w-full sm:h-36 md:h-40">
+            <canvas id="chartKategori" class="absolute inset-0 h-full w-full"></canvas>
           </div>
         </div>
-      </div>
-    </div>
 
-    
-    <div class="col-span-1">
-      <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-700">Status Tiket</h3>
-          <span class="text-xs text-gray-500">Distribusi</span>
-        </div>
-        <div class="h-40 flex items-center justify-center">
-          <canvas id="chartStatus" class="w-full h-full max-h-40"></canvas>
-        </div>
-      </div>
-    </div>
-
-    
-    <div class="lg:col-span-3 col-span-1">
-      <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-700">Top 5 User Pembuat Tiket</h3>
-          <div class="text-xs text-gray-500">Periode</div>
-        </div>
-        <div class="min-h-[160px]">
-          <canvas id="chartTopUser" class="w-full h-40"></canvas>
-        </div>
-      </div>
-    </div>
-
-    
-    <div class="lg:col-span-3 col-span-1">
-      <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-700">Root Cause Terbanyak</h3>
-          <div class="text-xs text-gray-500">Analisa</div>
-        </div>
-        <div class="min-h-[160px]">
-          <canvas id="chartRootCause" class="w-full h-40"></canvas>
+        <div class="border-t border-gray-100 pt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <h3 class="text-sm font-semibold text-gray-700">Top 5 User Pembuat Tiket</h3>
+              <span class="text-xs text-gray-500 shrink-0">Periode</span>
+            </div>
+            <div class="relative h-24 w-full sm:h-28">
+              <canvas id="chartTopUser" class="absolute inset-0 h-full w-full"></canvas>
+            </div>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <h3 class="text-sm font-semibold text-gray-700">Root Cause Terbanyak</h3>
+              <span class="text-xs text-gray-500 shrink-0">Analisa</span>
+            </div>
+            <div class="relative h-24 w-full sm:h-28">
+              <canvas id="chartRootCause" class="absolute inset-0 h-full w-full"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -197,7 +191,66 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
-  Chart.register(ChartDataLabels);
+  /** Gradasi donut status: diisi di afterLayout (arc sudah punya inner/outer radius), bukan scriptable backgroundColor. */
+  const statusDonutGradientPlugin = {
+    id: 'statusDonutGradientFill',
+    afterLayout(chart) {
+      if (chart._applyingDonutGradients) return;
+      if (chart.config.type !== 'doughnut' || chart.canvas?.id !== 'chartStatus') return;
+
+      const ds0 = chart.data?.datasets?.[0];
+      const labels = chart.data?.labels;
+      if (!ds0 || !labels?.length) {
+        if (ds0) ds0._donutGradLayoutKey = '';
+        return;
+      }
+
+      const data = ds0.data || [];
+      const layoutKey = [chart.width, chart.height, labels.join('\0'), data.join(',')].join('|');
+      if (ds0._donutGradLayoutKey === layoutKey) return;
+
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.length) return;
+
+      const { ctx } = chart;
+      const fills = [];
+      for (let idx = 0; idx < labels.length; idx += 1) {
+        const label = labels[idx];
+        const [c0, c1, c2] = statusDonutRadialStops(label, idx);
+        let fill = c1;
+        const arc = meta.data[idx];
+        if (arc && ctx && typeof arc.getProps === 'function') {
+          const p = arc.getProps(['x', 'y', 'innerRadius', 'outerRadius'], true);
+          if (p) {
+            const x = p.x;
+            const y = p.y;
+            const inner = p.innerRadius;
+            const outer = p.outerRadius;
+            if ([x, y, inner, outer].every((n) => Number.isFinite(Number(n))) && outer > inner + 0.5) {
+              const g = ctx.createRadialGradient(x, y, inner, x, y, outer);
+              g.addColorStop(0, c0);
+              g.addColorStop(0.42, c1);
+              g.addColorStop(1, c2);
+              fill = g;
+            }
+          }
+        }
+        fills.push(fill);
+      }
+
+      if (fills.length !== labels.length) return;
+
+      chart._applyingDonutGradients = true;
+      try {
+        ds0.backgroundColor = fills;
+        ds0._donutGradLayoutKey = layoutKey;
+      } finally {
+        chart._applyingDonutGradients = false;
+      }
+    },
+  };
+
+  Chart.register(ChartDataLabels, statusDonutGradientPlugin);
 
   const dataLabelCommon = {
     color: '#111827',
@@ -208,6 +261,133 @@
     formatter: v => v
   };
 
+  /** Skala & label gaya modern (grid tipis, tanpa border sumbu tebal). */
+  const modernAxisCategory = {
+    grid: { display: false, drawTicks: false, drawBorder: false },
+    ticks: { color: '#64748b', font: { size: 10, weight: '500' }, maxRotation: 42, autoSkipPadding: 8 },
+    border: { display: false },
+  };
+  const modernAxisValueY = {
+    beginAtZero: true,
+    grid: { color: 'rgba(148, 163, 184, 0.18)', lineWidth: 1, drawBorder: false, tickLength: 0 },
+    ticks: { color: '#64748b', font: { size: 10, weight: '500' }, precision: 0, padding: 6 },
+    border: { display: false },
+  };
+  const modernAxisValueX = {
+    beginAtZero: true,
+    grid: { color: 'rgba(148, 163, 184, 0.18)', lineWidth: 1, drawBorder: false, tickLength: 0 },
+    ticks: { color: '#64748b', font: { size: 10, weight: '500' }, precision: 0, padding: 6 },
+    border: { display: false },
+  };
+
+  function barGradientVertical(chart, stops) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return stops[1];
+    const g = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+    g.addColorStop(0, stops[0]);
+    g.addColorStop(0.55, stops[1]);
+    g.addColorStop(1, stops[2]);
+    return g;
+  }
+
+  function barGradientHorizontal(chart, left, right) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return right;
+    const g = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+    g.addColorStop(0, left);
+    g.addColorStop(1, right);
+    return g;
+  }
+
+  /** Tiga stop gradasi radial per status (terang di dalam ring → pekat di tepi luar), selaras gaya chart batang. */
+  function statusDonutRadialStops(label, idx) {
+    const key = String(label || '');
+    const map = {
+      OPEN: ['rgba(254, 215, 215, 0.95)', 'rgba(248, 113, 113, 0.98)', 'rgba(153, 27, 27, 1)'],
+      ON_PROGRESS: ['rgba(254, 243, 199, 0.95)', 'rgba(251, 191, 36, 0.98)', 'rgba(180, 83, 9, 1)'],
+      TAKEN: ['rgba(255, 237, 213, 0.95)', 'rgba(251, 146, 60, 0.98)', 'rgba(194, 65, 12, 1)'],
+      ESKALASI_VENDOR: ['rgba(250, 232, 255, 0.95)', 'rgba(232, 121, 249, 0.98)', 'rgba(126, 34, 206, 1)'],
+      VENDOR_RESOLVED: ['rgba(224, 231, 255, 0.95)', 'rgba(129, 140, 248, 0.98)', 'rgba(55, 48, 163, 1)'],
+      CLOSED: ['rgba(209, 250, 229, 0.95)', 'rgba(52, 211, 153, 0.98)', 'rgba(5, 46, 22, 0.96)'],
+    };
+    if (map[key]) return map[key];
+    const fallbacks = [
+      ['rgba(199, 210, 254, 0.95)', 'rgba(99, 102, 241, 0.98)', 'rgba(49, 46, 129, 1)'],
+      ['rgba(186, 230, 253, 0.95)', 'rgba(14, 165, 233, 0.98)', 'rgba(7, 89, 133, 1)'],
+      ['rgba(233, 213, 255, 0.95)', 'rgba(168, 85, 247, 0.98)', 'rgba(88, 28, 135, 1)'],
+    ];
+    return fallbacks[idx % fallbacks.length];
+  }
+
+  /** Fallback solid sebelum plugin gradasi jalan (satu frame / data kosong). */
+  function statusDonutSolidFills(labels) {
+    return (labels || []).map((lbl, i) => statusDonutRadialStops(lbl, i)[1]);
+  }
+
+  const STATUS_LEGEND_LABEL = {
+    OPEN: 'Open',
+    ON_PROGRESS: 'Dalam proses',
+    TAKEN: 'Diambil TI',
+    ESKALASI_VENDOR: 'Eskalasi vendor',
+    VENDOR_RESOLVED: 'Selesai vendor',
+    CLOSED: 'Selesai',
+  };
+
+  function statusLegendText(raw) {
+    const k = String(raw || '');
+    if (STATUS_LEGEND_LABEL[k]) return STATUS_LEGEND_LABEL[k];
+    return k.replace(/_/g, ' ').trim() || '—';
+  }
+
+  /** Legenda di luar donut: swatch warna (selaras palet chart) + label + jumlah. */
+  function renderChartStatusLegend(labels, data) {
+    const ul = document.getElementById('chartStatusLegend');
+    if (!ul) return;
+    ul.replaceChildren();
+    if (!labels?.length) return;
+
+    labels.forEach((raw, i) => {
+      const n = Number(data[i] ?? 0);
+      const swatchColor = statusDonutRadialStops(raw, i)[1];
+      const li = document.createElement('li');
+      li.className = 'inline-flex shrink-0 items-center gap-1.5';
+      li.setAttribute('role', 'listitem');
+
+      const sw = document.createElement('span');
+      sw.className = 'h-3.5 w-3.5 shrink-0 rounded-md ring-1 ring-black/10 shadow-sm';
+      sw.style.background = swatchColor;
+      sw.setAttribute('aria-hidden', 'true');
+
+      const lab = document.createElement('span');
+      lab.className = 'whitespace-nowrap font-medium leading-snug text-gray-700';
+      lab.textContent = statusLegendText(raw);
+
+      const num = document.createElement('span');
+      num.className = 'shrink-0 tabular-nums text-xs font-semibold text-gray-500';
+      num.textContent = String(n);
+
+      li.append(sw, lab, num);
+      ul.appendChild(li);
+    });
+  }
+
+  const modernDonutDataset = {
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    hoverBorderWidth: 2,
+    hoverBorderColor: '#ffffff',
+  };
+
+  // Doughnut: matikan datalabels lewat display:false (lebih kompatibel daripada plugins.datalabels = false).
+  const modernDonutOptions = {
+    cutout: '60%',
+    rotation: -90,
+    plugins: {
+      legend: { display: false },
+      datalabels: { display: false },
+    },
+  };
+
   const charts = {};
 
   function upsertChart(id, config) {
@@ -215,56 +395,125 @@
     if (!el) return;
     const ctx = el.getContext('2d');
 
-    // maintainAspectRatio false supaya chart mengisi kontainer responsif
     config.options = config.options || {};
     config.options.maintainAspectRatio = false;
 
+    // Hancurkan instance lalu buat ulang — update in-place sering membuat Chart.js 4 + plugin tidak sinkron (data kosong).
     if (charts[id]) {
-      charts[id].config.data = config.data;
-      charts[id].config.options = config.options;
-      charts[id].update();
-    } else {
+      try {
+        charts[id].destroy();
+      } catch (_) {}
+      charts[id] = null;
+    }
+    try {
       charts[id] = new Chart(ctx, config);
+    } catch (e) {
+      console.error('Chart init gagal:', id, e);
+      charts[id] = null;
     }
   }
+
+  const kategoriBarRadii = { topLeft: 10, topRight: 10, bottomLeft: 3, bottomRight: 3 };
+  const topUserBarRadii = { topLeft: 0, topRight: 10, bottomLeft: 0, bottomRight: 10 };
+  const rootBarRadii = { topLeft: 10, topRight: 10, bottomLeft: 3, bottomRight: 3 };
 
   // init empty charts to reserve layout
   upsertChart('chartKategori', {
     type: 'bar',
-    data: { labels: [], datasets: [{ label: 'Jumlah Tiket', data: [], borderRadius: 6 }] },
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Jumlah Tiket',
+        data: [],
+        borderWidth: 0,
+        borderRadius: kategoriBarRadii,
+        maxBarThickness: 38,
+        backgroundColor: (c) => barGradientVertical(c.chart, ['rgba(165, 180, 252, 0.5)', 'rgba(99, 102, 241, 0.88)', 'rgba(49, 46, 129, 0.95)']),
+      }],
+    },
     options: {
-      plugins: { legend: { display: false }, datalabels: dataLabelCommon },
-      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-    }
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          color: '#334155',
+          anchor: 'end',
+          align: 'top',
+          offset: 4,
+          font: { weight: '700', size: 9 },
+          formatter: (v) => v,
+        },
+      },
+      scales: { x: modernAxisCategory, y: modernAxisValueY },
+    },
   });
 
   upsertChart('chartStatus', {
-    type: 'pie',
-    data: { labels: [], datasets: [{ data: [] }] },
-    options: {
-      plugins: {
-        datalabels: { color: '#fff', font: { weight: '700', size: 11 }, formatter: v => v > 0 ? v : '' }
-      }
-    }
+    type: 'doughnut',
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        backgroundColor: statusDonutSolidFills([]),
+        ...modernDonutDataset,
+      }],
+    },
+    options: { ...modernDonutOptions },
   });
 
   upsertChart('chartTopUser', {
     type: 'bar',
-    data: { labels: [], datasets: [{ data: [], borderRadius: 6 }] },
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderWidth: 0,
+        borderRadius: topUserBarRadii,
+        maxBarThickness: 22,
+        backgroundColor: (c) => barGradientHorizontal(c.chart, 'rgba(125, 211, 252, 0.55)', 'rgba(3, 105, 161, 0.92)'),
+      }],
+    },
     options: {
       indexAxis: 'y',
-      plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
-      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-    }
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          color: '#fff',
+          anchor: 'center',
+          align: 'center',
+          font: { weight: '700', size: 9 },
+          formatter: (v) => v,
+        },
+      },
+      scales: { x: modernAxisValueX, y: modernAxisCategory },
+    },
   });
 
   upsertChart('chartRootCause', {
     type: 'bar',
-    data: { labels: [], datasets: [{ data: [], borderRadius: 6 }] },
+    data: {
+      labels: [],
+      datasets: [{
+        data: [],
+        borderWidth: 0,
+        borderRadius: rootBarRadii,
+        maxBarThickness: 34,
+        backgroundColor: (c) => barGradientVertical(c.chart, ['rgba(110, 231, 183, 0.45)', 'rgba(16, 185, 129, 0.88)', 'rgba(6, 78, 59, 0.92)']),
+      }],
+    },
     options: {
-      plugins: { legend: { display: false }, datalabels: dataLabelCommon },
-      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-    }
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          color: '#134e4a',
+          anchor: 'end',
+          align: 'top',
+          offset: 4,
+          font: { weight: '700', size: 9 },
+          formatter: (v) => v,
+        },
+      },
+      scales: { x: modernAxisCategory, y: modernAxisValueY },
+    },
   });
 
   // helper show/hide loading overlay
@@ -315,42 +564,115 @@
       // update charts
       upsertChart('chartKategori', {
         type: 'bar',
-        data: { labels: json.kategoriLabels, datasets: [{ data: json.kategoriData, borderRadius: 6 }] },
+        data: {
+          labels: json.kategoriLabels,
+          datasets: [{
+            label: 'Jumlah Tiket',
+            data: json.kategoriData,
+            borderWidth: 0,
+            borderRadius: kategoriBarRadii,
+            maxBarThickness: 38,
+            backgroundColor: (c) => barGradientVertical(c.chart, ['rgba(165, 180, 252, 0.5)', 'rgba(99, 102, 241, 0.88)', 'rgba(49, 46, 129, 0.95)']),
+          }],
+        },
         options: {
-          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#334155',
+              anchor: 'end',
+              align: 'top',
+              offset: 4,
+              font: { weight: '700', size: 9 },
+              formatter: (v) => v,
+            },
+          },
+          scales: { x: modernAxisCategory, y: modernAxisValueY },
+        },
       });
 
+      const statusLabels = json.statusLabels || [];
+      const statusData = (json.statusData || []).map((n) => Number(n));
       upsertChart('chartStatus', {
-        type: 'pie',
-        data: { labels: json.statusLabels, datasets: [{ data: json.statusData }] },
-        options: {
-          plugins: { datalabels: { color: '#fff', font: { weight: '700', size: 11 }, formatter: v => v > 0 ? v : '' } }
-        }
+        type: 'doughnut',
+        data: {
+          labels: statusLabels,
+          datasets: [{
+            data: statusData,
+            backgroundColor: statusDonutSolidFills(statusLabels),
+            ...modernDonutDataset,
+          }],
+        },
+        options: { ...modernDonutOptions },
       });
+      requestAnimationFrame(() => {
+        try {
+          if (charts.chartStatus && typeof charts.chartStatus.resize === 'function') {
+            charts.chartStatus.resize();
+          }
+        } catch (_) {}
+      });
+      renderChartStatusLegend(statusLabels, statusData);
 
       upsertChart('chartTopUser', {
         type: 'bar',
-        data: { labels: json.topLabels, datasets: [{ data: json.topData, borderRadius: 6 }] },
+        data: {
+          labels: json.topLabels,
+          datasets: [{
+            data: json.topData,
+            borderWidth: 0,
+            borderRadius: topUserBarRadii,
+            maxBarThickness: 22,
+            backgroundColor: (c) => barGradientHorizontal(c.chart, 'rgba(125, 211, 252, 0.55)', 'rgba(3, 105, 161, 0.92)'),
+          }],
+        },
         options: {
           indexAxis: 'y',
-          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
-          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#fff',
+              anchor: 'center',
+              align: 'center',
+              font: { weight: '700', size: 9 },
+              formatter: (v) => v,
+            },
+          },
+          scales: { x: modernAxisValueX, y: modernAxisCategory },
+        },
       });
 
       upsertChart('chartRootCause', {
         type: 'bar',
-        data: { labels: json.rootLabels, datasets: [{ data: json.rootData, borderRadius: 6 }] },
+        data: {
+          labels: json.rootLabels,
+          datasets: [{
+            data: json.rootData,
+            borderWidth: 0,
+            borderRadius: rootBarRadii,
+            maxBarThickness: 34,
+            backgroundColor: (c) => barGradientVertical(c.chart, ['rgba(110, 231, 183, 0.45)', 'rgba(16, 185, 129, 0.88)', 'rgba(6, 78, 59, 0.92)']),
+          }],
+        },
         options: {
-          plugins: { legend: { display: false }, datalabels: { ...dataLabelCommon, anchor: 'center', align: 'center' } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#134e4a',
+              anchor: 'end',
+              align: 'top',
+              offset: 4,
+              font: { weight: '700', size: 9 },
+              formatter: (v) => v,
+            },
+          },
+          scales: { x: modernAxisCategory, y: modernAxisValueY },
+        },
       });
 
     } catch (err) {
       console.error(err);
+      renderChartStatusLegend([], []);
       alert('Terjadi kesalahan saat memuat data statistik: ' + err.message);
     } finally {
       showLoading(false);
@@ -535,15 +857,33 @@
     }
   });
 
-  // initial load (no date range = all)
-  fetchStats(document.getElementById('filterFrom').value, document.getElementById('filterTo').value);
+  // Muat data setelah chart pertama punya kesempatan layout (hindari error yang memblok fetch).
+  function runInitialFetchStats() {
+    const fromEl = document.getElementById('filterFrom');
+    const toEl = document.getElementById('filterTo');
+    if (!fromEl || !toEl) return;
+    fetchStats(fromEl.value, toEl.value);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(runInitialFetchStats));
+  } else {
+    requestAnimationFrame(runInitialFetchStats);
+  }
 
   // responsiveness: reflow charts on orientation change
   window.addEventListener('orientationchange', () => {
-    Object.values(charts).forEach(c => c.resize());
+    Object.values(charts).forEach((c) => {
+      try {
+        if (c && typeof c.resize === 'function') c.resize();
+      } catch (_) {}
+    });
   });
   window.addEventListener('resize', () => {
-    Object.values(charts).forEach(c => c.resize());
+    Object.values(charts).forEach((c) => {
+      try {
+        if (c && typeof c.resize === 'function') c.resize();
+      } catch (_) {}
+    });
   });
 </script>
 <?php $__env->stopSection(); ?>

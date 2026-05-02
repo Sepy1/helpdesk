@@ -31,13 +31,15 @@
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="grid gap-6 lg:grid-cols-3">
+
+<div class="flex min-h-[calc(100dvh-10.5rem)] flex-col md:min-h-[calc(100dvh-6.25rem)]">
+<div class="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
   
-  <div class="lg:col-span-2 h-full flex flex-col gap-6">
+  <div class="flex min-h-0 flex-col gap-6 lg:col-span-2 lg:h-full lg:min-h-0">
     
 
     
-    <div class="mt-6 bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
+    <div class="mt-0 shrink-0 bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
       
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div class="min-w-0">
@@ -91,26 +93,11 @@
       <div class="mt-4 flex items-center justify-between">
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
-          <?php
-            $commentAttachments = $ticket->comments->filter(fn($c) => !empty($c->attachment));
-            $hasAny = $ticket->lampiran || $commentAttachments->isNotEmpty();
-          ?>
-
-          <?php if($hasAny): ?>
-            <div class="space-y-1">
-              <?php if($ticket->lampiran): ?>
-                <div>
-                  <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
-                  <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
-                </div>
-              <?php endif; ?>
-
-              <?php $__currentLoopData = $commentAttachments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <div>
-                  <a href="<?php echo e(route('comment.download', $c->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lampiran: <?php echo e(basename($c->attachment)); ?></a>
-                  <a href="<?php echo e(route('comment.download', $c->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
-                </div>
-              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+          
+          <?php if($ticket->lampiran): ?>
+            <div>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
             </div>
           <?php else: ?>
             <div class="text-xs text-gray-400">-</div>
@@ -152,7 +139,7 @@
     
 
     
-    <div class="bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm grow">
+    <div class="min-h-0 flex-1 bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm lg:min-h-0 lg:overflow-y-auto">
       <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
       <dl class="text-[13px] text-gray-700 space-y-1">
         <div class="flex justify-between"><dt>Nomor</dt><dd class="font-medium"><?php echo e($ticket->nomor_tiket); ?></dd></div>
@@ -164,6 +151,9 @@
         <div class="flex justify-between"><dt>Eskalasi</dt><dd><?php echo e($ticket->escalated ?? 'TIDAK'); ?></dd></div>
         <div class="flex justify-between"><dt>Taken At</dt><dd><?php echo e(optional($ticket->taken_at)->format('d M Y H:i') ?? '-'); ?></dd></div>
         <div class="flex justify-between"><dt>Closed At</dt><dd><?php echo e(optional($ticket->closed_at)->format('d M Y H:i') ?? '-'); ?></dd></div>
+        <?php if($ticket->status === 'CLOSED' && $ticket->rootCauseDetail): ?>
+          <div class="flex justify-between gap-2"><dt class="shrink-0">Detail root cause</dt><dd class="text-right font-medium text-gray-800"><?php echo e($ticket->rootCauseDetail->label); ?></dd></div>
+        <?php endif; ?>
       </dl>
 
       
@@ -172,8 +162,8 @@
   </div>
 
   
-  <aside class="space-y-4 lg:mt-6 h-full">
-    <div class="bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm h-full flex flex-col min-h-0">
+  <aside class="flex min-h-0 flex-col lg:min-h-0">
+    <div class="flex h-full min-h-0 flex-1 flex-col rounded-2xl bg-white p-3 shadow-md ring-1 ring-gray-100 sm:p-5 text-xs sm:text-sm lg:min-h-0">
       <div class="shrink-0 flex items-center justify-between">
         <div class="flex items-center">
           <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
@@ -182,7 +172,7 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 flex-1 overflow-auto max-h-[48vh] sm:max-h-[54vh] pr-1 space-y-2">
+      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 lg:min-h-[12rem]">
         <?php $__empty_1 = true; $__currentLoopData = $ticket->comments->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
           <?php $mine = auth()->check() && auth()->id() === $c->user_id; ?>
           <div id="c-<?php echo e($c->id); ?>" class="flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>" data-comment-ts="<?php echo e(optional($c->created_at)->format('c')); ?>">
@@ -252,6 +242,7 @@
       </div>
     </div>
   </aside>
+</div>
 </div>
 
 
@@ -348,135 +339,161 @@
 <div x-data="{ open:false }"
   x-on:open-update.window="open=true"
   x-show="open" x-cloak
-  class="fixed inset-0 z-[120] flex items-start sm:items-center justify-center"
-     role="dialog" aria-modal="true" aria-label="Update tiket"
+  class="fixed inset-0 z-[120] overflow-y-auto overflow-x-hidden"
+     role="dialog" aria-modal="true" aria-labelledby="modal-update-title"
      @keydown.escape.window="open=false">
 
-  <div class="absolute inset-0 bg-black/10 backdrop-blur-sm" x-transition.opacity @click="open=false" aria-hidden="true"></div>
+  <div class="fixed inset-0 z-0 bg-black/40 backdrop-blur-[2px]" x-transition.opacity @click="open=false" aria-hidden="true"></div>
 
-  <div class="relative w-full max-w-2xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-3 sm:p-5 text-xs sm:text-sm"
+  <div class="relative z-10 flex min-h-[100dvh] w-full items-center justify-center px-3 py-4 sm:px-4 sm:py-6" @click.self="open=false">
+  <div class="relative flex w-full max-w-2xl max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-2xl bg-white text-sm shadow-2xl ring-1 ring-gray-200/80 md:max-h-[calc(100dvh-1.25rem)] md:max-w-4xl"
        x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
-       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+       x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+       x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
        x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-       x-transition:leave-end="opacity-0 scale-95 -translate-y-1">
+       x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+       x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
 
-    <div class="flex items-start justify-between mb-4">
-      <h3 class="text-lg font-semibold text-gray-800">Update Tiket</h3>
-      <button class="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100" @click="open=false" aria-label="Tutup">✕</button>
+    <div class="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 bg-gray-50/80 px-3 py-2 sm:px-4">
+      <div class="min-w-0">
+        <h3 id="modal-update-title" class="truncate text-sm font-semibold text-gray-900 sm:text-base">Update tiket</h3>
+        <p class="truncate text-[11px] text-gray-500 sm:text-xs"><?php echo e($ticket->nomor_tiket ?? 'Tiket'); ?></p>
+      </div>
+      <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200/80 hover:text-gray-800 sm:h-9 sm:w-9" @click="open=false" aria-label="Tutup">
+        <span class="text-lg leading-none" aria-hidden="true">×</span>
+      </button>
     </div>
 
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-3">
     <?php if(auth()->guard()->check()): ?>
       <?php if(auth()->user()->role === 'IT'): ?>
-        <div class="space-y-6">
-          <div>
-            <h4 class="text-sm font-semibold text-gray-800 mb-2">Ubah Status Tiket</h4>
-            <form method="POST" action="<?php echo e(route('it.ticket.status', $ticket->id)); ?>" class="flex items-center gap-2">
+        <div class="flex flex-col gap-3 md:flex-row md:items-stretch md:gap-4">
+          <div class="flex min-w-0 flex-col gap-3 md:basis-0 md:min-w-0 md:flex-1">
+          <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Status tiket</h4>
+            <form method="POST" action="<?php echo e(route('it.ticket.status', $ticket->id)); ?>" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <?php echo csrf_field(); ?>
-              <select name="status" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <?php $__currentLoopData = ($statuses ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <option value="<?php echo e($s); ?>" <?php if($ticket->status === $s): echo 'selected'; endif; ?>><?php echo e($s); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-              </select>
-              <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Ubah Status</button>
-            </form>
-          </div>
-          <div>
-            <h4 class="text-sm font-semibold text-gray-800 mb-2">Assign ke Vendor</h4>
-            <form method="POST" action="<?php echo e(route('it.ticket.assign_vendor', $ticket->id)); ?>" class="flex flex-wrap items-center gap-2">
-              <?php echo csrf_field(); ?>
-              <select name="vendor_id" class="rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <option value="" <?php echo e(empty($ticket->vendor_id) ? 'selected' : ''); ?>>Tidak</option>
-                <?php $__currentLoopData = ($vendors ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <option value="<?php echo e($v->id); ?>" <?php if($ticket->vendor_id === $v->id): echo 'selected'; endif; ?>><?php echo e($v->name); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-              </select>
-              <div class="ml-auto flex gap-2">
-                <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-2 text-white text-sm hover:bg-emerald-700">Assign</button>
+              <div class="min-w-0 flex-1">
+                <label for="modal-status-select" class="sr-only">Status</label>
+                <select id="modal-status-select" name="status" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <?php $__currentLoopData = ($statuses ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($s); ?>" <?php if($ticket->status === $s): echo 'selected'; endif; ?>><?php echo e($s); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
               </div>
+              <button type="submit" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 sm:min-w-[7.5rem]">Ubah status</button>
             </form>
-          </div>
+          </section>
 
-          <div>
-            <h4 class="text-sm font-semibold text-gray-800 mb-2">Override Kategori / Subkategori</h4>
-            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Assign ke vendor</h4>
+            <form method="POST" action="<?php echo e(route('it.ticket.assign_vendor', $ticket->id)); ?>" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
               <?php echo csrf_field(); ?>
-              <div class="w-full sm:w-auto">
-                <select id="override-category-select" name="category_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                  <option value="">-- Tidak (kosong) --</option>
+              <div class="min-w-0 flex-1">
+                <label for="modal-vendor-select" class="sr-only">Vendor</label>
+                <select id="modal-vendor-select" name="vendor_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <option value="" <?php echo e(empty($ticket->vendor_id) ? 'selected' : ''); ?>>Tidak assign vendor</option>
+                  <?php $__currentLoopData = ($vendors ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($v->id); ?>" <?php if($ticket->vendor_id === $v->id): echo 'selected'; endif; ?>><?php echo e($v->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+              </div>
+              <button type="submit" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 sm:min-w-[7.5rem]">Simpan assign</button>
+            </form>
+          </section>
+
+          <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Override kategori</h4>
+            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <?php echo csrf_field(); ?>
+              <div class="min-w-0 sm:col-span-1">
+                <label for="override-category-select" class="mb-0.5 block text-[11px] font-medium text-gray-600">Kategori</label>
+                <select id="override-category-select" name="category_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <option value="">— Tidak diubah —</option>
                   <?php $__currentLoopData = ($categories ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e($c->id); ?>" <?php if($ticket->category_id == $c->id): echo 'selected'; endif; ?>><?php echo e($c->name); ?></option>
                   <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
-
-              <div class="w-full sm:w-auto">
-                <select id="override-subcategory-select" name="subcategory_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                  <option value="">-- Pilih Subkategori --</option>
+              <div class="min-w-0 sm:col-span-1">
+                <label for="override-subcategory-select" class="mb-0.5 block text-[11px] font-medium text-gray-600">Subkategori</label>
+                <select id="override-subcategory-select" name="subcategory_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <option value="">— Pilih subkategori —</option>
                 </select>
               </div>
-
-              <div class="w-full sm:w-auto sm:ml-auto">
-                <button type="submit" class="w-full sm:w-auto rounded-lg bg-indigo-600 px-3 py-2 text-white text-sm hover:bg-indigo-700">Simpan</button>
+              <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-2 sm:col-span-2 sm:flex-row sm:justify-end">
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
+                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">Simpan kategori</button>
               </div>
             </form>
+          </section>
           </div>
 
+          <div class="flex min-w-0 flex-col gap-3 md:basis-0 md:min-w-0 md:flex-1">
           <?php if(!empty($ticket->vendor_followup)): ?>
-            <div class="rounded-xl border border-gray-200 bg-white p-4">
-              <div class="text-xs font-semibold text-gray-700">Tindak Lanjut Vendor</div>
-              <div class="mt-1 text-sm text-gray-800 whitespace-pre-line"><?php echo e($ticket->vendor_followup); ?></div>
+            <section class="max-h-32 overflow-y-auto rounded-lg border border-fuchsia-100 bg-fuchsia-50/40 p-3">
+              <h4 class="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800">Tindak lanjut vendor</h4>
+              <div class="mt-1 text-xs text-gray-800 whitespace-pre-line"><?php echo e($ticket->vendor_followup); ?></div>
               <?php if($ticket->vendor_followup_at): ?>
-                <div class="mt-1 text-xs text-gray-500">Diperbarui: <?php echo e(optional($ticket->vendor_followup_at)->format('d M Y H:i') ?? '-'); ?></div>
+                <div class="mt-1 text-[10px] text-fuchsia-900/70">Diperbarui: <?php echo e(optional($ticket->vendor_followup_at)->format('d M Y H:i') ?? '-'); ?></div>
               <?php endif; ?>
-            </div>
+            </section>
           <?php endif; ?>
 
-          <form method="POST" action="<?php echo e(route('it.ticket.close', $ticket->id)); ?>" class="space-y-4">
-            <?php echo csrf_field(); ?>
-            <div>
-              <label class="text-sm font-medium text-gray-700">Root Cause</label>
-              <select name="root_cause" required class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                <?php $rcOld = old('root_cause', $ticket->root_cause); ?>
-                <option value="" disabled <?php echo e(empty($rcOld) ? 'selected' : ''); ?>>Pilih Root Cause</option>
-                <?php $__currentLoopData = ($rootCauses ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                  <option value="<?php echo e($rc->name); ?>" <?php if($rcOld === $rc->name): echo 'selected'; endif; ?>><?php echo e($rc->name); ?></option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-              </select>
-            </div>
-
-            <div>
-              <label class="text-sm font-medium text-gray-700">Tindak Lanjut</label>
-              <textarea name="closed_note" rows="3" required class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Tuliskan tindak lanjut penyelesaian..."><?php echo e(old('closed_note')); ?></textarea>
-            </div>
-            <div class="flex justify-end gap-2">
-              <button type="button" class="rounded-lg px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50" @click="open=false">Batal</button>
-              <button type="submit" class="rounded-lg bg-red-600 px-3 py-2 text-white text-sm hover:bg-red-700">Close Ticket</button>
-            </div>
-          </form>
+          <section class="rounded-lg border border-red-100 bg-red-50/30 p-3 ring-1 ring-red-100/80">
+            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-red-800">Tutup tiket</h4>
+            <p class="mt-0.5 text-[11px] text-red-900/70">Pilih <strong>root cause</strong>, lalu <strong>detail root cause</strong> (radio dari Parameter). <strong>Closed note</strong> = catatan penutupan / isian untuk opsi Lainnya.</p>
+            <form method="POST" action="<?php echo e(route('it.ticket.close', $ticket->id)); ?>" id="form-close-ticket" class="mt-2 space-y-2">
+              <?php echo csrf_field(); ?>
+              <div>
+                <label for="modal-close-root-cause" class="mb-0.5 block text-[11px] font-medium text-gray-700">Root cause</label>
+                <select id="modal-close-root-cause" name="root_cause" required class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <?php $rcOld = old('root_cause', $ticket->root_cause); ?>
+                  <option value="" disabled <?php echo e(empty($rcOld) ? 'selected' : ''); ?>>Pilih root cause</option>
+                  <?php $__currentLoopData = ($rootCauses ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($rc->name); ?>" <?php if($rcOld === $rc->name): echo 'selected'; endif; ?>><?php echo e($rc->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+              </div>
+              <div id="root-cause-detail-radios-wrap" class="min-h-[2.5rem]"></div>
+              <div id="modal-close-note-wrap">
+                <label id="modal-close-note-label" for="modal-close-note" class="mb-0.5 block text-[11px] font-medium text-gray-700">Closed note</label>
+                <textarea id="modal-close-note" name="closed_note" rows="2" class="max-h-28 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="…"><?php echo e(old('closed_note')); ?></textarea>
+              </div>
+              <div class="flex flex-col-reverse gap-2 border-t border-red-100/80 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
+                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-red-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-red-700">Close ticket</button>
+              </div>
+            </form>
+          </section>
+          </div>
         </div>
       <?php elseif(auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id()): ?>
-        <form method="POST" action="<?php echo e(route('vendor.ticket.followup', $ticket->id)); ?>" class="space-y-4">
+        <form method="POST" action="<?php echo e(route('vendor.ticket.followup', $ticket->id)); ?>" class="space-y-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
           <?php echo csrf_field(); ?>
+          <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Tindak lanjut vendor</h4>
           <div>
-            <label class="text-sm font-medium text-gray-700">Tindak Lanjut Vendor</label>
-            <textarea name="vendor_followup" rows="3" required class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Catat tindak lanjut..."><?php echo e(old('vendor_followup', $ticket->vendor_followup)); ?></textarea>
+            <label for="modal-vendor-followup" class="mb-0.5 block text-[11px] font-medium text-gray-700">Catatan</label>
+            <textarea id="modal-vendor-followup" name="vendor_followup" rows="3" required class="max-h-40 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Catat tindak lanjut…"><?php echo e(old('vendor_followup', $ticket->vendor_followup)); ?></textarea>
           </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" class="rounded-lg px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50" @click="open=false">Batal</button>
-            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-2 text-white text-sm hover:bg-emerald-700">Simpan</button>
+          <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-2 sm:flex-row sm:justify-end">
+            <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
+            <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700">Simpan</button>
           </div>
         </form>
       <?php endif; ?>
     <?php endif; ?>
+    </div>
 
+  </div>
   </div>
 </div>
 
   
   <?php $__env->startPush('scripts'); ?>
   <script>
+    window.rootCauseDetailsByRoot = <?php echo json_encode($rootCauseDetailsByRootName ?? [], 15, 512) ?>;
+    window.selectedRootCauseDetailId = <?php echo json_encode(old('root_cause_detail_id', $ticket->root_cause_detail_id), 512) ?>;
     window.downloadHistoryPanel = async function(){
       try{
         const panel = document.getElementById('history-panel');
@@ -671,6 +688,95 @@
         }
         if(initCat){ loadOverrideSubcategories(initCat, initSub); }
         }catch(_){ }
+
+      // Penutupan tiket: radio detail root cause per root cause (+ Lainnya + closed note)
+      try {
+        const byRoot = window.rootCauseDetailsByRoot || {};
+        const rootSel = document.getElementById('modal-close-root-cause');
+        const folWrap = document.getElementById('root-cause-detail-radios-wrap');
+        const noteTa = document.getElementById('modal-close-note');
+        const noteLbl = document.getElementById('modal-close-note-label');
+        if (!rootSel || !folWrap || !noteTa || !noteLbl) {
+          // bukan IT / elemen tidak ada
+        } else {
+          function syncNoteForFollowup() {
+            const list = Array.isArray(byRoot[rootSel.value]) ? byRoot[rootSel.value] : [];
+            if (list.length === 0) {
+              noteLbl.textContent = 'Closed note';
+              noteTa.required = true;
+              noteTa.placeholder = 'Wajib, minimal 3 karakter…';
+              return;
+            }
+            const picked = folWrap.querySelector('input[name="root_cause_detail_id"]:checked');
+            if (!picked) {
+              noteLbl.textContent = 'Closed note (opsional)';
+              noteTa.required = false;
+              noteTa.placeholder = 'Opsional…';
+              return;
+            }
+            const opt = list.find((o) => String(o.id) === picked.value);
+            if (opt && opt.is_other) {
+              noteLbl.textContent = 'Closed note (wajib untuk Lainnya)';
+              noteTa.required = true;
+              noteTa.placeholder = 'Isi closed note…';
+            } else {
+              noteLbl.textContent = 'Closed note (opsional)';
+              noteTa.required = false;
+              noteTa.placeholder = 'Opsional — ditambahkan setelah label detail';
+            }
+          }
+
+          function renderDetailRadios() {
+            const name = rootSel.value;
+            const list = Array.isArray(byRoot[name]) ? byRoot[name] : [];
+            folWrap.innerHTML = '';
+            if (!name) {
+              noteTa.required = false;
+              noteLbl.textContent = 'Closed note';
+              return;
+            }
+            if (list.length === 0) {
+              folWrap.innerHTML = '<p class="text-[11px] leading-snug text-amber-900">Belum ada detail untuk root cause ini. Atur di <strong>Parameter → Detail root cause</strong> atau isi <strong>closed note</strong> saja (wajib).</p>';
+              noteTa.required = true;
+              noteLbl.textContent = 'Closed note';
+              noteTa.placeholder = 'Wajib, minimal 3 karakter…';
+              return;
+            }
+
+            const fs = document.createElement('fieldset');
+            fs.className = 'rounded-md border border-red-200/70 bg-white/70 p-2';
+            const leg = document.createElement('legend');
+            leg.className = 'px-1 text-[10px] font-semibold uppercase tracking-wide text-red-900';
+            leg.textContent = 'Detail root cause';
+            fs.appendChild(leg);
+            const selRaw = window.selectedRootCauseDetailId;
+            const selId = selRaw != null && selRaw !== '' ? String(selRaw) : '';
+            list.forEach((opt, idx) => {
+              const lab = document.createElement('label');
+              lab.className = 'flex cursor-pointer items-start gap-2 rounded px-1 py-1 text-xs text-gray-800 hover:bg-red-50/60';
+              const inp = document.createElement('input');
+              inp.type = 'radio';
+              inp.name = 'root_cause_detail_id';
+              inp.value = String(opt.id);
+              inp.className = 'mt-0.5 h-3.5 w-3.5 shrink-0 border-gray-300 text-red-600 focus:ring-red-500';
+              if (idx === 0) inp.required = true;
+              if (selId ? String(opt.id) === selId : idx === 0) inp.checked = true;
+              inp.setAttribute('data-is-other', opt.is_other ? '1' : '0');
+              lab.appendChild(inp);
+              const span = document.createElement('span');
+              span.textContent = opt.label;
+              lab.appendChild(span);
+              fs.appendChild(lab);
+            });
+            folWrap.appendChild(fs);
+            fs.addEventListener('change', syncNoteForFollowup);
+            syncNoteForFollowup();
+          }
+
+          rootSel.addEventListener('change', renderDetailRadios);
+          renderDetailRadios();
+        }
+      } catch (_) {}
     });
   </script>
   <?php $__env->stopPush(); ?>

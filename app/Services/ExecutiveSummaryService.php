@@ -18,7 +18,9 @@ class ExecutiveSummaryService
         }
 
         $prompt = <<<PROMPT
-buatkan ringkasan eksekutif terhadap data tiket yang dikirim dan jelaskan mitigasi yang perlu dilakukan degan menampilkan statistik jumlah tiket. jangan halu dan pastikan hanya memaiaki data yang dikirim
+buatkan ringkasan eksekutif terhadap data tiket yang dikirim dan jelaskan mitigasi yang perlu dilakukan dengan menampilkan statistik jumlah tiket. jangan halu dan pastikan hanya memakai data yang dikirim.
+
+Struktur JSON mencakup antara lain: statistik_jumlah_tiket, statistik_kategori, statistik_sub_kategori, statistik_detail_root_cause (agregat label detail root cause pada tiket tutup), jumlah_tiket_tutup_tanpa_detail_root_cause, dan data_tiket (per tiket: root_cause, detail_root_cause, closed_note, tindak_lanjut_progres_it, tindak_lanjut_vendor, serta field lain yang ada).
 
 Gunakan Bahasa Indonesia formal, jelas, dan seluruh output wajib berbentuk narasi paragraf.
 Dilarang menggunakan bullet points, numbering, daftar berpoin, atau format list apa pun.
@@ -26,14 +28,16 @@ Narasi wajib mencakup:
 - gambaran umum performa helpdesk berdasarkan statistik jumlah tiket,
 - narasi statistik kategori tiket yang dominan,
 - narasi statistik sub kategori tiket yang dominan,
-- narasi pola penyebab (jika tersedia di data),
+- narasi pola penyebab dan root cause (jika tersedia di data),
+- narasi pola detail root cause bila statistik_detail_root_cause atau field detail_root_cause pada data_tiket tersedia,
+- narasi pola tindak lanjut (progres IT dan/atau vendor) yang terungkap dari isian per tiket pada data_tiket, hanya jika tidak seluruhnya "tidak tersedia",
 - mitigasi yang konkret dan relevan berdasarkan data.
 
 Jika ada data yang kosong, sebutkan "tidak tersedia" tanpa membuat asumsi.
 PROMPT;
 
         $response = Http::withToken($apiKey)
-            ->timeout(30)
+            ->timeout(90)
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
                 'temperature' => 0.2,
