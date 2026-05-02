@@ -43,7 +43,16 @@
       
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div class="min-w-0">
-            <h2 class="text-lg font-semibold text-gray-800">#<?php echo e($ticket->nomor_tiket); ?></h2>
+            <h2 class="text-lg font-semibold text-gray-800 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span>#<?php echo e($ticket->nomor_tiket); ?></span>
+              <?php
+                $namaCabangPembuat = $ticket->user?->kodeKantor?->nama_kantor;
+                $kodeCabangPembuat = $ticket->user?->kode_kantor;
+              ?>
+              <?php if($namaCabangPembuat || $kodeCabangPembuat): ?>
+                <span class="text-sm font-normal text-gray-500">· <?php echo e($namaCabangPembuat ?? $kodeCabangPembuat); ?></span>
+              <?php endif; ?>
+            </h2>
             <div class="text-xs text-gray-500 mt-1">
             Dibuat oleh: <span class="font-medium text-gray-700"><?php echo e($ticket->user->name ?? '—'); ?></span>
             <?php if(isset($ticket->cabang)): ?>
@@ -142,7 +151,13 @@
     <div class="min-h-0 flex-1 bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm lg:min-h-0 lg:overflow-y-auto">
       <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
       <dl class="text-[13px] text-gray-700 space-y-1">
-        <div class="flex justify-between"><dt>Nomor</dt><dd class="font-medium"><?php echo e($ticket->nomor_tiket); ?></dd></div>
+        <div class="flex justify-between gap-2"><dt class="shrink-0">Nomor</dt><dd class="font-medium text-right">
+          <?php echo e($ticket->nomor_tiket); ?>
+
+          <?php if($ticket->user?->kodeKantor?->nama_kantor || $ticket->user?->kode_kantor): ?>
+            <span class="block text-xs font-normal text-gray-500"><?php echo e($ticket->user?->kodeKantor?->nama_kantor ?? $ticket->user?->kode_kantor); ?></span>
+          <?php endif; ?>
+        </dd></div>
         <div class="flex justify-between"><dt>Status</dt><dd class="font-medium"><?php echo e($ticket->status); ?></dd></div>
         <div class="flex justify-between"><dt>Kategori</dt><dd><?php echo e($ticket->kategori); ?></dd></div>
         <div class="flex justify-between"><dt>Dibuat</dt><dd><?php echo e(optional($ticket->created_at)->format('d M Y H:i') ?? '-'); ?></dd></div>

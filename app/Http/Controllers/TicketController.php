@@ -1087,7 +1087,7 @@ public function store(Request $request)
     /** Detail tiket (IT & cabang-yang-bersangkutan) */
     public function show(Ticket $ticket)
     {
-        $ticket->load(['user', 'it', 'vendor', 'comments.user', 'histories.user', 'rootCauseDetail']);
+        $ticket->load(['user.kodeKantor', 'it', 'vendor', 'comments.user', 'histories.user', 'rootCauseDetail']);
 
         if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) {
             abort(403);
