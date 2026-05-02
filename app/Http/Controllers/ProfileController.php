@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KodeKantor;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+            'kodeKantors' => KodeKantor::orderBy('kode')->get(),
         ]);
     }
 
@@ -91,6 +93,7 @@ class ProfileController extends Controller
 
         return view('vendor.profile', [
             'user' => $request->user(),
+            'kodeKantors' => KodeKantor::orderBy('kode')->get(),
         ]);
     }
 

@@ -37,6 +37,17 @@
       </select>
       @error('role')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
     </div>
+    <div>
+      <label class="text-sm font-medium text-gray-700">Kode kantor</label>
+      <select name="kode_kantor" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+        <option value="">— Tidak dipilih —</option>
+        @foreach($kodeKantors as $kk)
+          <option value="{{ $kk->kode }}" @selected(old('kode_kantor') === $kk->kode)>{{ $kk->kode }} — {{ $kk->nama_kantor }}</option>
+        @endforeach
+      </select>
+      <p class="mt-1 text-xs text-gray-500">Opsional. Daftar kantor wilayah.</p>
+      @error('kode_kantor')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+    </div>
     <div class="flex justify-end gap-2">
       <a href="{{ route('it.users.index') }}" class="rounded-lg px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50">Batal</a>
       <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700">Simpan</button>

@@ -12,28 +12,42 @@ class TicketCommentController extends Controller
     public function store(Request $request, Ticket $ticket)
     {
         $request->validate([
-            'body' => 'required|string',
-            'attachment' => 'nullable|file|max:5048',
+            'body' => 'nullable|string|max:65535',
+            'attachment' => 'nullable|file|max:5120',
         ]);
+
+        $bodyRaw = (string) $request->input('body', '');
+        if (trim($bodyRaw) === '' && ! $request->hasFile('attachment')) {
+            return back()
+                ->withErrors(['body' => 'Tulis pesan atau tempel/lampirkan gambar.'])
+                ->withInput();
+        }
 
         $data = [
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
-            'body' => $request->body,
+            'body' => trim($bodyRaw) === '' ? '' : $bodyRaw,
         ];
 
         if ($request->hasFile('attachment')) {
             $f = $request->file('attachment');
-            $original = $f->getClientOriginalName();
-            $ext = $f->getClientOriginalExtension();
-            $name = pathinfo($original, PATHINFO_FILENAME);
-            $sanitized = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+            $ext = strtolower($f->getClientOriginalExtension());
+            if ($ext === '' || $ext === 'tmp' || strlen($ext) > 8) {
+                $ext = match ($f->getMimeType()) {
+                    'image/jpeg', 'image/jpg' => 'jpg',
+                    'image/png' => 'png',
+                    'image/gif' => 'gif',
+                    'image/webp' => 'webp',
+                    'application/pdf' => 'pdf',
+                    default => 'bin',
+                };
+            }
             try {
                 $code = random_int(10000, 99999);
             } catch (\Throwable $e) {
                 $code = mt_rand(10000, 99999);
             }
-            $filename = $sanitized . '-' . $code . '.' . $ext;
+            $filename = 'comment-img-' . $code . '-' . uniqid('', true) . '.' . $ext;
             $path = $f->storeAs('attachments', $filename, 'public');
             $data['attachment'] = $path;
         }
@@ -55,7 +69,9 @@ class TicketCommentController extends Controller
                 'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
                 'kind'       => 'comment',
                 'title'      => 'Komentar baru pada tiket ' . ($ticket->nomor_tiket ?? $ticket->id),
-                'body'       => str($comment->body)->limit(140),
+                'body'       => (trim((string) $comment->body) !== '')
+                    ? (string) str($comment->body)->limit(140)
+                    : '[Gambar]',
                 'url'        => $url,
                 'actor_id'   => $actor?->id,
                 'actor_name' => $actor?->name,

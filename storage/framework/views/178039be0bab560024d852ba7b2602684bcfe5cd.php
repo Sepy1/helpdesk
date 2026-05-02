@@ -243,13 +243,13 @@
         <?php endif; ?>
       </td>
       <td>
-        <div style="font-weight:bold; margin-bottom:8px;">User Pelapor Terbanyak (12 Bulan)</div>
+        <div style="font-weight:bold; margin-bottom:8px;">Kantor Pembuat Terbanyak (12 Bulan)</div>
         <?php if(!empty($reporterTrendChartUrl)): ?>
           <div class="chart-frame">
-            <img src="<?php echo e($reporterTrendChartUrl); ?>" alt="Grafik tren user pelapor 12 bulan">
+            <img src="<?php echo e($reporterTrendChartUrl); ?>" alt="Grafik tren kantor pembuat 12 bulan">
           </div>
         <?php else: ?>
-          <div class="muted">Data grafik user pelapor tidak tersedia.</div>
+          <div class="muted">Data grafik kantor pembuat tidak tersedia.</div>
         <?php endif; ?>
       </td>
     </tr>
@@ -266,26 +266,26 @@
   <div class="page-break-before"></div>
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
   <?php if(!empty($groupedTickets) && count($groupedTickets) > 0): ?>
-    <?php $__currentLoopData = $groupedTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $userName => $userTickets): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+    <?php $__currentLoopData = $groupedTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $groupLabel => $groupTickets): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <?php if(!$loop->first): ?>
         <div class="page-break-before"></div>
       <?php endif; ?>
       <?php
-        $userTotal = count($userTickets);
-        $userClosed = $userTickets->where('status', 'CLOSED')->count();
-        $userOnProgress = $userTickets->where('status', 'ON_PROGRESS')->count();
-        $userEskalasi = $userTickets->where('status', 'ESKALASI_VENDOR')->count();
-        $userOpen = max(0, $userTotal - $userClosed);
-        $userRootCauseStats = $userTickets
+        $groupTotal = count($groupTickets);
+        $groupClosed = $groupTickets->where('status', 'CLOSED')->count();
+        $groupOnProgress = $groupTickets->where('status', 'ON_PROGRESS')->count();
+        $groupEskalasi = $groupTickets->where('status', 'ESKALASI_VENDOR')->count();
+        $groupOpen = max(0, $groupTotal - $groupClosed);
+        $groupRootCauseStats = $groupTickets
           ->groupBy(fn($t) => $t->root_cause ?? 'Tidak Ditentukan')
           ->map(fn($items) => count($items))
           ->sortDesc();
       ?>
 
       <div style="margin-top:10px; margin-bottom:4px; font-weight:bold;">
-        <?php echo e($userName); ?>
+        <?php echo e($groupLabel); ?>
 
-        <span class="muted">(<?php echo e(count($userTickets)); ?> tiket)</span>
+        <span class="muted">(<?php echo e(count($groupTickets)); ?> tiket)</span>
       </div>
 
       <table style="width:100%; border-collapse:collapse; margin-top:4px; margin-bottom:8px;">
@@ -295,23 +295,23 @@
               <tbody>
                 <tr>
                   <td style="padding:6px; color:#444; width:65%;">Total Tiket</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($userTotal); ?></td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($groupTotal); ?></td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Closed</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($userClosed); ?></td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($groupClosed); ?></td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket On Progress</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($userOnProgress); ?></td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($groupOnProgress); ?></td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Open</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($userOpen); ?></td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($groupOpen); ?></td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Eskalasi Vendor</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($userEskalasi); ?></td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($groupEskalasi); ?></td>
                 </tr>
               </tbody>
             </table>
@@ -325,7 +325,7 @@
                 </tr>
               </thead>
               <tbody>
-                <?php $__empty_1 = true; $__currentLoopData = $userRootCauseStats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rootCause => $rootTotal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php $__empty_1 = true; $__currentLoopData = $groupRootCauseStats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rootCause => $rootTotal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                   <tr>
                     <td style="padding:6px;"><?php echo e($rootCause); ?></td>
                     <td style="padding:6px; text-align:right; font-weight:bold;"><?php echo e($rootTotal); ?></td>
@@ -354,7 +354,7 @@
           </tr>
         </thead>
         <tbody>
-          <?php $__currentLoopData = $userTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+          <?php $__currentLoopData = $groupTickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
           <tr>
             <td style="width:5%;"><?php echo e($i+1); ?></td>
             <td style="width:13%;"><?php echo e(optional($t->created_at)->format('d M Y') ?? '-'); ?></td>

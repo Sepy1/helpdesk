@@ -41,6 +41,19 @@
             @endif
         </div>
 
+        @isset($kodeKantors)
+        <div>
+            <x-input-label for="kode_kantor" value="Kode kantor" />
+            <select id="kode_kantor" name="kode_kantor" class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900">
+                <option value="">— Tidak dipilih —</option>
+                @foreach($kodeKantors as $kk)
+                    <option value="{{ $kk->kode }}" @selected(old('kode_kantor', $user->kode_kantor) === $kk->kode)>{{ $kk->kode }} — {{ $kk->nama_kantor }}</option>
+                @endforeach
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('kode_kantor')" />
+        </div>
+        @endisset
+
         <div>
             <x-input-label for="no_hp" :value="__('No. HP')" />
             @php

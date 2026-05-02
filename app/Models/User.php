@@ -21,6 +21,7 @@ class User extends Authenticatable
         'username',
         'email',
         'role',
+        'kode_kantor',
         'visible_on_assign',
         'no_hp',
         'password',
@@ -49,5 +50,10 @@ class User extends Authenticatable
     public function devices()
     {
         return $this->hasMany(UserDevice::class);
+    }
+
+    public function kodeKantor()
+    {
+        return $this->belongsTo(KodeKantor::class, 'kode_kantor', 'kode');
     }
 }

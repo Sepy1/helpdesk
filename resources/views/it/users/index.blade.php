@@ -42,6 +42,7 @@
           <th class="py-2 px-3 text-left">Email</th>
           <th class="py-2 px-3 text-left">Username</th>
           <th class="py-2 px-3 text-left">Role</th>
+          <th class="py-2 px-3 text-left">Kantor</th>
           <th class="py-2 px-3 text-left">Aksi</th>
         </tr>
       </thead>
@@ -52,6 +53,15 @@
           <td class="py-2 px-3">{{ $u->email }}</td>
           <td class="py-2 px-3">{{ $u->username }}</td>
           <td class="py-2 px-3">{{ $u->role }}</td>
+          <td class="py-2 px-3 text-gray-700">
+            @if($u->kodeKantor)
+              <span class="font-mono text-xs">{{ $u->kodeKantor->kode }}</span>
+              <span class="text-gray-500">·</span>
+              {{ $u->kodeKantor->nama_kantor }}
+            @else
+              <span class="text-gray-400">—</span>
+            @endif
+          </td>
           <td class="py-2 px-3">
             <div class="flex flex-col sm:flex-row gap-2">
               <a href="{{ route('it.users.edit',$u) }}" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700 text-center">Edit</a>

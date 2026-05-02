@@ -13,6 +13,7 @@ use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
+use App\Models\KodeKantor;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use App\Mail\TicketSubmitted;
@@ -418,11 +419,11 @@ public function store(Request $request)
                    });
             });
         })
-        // filter username pembuat tiket
-        ->when($request->filled('username'), function ($q) use ($request) {
-            $username = trim($request->username);
-            $q->whereHas('user', function ($uq) use ($username) {
-                $uq->where('username', 'like', "%{$username}%");
+        // filter kode kantor pembuat tiket
+        ->when($request->filled('kode_kantor'), function ($q) use ($request) {
+            $kode = trim((string) $request->kode_kantor);
+            $q->whereHas('user', function ($uq) use ($kode) {
+                $uq->where('kode_kantor', $kode);
             });
         })
 
@@ -438,9 +439,10 @@ public function store(Request $request)
 
     // root cause options (load from DB so admin can manage them)
     $rootCauses = RootCause::orderBy('sort')->orderBy('name')->pluck('name')->toArray();
+    $kodeKantors = KodeKantor::orderBy('kode')->get();
 
     // kirim semua data ke view agar select bisa di-render
-    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses'));
+    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses', 'kodeKantors'));
     }
 
     /**
@@ -478,10 +480,10 @@ public function store(Request $request)
                        ->orWhere('kategori', 'like', "%{$v}%");
                 });
             })
-            ->when($request->filled('username'), function ($q) use ($request) {
-                $username = trim($request->username);
-                $q->whereHas('user', function ($uq) use ($username) {
-                    $uq->where('username', 'like', "%{$username}%");
+            ->when($request->filled('kode_kantor'), function ($q) use ($request) {
+                $kode = trim((string) $request->kode_kantor);
+                $q->whereHas('user', function ($uq) use ($kode) {
+                    $uq->where('kode_kantor', $kode);
                 });
             })
             ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
@@ -508,7 +510,7 @@ public function store(Request $request)
         $dateFrom = $request->query('date_from');
         $dateTo   = $request->query('date_to');
 
-        $q = Ticket::with(['user','it','subcategory'])
+        $q = Ticket::with(['user.kodeKantor', 'it', 'subcategory', 'rootCauseDetail'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->when($hasCategoryId && $request->filled('category_id'), fn($q) => $q->where('category_id', $request->category_id))
             ->when(!$hasCategoryId && $request->filled('kategori'), fn($q) => $q->where('kategori', $request->kategori))
@@ -521,12 +523,13 @@ public function store(Request $request)
                        ->orWhere('kategori', 'like', "%{$v}%");
                 });
             })
-            ->when($request->filled('username'), function ($q) use ($request) {
-                $username = trim($request->username);
-                $q->whereHas('user', function ($uq) use ($username) {
-                    $uq->where('username', 'like', "%{$username}%");
+            ->when($request->filled('kode_kantor'), function ($q) use ($request) {
+                $kode = trim((string) $request->kode_kantor);
+                $q->whereHas('user', function ($uq) use ($kode) {
+                    $uq->where('kode_kantor', $kode);
                 });
             })
+            ->when($request->filled('root_cause'), fn ($q) => $q->where('root_cause', $request->root_cause))
             ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo,   fn($q) => $q->whereDate('created_at', '<=', $dateTo))
             ->orderByDesc('created_at');
@@ -536,7 +539,25 @@ public function store(Request $request)
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = ['Nomor Tiket', 'Pembuat', 'Kategori', 'Subkategori', 'IT Handler', 'Deskripsi', 'Status', 'Tanggal Dibuat', 'Tanggal Ditangani', 'Eskalasi', 'Vendor Followup', 'Vendor Followup At', 'Root Cause', 'Closed Note'];
+        $headers = [
+            'Nomor Tiket',
+            'Pembuat',
+            'Kode Kantor',
+            'Nama Kantor',
+            'Kategori',
+            'Subkategori',
+            'IT Handler',
+            'Deskripsi',
+            'Status',
+            'Tanggal Dibuat',
+            'Tanggal Ditangani',
+            'Eskalasi',
+            'Vendor Followup',
+            'Vendor Followup At',
+            'Root Cause',
+            'Detail Root Cause',
+            'Closed Note',
+        ];
 
         // helper: convert 1-based column index to Excel column letters (1 -> A, 27 -> AA)
         $colLetter = function(int $col) {
@@ -557,20 +578,27 @@ public function store(Request $request)
 
         $rowNum = 2;
         foreach ($rows as $t) {
+            $kodeKantor = $t->user?->kode_kantor;
+            $namaKantor = $t->user?->kodeKantor?->nama_kantor;
+            $detailRc = $t->rootCauseDetail?->label;
+
             $sheet->setCellValue($colLetter(1) . $rowNum, $t->nomor_tiket);
             $sheet->setCellValue($colLetter(2) . $rowNum, optional($t->user)->name);
-            $sheet->setCellValue($colLetter(3) . $rowNum, $t->kategori);
-            $sheet->setCellValue($colLetter(4) . $rowNum, optional($t->subcategory)->name);
-            $sheet->setCellValue($colLetter(5) . $rowNum, optional($t->it)->name);
-            $sheet->setCellValue($colLetter(6) . $rowNum, $t->deskripsi);
-            $sheet->setCellValue($colLetter(7) . $rowNum, $t->status);
-            $sheet->setCellValue($colLetter(8) . $rowNum, optional($t->created_at)?->format('Y-m-d H:i:s'));
-            $sheet->setCellValue($colLetter(9) . $rowNum, optional($t->taken_at)?->format('Y-m-d H:i:s'));
-            $sheet->setCellValue($colLetter(10) . $rowNum, $t->eskalasi);
-            $sheet->setCellValue($colLetter(11) . $rowNum, $t->vendor_followup);
-            $sheet->setCellValue($colLetter(12) . $rowNum, optional($t->vendor_followup_at)?->format('Y-m-d H:i:s'));
-            $sheet->setCellValue($colLetter(13) . $rowNum, $t->root_cause);
-            $sheet->setCellValue($colLetter(14) . $rowNum, $t->closed_note);
+            $sheet->setCellValue($colLetter(3) . $rowNum, $kodeKantor ?? '');
+            $sheet->setCellValue($colLetter(4) . $rowNum, $namaKantor ?? '');
+            $sheet->setCellValue($colLetter(5) . $rowNum, $t->kategori);
+            $sheet->setCellValue($colLetter(6) . $rowNum, optional($t->subcategory)->name);
+            $sheet->setCellValue($colLetter(7) . $rowNum, optional($t->it)->name);
+            $sheet->setCellValue($colLetter(8) . $rowNum, $t->deskripsi);
+            $sheet->setCellValue($colLetter(9) . $rowNum, $t->status);
+            $sheet->setCellValue($colLetter(10) . $rowNum, optional($t->created_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(11) . $rowNum, optional($t->taken_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(12) . $rowNum, $t->eskalasi);
+            $sheet->setCellValue($colLetter(13) . $rowNum, $t->vendor_followup);
+            $sheet->setCellValue($colLetter(14) . $rowNum, optional($t->vendor_followup_at)?->format('Y-m-d H:i:s'));
+            $sheet->setCellValue($colLetter(15) . $rowNum, $t->root_cause);
+            $sheet->setCellValue($colLetter(16) . $rowNum, $detailRc ?? '');
+            $sheet->setCellValue($colLetter(17) . $rowNum, $t->closed_note);
             $rowNum++;
         }
 
@@ -1375,7 +1403,7 @@ public function downloadCommentAttachment(TicketComment $comment)
      * STATISTIK IT
      * ========================= */
 
-    /** Statistik untuk IT: kategori, status, top 5 user */
+    /** Statistik untuk IT: kategori, status, top 5 kantor pembuat */
     public function stats()
     {
         if (auth()->user()->role !== 'IT') abort(403);
@@ -1396,18 +1424,28 @@ public function downloadCommentAttachment(TicketComment $comment)
         $statusLabels = self::STATUS;
         $statusData   = collect($statusLabels)->map(fn ($s) => (int) optional($qStatus->get($s))->total)->values();
 
-        // Top 5 user pembuat
-        $topUsers = User::select('users.id', 'users.name', DB::raw('COUNT(tickets.id) AS total'))
-            ->join('tickets', 'tickets.user_id', '=', 'users.id')
-            ->groupBy('users.id', 'users.name')
+        // Top 5 kantor pembuat (users.kode_kantor)
+        $top = Ticket::query()
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->select('users.kode_kantor', DB::raw('COUNT(tickets.id) AS total'))
+            ->groupBy('users.kode_kantor')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
-        $topLabels = $topUsers->pluck('name');
-        $topData   = $topUsers->pluck('total');
 
-        // daftar user untuk pilihan filter laporan (pembuat tiket)
-        $users = User::orderBy('name')->get(['id','name']);
+        $kodeList = $top->pluck('kode_kantor')->filter()->values();
+        $namaByKode = KodeKantor::whereIn('kode', $kodeList)->pluck('nama_kantor', 'kode');
+
+        $topLabels = $top->map(function ($r) use ($namaByKode) {
+            if ($r->kode_kantor === null || $r->kode_kantor === '') {
+                return 'Tanpa kantor';
+            }
+
+            return $r->kode_kantor.' — '.($namaByKode[$r->kode_kantor] ?? $r->kode_kantor);
+        });
+        $topData = $top->pluck('total');
+
+        $kodeKantors = KodeKantor::orderBy('kode')->get(['kode', 'nama_kantor']);
 
         return view('it.stats', [
             'kategoriLabels' => $kategoriLabels,
@@ -1416,7 +1454,7 @@ public function downloadCommentAttachment(TicketComment $comment)
             'statusData'     => $statusData,
             'topLabels'      => $topLabels,
             'topData'        => $topData,
-            'users' => $users,
+            'kodeKantors'    => $kodeKantors,
         ]);
     }
 

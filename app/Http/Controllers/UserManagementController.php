@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KodeKantor;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class UserManagementController extends Controller
         $q = trim($request->get('q', ''));
         $role = $request->get('role');
         $users = User::query()
+            ->with('kodeKantor')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('name', 'like', "%$q%")
@@ -41,18 +43,24 @@ class UserManagementController extends Controller
     public function create()
     {
         $this->ensureIT();
-        return view('it.users.create');
+        $kodeKantors = KodeKantor::orderBy('kode')->get();
+
+        return view('it.users.create', compact('kodeKantors'));
     }
 
     public function store(Request $request)
     {
         $this->ensureIT();
+        $request->merge([
+            'kode_kantor' => $request->filled('kode_kantor') ? $request->input('kode_kantor') : null,
+        ]);
         $data = $request->validate([
             'username' => 'required|string|min:3|max:50|unique:users,username',
             'name' => 'required|string|min:3',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'role' => 'required|in:IT,CABANG,VENDOR,ADMIN',
+            'kode_kantor' => 'nullable|string|size:3|exists:kode_kantor,kode',
         ]);
         $user = User::create([
             'username' => $data['username'],
@@ -60,6 +68,7 @@ class UserManagementController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
+            'kode_kantor' => $data['kode_kantor'] ?? null,
         ]);
         return redirect()->route('it.users.index')->with('success', 'User dibuat.');
     }
@@ -67,23 +76,30 @@ class UserManagementController extends Controller
     public function edit(User $user)
     {
         $this->ensureIT();
-        return view('it.users.edit', compact('user'));
+        $kodeKantors = KodeKantor::orderBy('kode')->get();
+
+        return view('it.users.edit', compact('user', 'kodeKantors'));
     }
 
     public function update(Request $request, User $user)
     {
         $this->ensureIT();
+        $request->merge([
+            'kode_kantor' => $request->filled('kode_kantor') ? $request->input('kode_kantor') : null,
+        ]);
         $data = $request->validate([
             'username' => 'required|string|min:3|max:50|unique:users,username,'.$user->id,
             'name' => 'required|string|min:3',
             'email' => 'required|email|unique:users,email,'.$user->id,
             'role' => 'required|in:IT,CABANG,VENDOR,ADMIN',
             'password' => 'nullable|string|min:8',
+            'kode_kantor' => 'nullable|string|size:3|exists:kode_kantor,kode',
         ]);
         $user->username = $data['username'];
         $user->name = $data['name'];
         $user->email = $data['email'];
         $user->role = $data['role'];
+        $user->kode_kantor = $data['kode_kantor'] ?? null;
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }

@@ -17,11 +17,11 @@
         <label for="filterTo" class="sr-only">Sampai</label>
         <input id="filterTo" name="date_to" type="date" class="w-full sm:w-40 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm" />
 
-        <label for="filterUser" class="sr-only">Pembuat</label>
-        <select id="filterUser" name="user_id" class="w-full sm:w-48 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm">
-          <option value="">Semua Pembuat</option>
-          @foreach(($users ?? []) as $u)
-            <option value="{{ $u->id }}">{{ $u->name }}</option>
+        <label for="filterKodeKantor" class="sr-only">Kode kantor pembuat</label>
+        <select id="filterKodeKantor" name="kode_kantor" class="w-full sm:w-48 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm">
+          <option value="">Semua Kantor</option>
+          @foreach(($kodeKantors ?? []) as $k)
+            <option value="{{ $k->kode }}">{{ $k->kode }} — {{ $k->nama_kantor }}</option>
           @endforeach
         </select>
 
@@ -103,7 +103,7 @@
       </div>
     </div>
 
-    {{-- Kategori + Top 5 pembuat + Root cause (satu card) --}}
+    {{-- Kategori + Top 5 kantor + Root cause (satu card) --}}
     <div class="lg:col-span-2 md:col-span-1 col-span-1">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full flex flex-col gap-3">
         <div class="min-w-0">
@@ -119,7 +119,7 @@
         <div class="border-t border-gray-100 pt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div class="min-w-0">
             <div class="flex items-center justify-between gap-2 mb-1.5">
-              <h3 class="text-sm font-semibold text-gray-700">Top 5 User Pembuat Tiket</h3>
+              <h3 class="text-sm font-semibold text-gray-700">Top 5 Kantor Pembuat Tiket</h3>
               <span class="text-xs text-gray-500 shrink-0">Periode</span>
             </div>
             <div class="relative h-24 w-full sm:h-28">
@@ -532,8 +532,8 @@
       const params = new URLSearchParams();
       if (from) params.set('date_from', from);
       if (to) params.set('date_to', to);
-      const user = document.getElementById('filterUser')?.value;
-      if (user) params.set('user_id', user);
+      const kodeKantor = document.getElementById('filterKodeKantor')?.value;
+      if (kodeKantor) params.set('kode_kantor', kodeKantor);
       const url = `{{ route('stats.data') }}?${params.toString()}`;
       const res = await fetch(url, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -694,8 +694,8 @@
     const params = new URLSearchParams();
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
-    const user = document.getElementById('filterUser')?.value;
-    if (user) params.set('user_id', user);
+    const kodeKantor = document.getElementById('filterKodeKantor')?.value;
+    if (kodeKantor) params.set('kode_kantor', kodeKantor);
     const url = `{{ route('it.tickets.export') }}?${params.toString()}`;
     window.location.href = url;
   });
@@ -734,7 +734,7 @@
     openReportSummaryModal();
     const from = document.getElementById('filterFrom').value;
     const to = document.getElementById('filterTo').value;
-    const user = document.getElementById('filterUser')?.value || '';
+    const kodeKantor = document.getElementById('filterKodeKantor')?.value || '';
 
     try {
       const res = await fetch(`{{ route('it.stats.report.summary_preview') }}`, {
@@ -749,7 +749,7 @@
         body: JSON.stringify({
           date_from: from || null,
           date_to: to || null,
-          user_id: user || null,
+          kode_kantor: kodeKantor || null,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -804,7 +804,7 @@
   reportSummaryConfirm.addEventListener('click', async () => {
     const from = document.getElementById('filterFrom').value;
     const to = document.getElementById('filterTo').value;
-    const user = document.getElementById('filterUser')?.value || '';
+    const kodeKantor = document.getElementById('filterKodeKantor')?.value || '';
     const executiveSummary = reportSummaryTextarea.value;
 
     reportSummaryConfirm.disabled = true;
@@ -813,7 +813,7 @@
       fd.append('_token', csrfToken());
       fd.append('date_from', from);
       fd.append('date_to', to);
-      fd.append('user_id', user);
+      fd.append('kode_kantor', kodeKantor);
       fd.append('executive_summary', executiveSummary);
 
       const res = await fetch(`{{ route('it.stats.report') }}`, {

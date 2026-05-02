@@ -196,12 +196,27 @@
                   </svg>
                 @endif
               </div>
-              <div class="mt-1 inline-block rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
-                {{ $c->body }}
+              <div class="mt-1 inline-block max-w-full rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
+                @if(trim((string) $c->body) !== '')
+                  <div class="whitespace-pre-wrap break-words">{{ $c->body }}</div>
+                @endif
                 @if($c->attachment)
-                  <div class="mt-2">
-                    <a href="{{ route('comment.download', $c->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
-                  </div>
+                  @php
+                    $isCommentImage = (bool) preg_match('/\.(jpe?g|png|gif|webp)$/i', $c->attachment);
+                  @endphp
+                  @if($isCommentImage)
+                    @php $commentImgUrl = route('comment.download', $c->id) . '?inline=1'; @endphp
+                    <div class="mt-2 overflow-hidden rounded-lg">
+                      <img src="{{ $commentImgUrl }}" alt="Gambar — klik untuk memperbesar" title="Klik untuk pratinjau" data-full-src="{{ $commentImgUrl }}" role="button" tabindex="0" class="js-comment-image-preview max-h-72 w-full max-w-full cursor-zoom-in object-contain transition-opacity hover:opacity-95 {{ $mine ? 'ring-1 ring-white/30' : 'ring-1 ring-gray-200/80' }}" loading="lazy" decoding="async" />
+                    </div>
+                    <div class="mt-1.5">
+                      <a href="{{ route('comment.download', $c->id) }}" class="inline-flex items-center text-[10px] font-medium underline {{ $mine ? 'text-white/90 hover:text-white' : 'text-indigo-600 hover:text-indigo-800' }}">Unduh gambar</a>
+                    </div>
+                  @else
+                    <div class="mt-2">
+                      <a href="{{ route('comment.download', $c->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
+                    </div>
+                  @endif
                 @endif
               </div>
               <div class="mt-1 flex {{ $mine ? 'justify-end' : 'justify-start' }}">
@@ -223,16 +238,25 @@
 
       <div class="shrink-0 mt-3 border-t pt-3">
         @if($ticket->status !== 'CLOSED')
-          <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" id="ticket-comment-form" class="flex flex-col gap-2">
             @csrf
-            <textarea name="body" class="w-full flex-1 rounded-lg border-gray-300 resize-y min-h-[38px] max-h-[120px]" rows="2" required placeholder="Tulis pesan..."></textarea>
-            <label id="attachBtn" class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 ring-gray-200 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer transition-colors self-end sm:self-auto" title="Lampirkan file">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79V7a5 5 0 00-9.9-1M3 13l7.5-7.5a3.5 3.5 0 015 5L9 19a4 4 0 11-5.657-5.657L14 2" />
-              </svg>
-              <input id="attachInput" type="file" name="attachment" class="sr-only" />
-            </label>
-            <button class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg self-end sm:self-auto">Kirim</button>
+            <div id="comment-attachment-preview" class="hidden flex flex-wrap items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 p-2">
+              <img id="comment-attachment-preview-img" alt="Pratinjau lampiran — klik untuk memperbesar" title="Klik untuk pratinjau" class="hidden max-h-40 w-auto max-w-full cursor-zoom-in rounded-md object-contain ring-1 ring-gray-200/80 transition-opacity hover:opacity-90" />
+              <span id="comment-attachment-preview-file" class="hidden max-w-full break-all text-xs text-gray-700"></span>
+              <button type="button" id="comment-attachment-clear" class="ml-auto text-xs font-medium text-red-600 hover:text-red-700 hover:underline">Hapus lampiran</button>
+            </div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <textarea id="commentBody" name="body" class="w-full flex-1 rounded-lg border-gray-300 resize-y min-h-[44px] max-h-[160px] sm:min-h-[38px] sm:max-h-[120px]" rows="2" placeholder="Tulis pesan / Tempel gambar di sini (Ctrl+V) ."></textarea>
+              <div class="flex shrink-0 items-center justify-end gap-2 self-end sm:self-auto">
+                <label id="attachBtn" class="inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 ring-gray-200 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer transition-colors" title="Lampirkan file">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79V7a5 5 0 00-9.9-1M3 13l7.5-7.5a3.5 3.5 0 015 5L9 19a4 4 0 11-5.657-5.657L14 2" />
+                  </svg>
+                  <input id="attachInput" type="file" name="attachment" class="sr-only" />
+                </label>
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg">Kirim</button>
+              </div>
+            </div>
           </form>
         @else
           <div class="rounded-lg bg-gray-50 text-gray-600 ring-1 ring-gray-200 px-4 py-3 text-sm">Tiket telah ditutup. Komentar dan lampiran dinonaktifkan.</div>
@@ -241,6 +265,16 @@
     </div>
   </aside>
 </div>
+</div>
+
+{{-- Modal pratinjau gambar komentar (klik gambar di chat / pratinjau tempel) --}}
+<div id="comment-image-lightbox" class="fixed inset-0 z-[130] hidden bg-black/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="comment-image-lightbox-title" aria-hidden="true">
+  <p id="comment-image-lightbox-title" class="sr-only">Pratinjau gambar</p>
+  <button type="button" id="comment-image-lightbox-backdrop" class="absolute inset-0 cursor-default" aria-label="Tutup pratinjau"></button>
+  <div class="relative z-10 flex max-h-full max-w-full flex-col items-center">
+    <button type="button" id="comment-image-lightbox-close" class="mb-2 shrink-0 rounded-full bg-white/95 px-4 py-1.5 text-sm font-medium text-gray-800 shadow-md ring-1 ring-gray-200 hover:bg-white sm:absolute sm:-top-3 sm:right-0 sm:mb-0">Tutup</button>
+    <img id="comment-image-lightbox-img" src="" alt="Pratinjau gambar" class="max-h-[min(85dvh,900px)] max-w-full cursor-default rounded-lg object-contain shadow-2xl ring-1 ring-white/10" width="1200" height="900" decoding="async" />
+  </div>
 </div>
 
 {{-- ===================== MODAL HISTORY (Alpine) ===================== --}}
@@ -527,22 +561,157 @@
     document.addEventListener('DOMContentLoaded', function(){
       const list = document.getElementById('chat-list');
       if(list){ list.scrollTop = list.scrollHeight; }
-      // Toggle attachment button color when a file is chosen
+      // Lampiran + tempel gambar (clipboard) seperti WhatsApp
       const attachInput = document.getElementById('attachInput');
       const attachBtn = document.getElementById('attachBtn');
-      if(attachInput && attachBtn){
-        const setActive = (on)=>{
-          attachBtn.classList.toggle('ring-emerald-300', on);
-          attachBtn.classList.toggle('bg-emerald-50', on);
-          attachBtn.classList.toggle('text-emerald-700', on);
-          attachBtn.classList.toggle('hover:bg-emerald-100', on);
-          attachBtn.classList.toggle('ring-gray-200', !on);
-          attachBtn.classList.toggle('bg-white', !on);
-          attachBtn.classList.toggle('text-gray-600', !on);
-          attachBtn.classList.toggle('hover:bg-gray-50', !on);
-        };
-        attachInput.addEventListener('change', ()=> setActive(attachInput.files && attachInput.files.length>0));
+      const commentBodyEl = document.getElementById('commentBody');
+      const previewWrap = document.getElementById('comment-attachment-preview');
+      const previewImg = document.getElementById('comment-attachment-preview-img');
+      const previewFile = document.getElementById('comment-attachment-preview-file');
+      const previewClear = document.getElementById('comment-attachment-clear');
+      let pastePreviewObjectUrl = null;
+
+      const revokePastePreview = () => {
+        if (pastePreviewObjectUrl) {
+          URL.revokeObjectURL(pastePreviewObjectUrl);
+          pastePreviewObjectUrl = null;
+        }
+      };
+
+      const setAttachBtnActive = (on) => {
+        if (!attachBtn) return;
+        attachBtn.classList.toggle('ring-emerald-300', on);
+        attachBtn.classList.toggle('bg-emerald-50', on);
+        attachBtn.classList.toggle('text-emerald-700', on);
+        attachBtn.classList.toggle('hover:bg-emerald-100', on);
+        attachBtn.classList.toggle('ring-gray-200', !on);
+        attachBtn.classList.toggle('bg-white', !on);
+        attachBtn.classList.toggle('text-gray-600', !on);
+        attachBtn.classList.toggle('hover:bg-gray-50', !on);
+      };
+
+      const isImageFile = (f) => f && f.type && f.type.indexOf('image/') === 0;
+
+      const syncAttachmentPreview = () => {
+        revokePastePreview();
+        if (!previewWrap || !previewImg || !previewFile || !attachInput) return;
+        const f = attachInput.files && attachInput.files[0] ? attachInput.files[0] : null;
+        if (!f) {
+          previewWrap.classList.add('hidden');
+          previewImg.classList.add('hidden');
+          previewImg.removeAttribute('src');
+          previewFile.classList.add('hidden');
+          previewFile.textContent = '';
+          setAttachBtnActive(false);
+          return;
+        }
+        previewWrap.classList.remove('hidden');
+        setAttachBtnActive(true);
+        if (isImageFile(f)) {
+          previewFile.classList.add('hidden');
+          previewFile.textContent = '';
+          pastePreviewObjectUrl = URL.createObjectURL(f);
+          previewImg.src = pastePreviewObjectUrl;
+          previewImg.classList.remove('hidden');
+        } else {
+          previewImg.classList.add('hidden');
+          previewImg.removeAttribute('src');
+          previewFile.textContent = f.name || 'Berkas terpilih';
+          previewFile.classList.remove('hidden');
+        }
+      };
+
+      const clearCommentAttachment = () => {
+        if (attachInput) attachInput.value = '';
+        syncAttachmentPreview();
+      };
+
+      if (attachInput && attachBtn) {
+        attachInput.addEventListener('change', syncAttachmentPreview);
       }
+      if (previewClear) {
+        previewClear.addEventListener('click', clearCommentAttachment);
+      }
+
+      if (commentBodyEl && attachInput) {
+        commentBodyEl.addEventListener('paste', (e) => {
+          const items = e.clipboardData && e.clipboardData.items;
+          if (!items || !items.length) return;
+          for (let i = 0; i < items.length; i++) {
+            const it = items[i];
+            if (it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+              const blob = it.getAsFile();
+              if (!blob) continue;
+              e.preventDefault();
+              const ext = (blob.type === 'image/png') ? 'png' : (blob.type === 'image/gif') ? 'gif' : (blob.type === 'image/webp') ? 'webp' : 'jpg';
+              const file = new File([blob], 'tempel-gambar.' + ext, { type: blob.type || 'image/png' });
+              const dt = new DataTransfer();
+              dt.items.add(file);
+              attachInput.files = dt.files;
+              syncAttachmentPreview();
+              break;
+            }
+          }
+        });
+      }
+
+      // Pratinjau gambar komentar (modal lightbox)
+      const commentImageLightbox = document.getElementById('comment-image-lightbox');
+      const commentImageLightboxImg = document.getElementById('comment-image-lightbox-img');
+      const commentImageLightboxBackdrop = document.getElementById('comment-image-lightbox-backdrop');
+      const commentImageLightboxClose = document.getElementById('comment-image-lightbox-close');
+
+      const openCommentImageLightbox = (src) => {
+        if (!commentImageLightbox || !commentImageLightboxImg || !src) return;
+        commentImageLightboxImg.src = src;
+        commentImageLightbox.classList.remove('hidden');
+        commentImageLightbox.classList.add('flex', 'flex-col', 'items-center', 'justify-center');
+        commentImageLightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        window.setTimeout(() => commentImageLightboxClose?.focus(), 0);
+      };
+
+      const closeCommentImageLightbox = () => {
+        if (!commentImageLightbox || !commentImageLightboxImg) return;
+        commentImageLightbox.classList.add('hidden');
+        commentImageLightbox.classList.remove('flex', 'flex-col', 'items-center', 'justify-center');
+        commentImageLightbox.setAttribute('aria-hidden', 'true');
+        commentImageLightboxImg.removeAttribute('src');
+        document.body.style.overflow = '';
+      };
+
+      if (list) {
+        list.addEventListener('click', (ev) => {
+          const el = ev.target.closest('.js-comment-image-preview');
+          if (!el) return;
+          ev.preventDefault();
+          const src = el.getAttribute('data-full-src') || el.currentSrc || el.src;
+          openCommentImageLightbox(src);
+        });
+        list.addEventListener('keydown', (ev) => {
+          if (ev.key !== 'Enter' && ev.key !== ' ') return;
+          const el = ev.target.closest('.js-comment-image-preview');
+          if (!el) return;
+          ev.preventDefault();
+          const src = el.getAttribute('data-full-src') || el.currentSrc || el.src;
+          openCommentImageLightbox(src);
+        });
+      }
+
+      if (previewImg) {
+        previewImg.addEventListener('click', () => {
+          if (previewImg.classList.contains('hidden') || !previewImg.getAttribute('src')) return;
+          openCommentImageLightbox(previewImg.src);
+        });
+      }
+
+      commentImageLightboxBackdrop?.addEventListener('click', closeCommentImageLightbox);
+      commentImageLightboxClose?.addEventListener('click', closeCommentImageLightbox);
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Escape') return;
+        if (!commentImageLightbox || commentImageLightbox.classList.contains('hidden')) return;
+        closeCommentImageLightbox();
+      });
 
       // Deep-link handling: open History modal and scroll to item when URL hash points to it
       try{
@@ -631,7 +800,7 @@
       };
 
       // Mark comments seen when focusing composer or reaching bottom
-      const composer = document.querySelector('textarea[name="body"]');
+      const composer = document.getElementById('commentBody') || document.querySelector('textarea[name="body"]');
       if(composer){
         composer.addEventListener('focus', markCommentsSeen);
       }
@@ -644,9 +813,17 @@
         });
       }
       const form = document.querySelector('form[action*="ticket.comment"]');
-      if(form){
-        form.addEventListener('submit', ()=>{
-          // Assume user has seen latest after sending
+      if (form) {
+        form.addEventListener('submit', (ev) => {
+          const ta = document.getElementById('commentBody') || form.querySelector('[name="body"]');
+          const txt = (ta && ta.value) ? ta.value.trim() : '';
+          const hasFile = attachInput && attachInput.files && attachInput.files.length > 0;
+          if (!txt && !hasFile) {
+            ev.preventDefault();
+            alert('Tulis pesan atau tempel/lampirkan gambar terlebih dahulu.');
+            if (ta) ta.focus();
+            return;
+          }
           markCommentsSeen();
         });
       }

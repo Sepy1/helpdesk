@@ -32,6 +32,17 @@
       @error('role')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
     </div>
     <div>
+      <label class="text-sm font-medium text-gray-700">Kode kantor</label>
+      <select name="kode_kantor" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+        <option value="">— Tidak dipilih —</option>
+        @foreach($kodeKantors as $kk)
+          <option value="{{ $kk->kode }}" @selected(old('kode_kantor', $user->kode_kantor) === $kk->kode)>{{ $kk->kode }} — {{ $kk->nama_kantor }}</option>
+        @endforeach
+      </select>
+      <p class="mt-1 text-xs text-gray-500">Opsional.</p>
+      @error('kode_kantor')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
+    </div>
+    <div>
       <label class="text-sm font-medium text-gray-700">Password Baru (opsional)</label>
       <input type="password" name="password" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
       @error('password')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror

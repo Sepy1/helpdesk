@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\KodeKantor;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,16 @@ use App\Services\ExecutiveSummaryService;
 
 class StatsController extends Controller
 {
+    /** Filter tiket berdasarkan kode kantor pembuat (users.kode_kantor). */
+    protected function applyKantorFilterToTickets(\Illuminate\Database\Eloquent\Builder $tickets, Request $request): void
+    {
+        if (! $request->filled('kode_kantor')) {
+            return;
+        }
+        $kode = trim((string) $request->input('kode_kantor', $request->query('kode_kantor')));
+        $tickets->whereHas('user', fn ($uq) => $uq->where('kode_kantor', $kode));
+    }
+
     /**
      * Mengembalikan data statistik dalam format JSON.
      * Query param:
@@ -30,10 +41,7 @@ class StatsController extends Controller
         // base query (tickets)
         $tickets = \App\Models\Ticket::query();
 
-        // filter by user (pembuat) jika diberikan
-        if ($request->filled('user_id')) {
-            $tickets->where('user_id', $request->query('user_id'));
-        }
+        $this->applyKantorFilterToTickets($tickets, $request);
 
         // filter by date range if provided (date_from/date_to), else fallback to month format 'YYYY-MM'
         if ($dateFrom || $dateTo) {
@@ -157,20 +165,27 @@ class StatsController extends Controller
         $statusData   = $status->pluck('total')->all();
 
         // ------------------------------
-        // 3) Top 5 user pembuat tiket (pakai user_id)
+        // 3) Top 5 kantor pembuat (users.kode_kantor)
         // ------------------------------
         $top = (clone $tickets)
-            ->select('user_id', DB::raw('count(*) as total'))
-            ->groupBy('user_id')
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->select('users.kode_kantor', DB::raw('count(tickets.id) as total'))
+            ->groupBy('users.kode_kantor')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
 
-        $userIds = $top->pluck('user_id')->filter()->all();
-        $users = \App\Models\User::whereIn('id', $userIds)->pluck('name','id');
+        $kodeList = $top->pluck('kode_kantor')->filter()->values();
+        $namaByKode = KodeKantor::whereIn('kode', $kodeList)->pluck('nama_kantor', 'kode');
 
-        $topLabels = $top->map(fn($r) => $users[$r->user_id] ?? ('User #' . $r->user_id))->all();
-        $topData   = $top->pluck('total')->all();
+        $topLabels = $top->map(function ($r) use ($namaByKode) {
+            if ($r->kode_kantor === null || $r->kode_kantor === '') {
+                return 'Tanpa kantor';
+            }
+
+            return $r->kode_kantor.' — '.($namaByKode[$r->kode_kantor] ?? $r->kode_kantor);
+        })->all();
+        $topData = $top->pluck('total')->all();
 
         // ------------------------------
         // 4) Root cause terbanyak
@@ -355,9 +370,7 @@ class StatsController extends Controller
             }
         }
 
-        if ($request->filled('user_id')) {
-            $ticketsBase->where('user_id', $request->input('user_id', $request->query('user_id')));
-        }
+        $this->applyKantorFilterToTickets($ticketsBase, $request);
 
         $total = (clone $ticketsBase)->count();
         $closed = (clone $ticketsBase)->where('status', 'CLOSED')->count();
@@ -405,7 +418,7 @@ class StatsController extends Controller
             ->all();
 
         $ticketsList = (clone $ticketsBase)
-            ->with(['user', 'subcategory', 'rootCauseDetail'])
+            ->with(['user.kodeKantor', 'subcategory', 'rootCauseDetail'])
             ->orderByDesc('created_at')
             ->get([
                 'id', 'nomor_tiket', 'created_at', 'user_id', 'kategori', 'subcategory_id',
@@ -414,7 +427,14 @@ class StatsController extends Controller
             ]);
 
         $groupedTickets = $ticketsList
-            ->groupBy(fn ($t) => optional($t->user)->name ?? 'Tidak diketahui')
+            ->groupBy(function ($t) {
+                $kode = $t->user?->kode_kantor;
+                if ($kode) {
+                    return $kode.' — '.($t->user?->kodeKantor?->nama_kantor ?? $kode);
+                }
+
+                return 'Tanpa kantor';
+            })
             ->sortKeys();
 
         $textForAi = static function (?string $value, int $max = 4000): string {
@@ -431,6 +451,8 @@ class StatsController extends Controller
 
             return [
                 'pembuat_tiket' => optional($t->user)->name ?? 'tidak tersedia',
+                'kode_kantor_pembuat' => $t->user?->kode_kantor ?? 'tidak tersedia',
+                'nama_kantor_pembuat' => $t->user?->kodeKantor?->nama_kantor ?? 'tidak tersedia',
                 'kategori_tiket' => $t->kategori ?? 'tidak tersedia',
                 'sub_kategori_tiket' => optional($t->subcategory)->name ?? 'tidak tersedia',
                 'root_cause' => $t->root_cause ?? 'tidak tersedia',
@@ -526,9 +548,7 @@ class StatsController extends Controller
             ->groupBy('kategori', 'ym')
             ->orderBy('ym');
 
-        if ($request->filled('user_id')) {
-            $catTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
-        }
+        $this->applyKantorFilterToTickets($catTrendQuery, $request);
 
         $catTrendRows = $catTrendQuery->get();
         $topCategories = $catTrendRows
@@ -600,9 +620,7 @@ class StatsController extends Controller
             ->groupBy('sub_kategori', 'ym')
             ->orderBy('ym');
 
-        if ($request->filled('user_id')) {
-            $subcatTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
-        }
+        $this->applyKantorFilterToTickets($subcatTrendQuery, $request);
 
         $subcatTrendRows = $subcatTrendQuery->get();
         $topSubcats = $subcatTrendRows
@@ -672,9 +690,7 @@ class StatsController extends Controller
             ->groupBy('root_cause', 'ym')
             ->orderBy('ym');
 
-        if ($request->filled('user_id')) {
-            $rootTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
-        }
+        $this->applyKantorFilterToTickets($rootTrendQuery, $request);
 
         $rootTrendRows = $rootTrendQuery->get();
         $topRootCauses = $rootTrendRows
@@ -729,19 +745,18 @@ class StatsController extends Controller
         $rootCauseTrendChartUrl = 'https://quickchart.io/chart?c=' . urlencode(json_encode($rootTrendConfig));
 
         $reporterTrendQuery = \App\Models\Ticket::query()
-            ->leftJoin('users', 'tickets.user_id', '=', 'users.id')
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->leftJoin('kode_kantor', 'users.kode_kantor', '=', 'kode_kantor.kode')
             ->select(
-                DB::raw('COALESCE(users.name, CONCAT("User #", tickets.user_id)) as reporter'),
+                DB::raw('CASE WHEN IFNULL(MAX(users.kode_kantor), "") = "" THEN "Tanpa kantor" ELSE CONCAT(MAX(users.kode_kantor), " — ", COALESCE(MAX(kode_kantor.nama_kantor), MAX(users.kode_kantor))) END as reporter'),
                 DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m") as ym'),
                 DB::raw('count(tickets.id) as total')
             )
             ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
-            ->groupBy('reporter', 'ym')
+            ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'), DB::raw('DATE_FORMAT(tickets.created_at, "%Y-%m")'))
             ->orderBy('ym');
 
-        if ($request->filled('user_id')) {
-            $reporterTrendQuery->where('tickets.user_id', $request->input('user_id', $request->query('user_id')));
-        }
+        $this->applyKantorFilterToTickets($reporterTrendQuery, $request);
 
         $reporterTrendRows = $reporterTrendQuery->get();
         $topReporters = $reporterTrendRows

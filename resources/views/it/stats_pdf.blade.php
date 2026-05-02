@@ -243,13 +243,13 @@
         @endif
       </td>
       <td>
-        <div style="font-weight:bold; margin-bottom:8px;">User Pelapor Terbanyak (12 Bulan)</div>
+        <div style="font-weight:bold; margin-bottom:8px;">Kantor Pembuat Terbanyak (12 Bulan)</div>
         @if(!empty($reporterTrendChartUrl))
           <div class="chart-frame">
-            <img src="{{ $reporterTrendChartUrl }}" alt="Grafik tren user pelapor 12 bulan">
+            <img src="{{ $reporterTrendChartUrl }}" alt="Grafik tren kantor pembuat 12 bulan">
           </div>
         @else
-          <div class="muted">Data grafik user pelapor tidak tersedia.</div>
+          <div class="muted">Data grafik kantor pembuat tidak tersedia.</div>
         @endif
       </td>
     </tr>
@@ -265,25 +265,25 @@
   <div class="page-break-before"></div>
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
   @if(!empty($groupedTickets) && count($groupedTickets) > 0)
-    @foreach($groupedTickets as $userName => $userTickets)
+    @foreach($groupedTickets as $groupLabel => $groupTickets)
       @if(!$loop->first)
         <div class="page-break-before"></div>
       @endif
       @php
-        $userTotal = count($userTickets);
-        $userClosed = $userTickets->where('status', 'CLOSED')->count();
-        $userOnProgress = $userTickets->where('status', 'ON_PROGRESS')->count();
-        $userEskalasi = $userTickets->where('status', 'ESKALASI_VENDOR')->count();
-        $userOpen = max(0, $userTotal - $userClosed);
-        $userRootCauseStats = $userTickets
+        $groupTotal = count($groupTickets);
+        $groupClosed = $groupTickets->where('status', 'CLOSED')->count();
+        $groupOnProgress = $groupTickets->where('status', 'ON_PROGRESS')->count();
+        $groupEskalasi = $groupTickets->where('status', 'ESKALASI_VENDOR')->count();
+        $groupOpen = max(0, $groupTotal - $groupClosed);
+        $groupRootCauseStats = $groupTickets
           ->groupBy(fn($t) => $t->root_cause ?? 'Tidak Ditentukan')
           ->map(fn($items) => count($items))
           ->sortDesc();
       @endphp
 
       <div style="margin-top:10px; margin-bottom:4px; font-weight:bold;">
-        {{ $userName }}
-        <span class="muted">({{ count($userTickets) }} tiket)</span>
+        {{ $groupLabel }}
+        <span class="muted">({{ count($groupTickets) }} tiket)</span>
       </div>
 
       <table style="width:100%; border-collapse:collapse; margin-top:4px; margin-bottom:8px;">
@@ -293,23 +293,23 @@
               <tbody>
                 <tr>
                   <td style="padding:6px; color:#444; width:65%;">Total Tiket</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userTotal }}</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $groupTotal }}</td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Closed</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userClosed }}</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $groupClosed }}</td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket On Progress</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userOnProgress }}</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $groupOnProgress }}</td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Open</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userOpen }}</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $groupOpen }}</td>
                 </tr>
                 <tr>
                   <td style="padding:6px; color:#444;">Tiket Eskalasi Vendor</td>
-                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $userEskalasi }}</td>
+                  <td style="padding:6px; text-align:right; font-weight:bold;">{{ $groupEskalasi }}</td>
                 </tr>
               </tbody>
             </table>
@@ -323,7 +323,7 @@
                 </tr>
               </thead>
               <tbody>
-                @forelse($userRootCauseStats as $rootCause => $rootTotal)
+                @forelse($groupRootCauseStats as $rootCause => $rootTotal)
                   <tr>
                     <td style="padding:6px;">{{ $rootCause }}</td>
                     <td style="padding:6px; text-align:right; font-weight:bold;">{{ $rootTotal }}</td>
@@ -352,7 +352,7 @@
           </tr>
         </thead>
         <tbody>
-          @foreach($userTickets as $i => $t)
+          @foreach($groupTickets as $i => $t)
           <tr>
             <td style="width:5%;">{{ $i+1 }}</td>
             <td style="width:13%;">{{ optional($t->created_at)->format('d M Y') ?? '-' }}</td>

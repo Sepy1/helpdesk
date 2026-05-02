@@ -11,21 +11,26 @@
     <div class="flex items-center justify-center text-center">
       <div>
         <h2 class="text-lg font-semibold text-gray-800">Daftar Tiket</h2>
-        <p class="text-sm text-gray-500">Klik nomor tiket untuk melihat detail.</p>
+        <p class="text-sm text-gray-500">Klik nomor tiket untuk melihat detail. Filter diterapkan otomatis.</p>
       </div>
     </div>
 
     
     <form method="GET" class="w-full flex flex-col xl:flex-row xl:flex-nowrap items-end gap-2 mb-4 md:mb-6" id="filter-form">
       <div class="w-full xl:w-[260px] xl:shrink-0">
-        <input type="text" name="q" value="<?php echo e(request('q')); ?>" placeholder="Cari nomor / deskripsi / kategori"
-               class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" />
+        <input type="text" id="filter-q" name="q" value="<?php echo e(request('q')); ?>" placeholder="Cari nomor / deskripsi / kategori"
+               class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" autocomplete="off" />
       </div>
 
       
-      <div class="w-full xl:w-[170px] xl:shrink-0">
-        <input type="text" name="username" value="<?php echo e(request('username')); ?>" placeholder="Username pembuat"
-               class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" />
+      <div class="w-full min-w-0 xl:w-[220px] xl:shrink-0">
+        <label class="sr-only">Kode kantor pembuat</label>
+        <select name="kode_kantor" class="w-full h-10 rounded-lg border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+          <option value="">Semua kantor</option>
+          <?php $__currentLoopData = $kodeKantors ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kk): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <option value="<?php echo e($kk->kode); ?>" <?php if(request('kode_kantor') === $kk->kode): echo 'selected'; endif; ?>><?php echo e($kk->kode); ?> — <?php echo e($kk->nama_kantor); ?></option>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </select>
       </div>
 
       
@@ -63,7 +68,7 @@
 
       
       <div class="w-full xl:flex-1 flex flex-wrap xl:flex-nowrap gap-2 justify-start xl:justify-end">
-        <button type="submit" class="w-full md:w-auto h-10 rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-4">Filter</button>
+        <button type="submit" class="w-full md:w-auto h-10 rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-700 hover:bg-gray-50" title="Muat ulang dengan nilai filter saat ini">Muat ulang</button>
 
         <a href="<?php echo e(route('it.dashboard')); ?>"
            class="shrink-0 h-10 inline-block text-center rounded-lg border border-gray-200 px-4 text-sm text-gray-700 hover:underline leading-10">
@@ -81,7 +86,7 @@
 
 
 <script>
-// Periode tanggal 1 field -> parse ke date_from dan date_to (fallback manual input)
+// Parse periode tanggal (teks range) -> hidden date_from / date_to (dipakai submit manual & otomatis)
 (function () {
   const form = document.getElementById('filter-form');
   const rangeInput = document.getElementById('date-range');
@@ -89,24 +94,25 @@
   const toInput = document.getElementById('date-to-hidden');
   if (!form || !rangeInput || !fromInput || !toInput) return;
 
-  form.addEventListener('submit', function () {
+  window.__parseTicketDashboardDates = function () {
     const raw = (rangeInput.value || '').trim();
     if (!raw) {
       fromInput.value = '';
       toInput.value = '';
       return;
     }
-
-    // dukung pemisah: " - ", " s/d ", atau " to "
-    const parts = raw.split(/\s+-\s+|\s+s\/d\s+|\s+to\s+/i).map(s => s.trim()).filter(Boolean);
+    const parts = raw.split(/\s+-\s+|\s+s\/d\s+|\s+to\s+/i).map(function (s) { return s.trim(); }).filter(Boolean);
     if (parts.length >= 2) {
       fromInput.value = parts[0];
       toInput.value = parts[1];
     } else {
-      // jika hanya 1 tanggal diisi, gunakan sebagai awal & akhir
       fromInput.value = parts[0] || '';
       toInput.value = parts[0] || '';
     }
+  };
+
+  form.addEventListener('submit', function () {
+    window.__parseTicketDashboardDates();
   });
 })();
 </script>
@@ -114,7 +120,7 @@
   // Polling: fetch tickets fragment and replace content if changed
   (function(){
     const intervalMs = 3000; // 3s
-    const activeFilterKeys = ['q', 'username', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
+    const activeFilterKeys = ['q', 'kode_kantor', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
     const queryParams = new URLSearchParams(window.location.search);
     const hasActiveFilter = activeFilterKeys.some((key) => {
       const value = queryParams.get(key);
@@ -161,10 +167,42 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('filter-form');
       const rangeInput = document.getElementById('date-range');
       const fromInput = document.getElementById('date-from-hidden');
       const toInput = document.getElementById('date-to-hidden');
-      if (!rangeInput || !fromInput || !toInput || typeof flatpickr !== 'function') return;
+      const qInput = document.getElementById('filter-q');
+      if (!form || !rangeInput || !fromInput || !toInput || typeof flatpickr !== 'function') return;
+
+      function applyFiltersFromForm() {
+        if (typeof window.__parseTicketDashboardDates === 'function') {
+          window.__parseTicketDashboardDates();
+        }
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      }
+
+      let qDebounce;
+      if (qInput) {
+        qInput.addEventListener('input', function () {
+          clearTimeout(qDebounce);
+          qDebounce = setTimeout(function () { applyFiltersFromForm(); }, 450);
+        });
+      }
+
+      form.querySelectorAll('select').forEach(function (sel) {
+        sel.addEventListener('change', function () { applyFiltersFromForm(); });
+      });
+
+      rangeInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyFiltersFromForm();
+        }
+      });
 
       flatpickr(rangeInput, {
         mode: 'range',
@@ -177,16 +215,17 @@
             toInput.value = instance.formatDate(selectedDates[1], 'Y-m-d');
             return;
           }
-
           if (selectedDates.length === 1) {
             const single = instance.formatDate(selectedDates[0], 'Y-m-d');
             fromInput.value = single;
             toInput.value = single;
             return;
           }
-
           fromInput.value = '';
           toInput.value = '';
+        },
+        onClose: function () {
+          applyFiltersFromForm();
         }
       });
     });
