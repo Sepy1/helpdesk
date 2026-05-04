@@ -31,11 +31,11 @@
 @endpush
 
 @section('content')
-{{-- Tinggi ~1 layar: header h-16 + pt-6 konten; mobile + ruang bottom nav --}}
-<div class="flex min-h-[calc(100dvh-10.5rem)] flex-col md:min-h-[calc(100dvh-6.25rem)]">
-<div class="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
+{{-- Tinggi ~1 layar: header h-16 + pt-6 konten; mobile + ruang bottom nav. max-h mencegah halaman memanjang tak terbatas; komentar menggulir di dalam card. --}}
+<div class="flex min-h-[calc(100dvh-10.5rem)] max-h-[calc(100dvh-10.5rem)] flex-col md:min-h-[calc(100dvh-6.25rem)] md:max-h-[calc(100dvh-6.25rem)]">
+<div class="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-3 lg:items-stretch">
   {{-- Kolom kiri (konten utama) --}}
-  <div class="flex min-h-0 flex-col gap-6 lg:col-span-2 lg:h-full lg:min-h-0">
+  <div class="flex min-h-0 flex-col gap-6 overflow-y-auto overflow-x-hidden lg:col-span-2 lg:h-full lg:min-h-0">
     {{-- Form tindak lanjut dipindahkan ke modal Update untuk tampilan lebih rapi --}}
 
     {{-- =========================
@@ -175,9 +175,9 @@
 
   </div>
 
-  {{-- Komentar kanan --}}
-  <aside class="flex min-h-0 flex-col lg:min-h-0">
-    <div class="flex h-full min-h-0 flex-1 flex-col rounded-2xl bg-white p-3 shadow-md ring-1 ring-gray-100 sm:p-5 text-xs sm:text-sm lg:min-h-0">
+  {{-- Komentar kanan: tinggi dibatasi viewport; daftar di #chat-list yang menggulir --}}
+  <aside class="flex min-h-[14rem] flex-col lg:min-h-0 lg:h-full">
+    <div class="flex min-h-0 max-h-full flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 shadow-md ring-1 ring-gray-100 sm:p-5 text-xs sm:text-sm lg:h-full lg:max-h-full lg:min-h-0">
       <div class="shrink-0 flex items-center justify-between">
         <div class="flex items-center">
           <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
@@ -186,7 +186,7 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 lg:min-h-[12rem]">
+      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-1 min-h-[10rem] lg:min-h-[12rem]">
         @forelse($ticket->comments->sortBy('created_at') as $c)
           @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
           <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">
