@@ -36,6 +36,13 @@
     @media (prefers-reduced-motion:reduce){
       .page-root,#page-loader,aside[aria-label="Sidebar"]>div{transition:none!important}
     }
+
+    /* Desktop scale-down for selected pages */
+    @media (min-width: 1024px){
+      .desktop-scale-80{
+        zoom: 80%;
+      }
+    }
   </style>
 
   {{-- Styles dari child (mis. timeline) --}}
@@ -159,7 +166,19 @@ function logoutMobile() {
          :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
       {{-- Toast dipindah ke pojok kanan bawah (lihat container di bawah) --}}
 
-      <div id="page-root" class="page-root">
+      <div id="page-root" class="page-root {{ request()->routeIs([
+        'ticket.show',
+        'it.ticket.create',
+        'cabang.dashboard',
+        'it.dashboard',
+        'it.my',
+        'cabang.tickets',
+        'vendor.tickets',
+        'it.stats',
+        'it.parameters',
+        'profile.edit',
+        'vendor.profile.edit'
+      ]) ? 'desktop-scale-80' : '' }}">
         @yield('content')
       </div>
     </div>

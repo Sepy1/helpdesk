@@ -36,6 +36,13 @@
     @media (prefers-reduced-motion:reduce){
       .page-root,#page-loader,aside[aria-label="Sidebar"]>div{transition:none!important}
     }
+
+    /* Desktop scale-down for selected pages */
+    @media (min-width: 1024px){
+      .desktop-scale-80{
+        zoom: 80%;
+      }
+    }
   </style>
 
   
@@ -159,7 +166,19 @@ function logoutMobile() {
          :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
       
 
-      <div id="page-root" class="page-root">
+      <div id="page-root" class="page-root <?php echo e(request()->routeIs([
+        'ticket.show',
+        'it.ticket.create',
+        'cabang.dashboard',
+        'it.dashboard',
+        'it.my',
+        'cabang.tickets',
+        'vendor.tickets',
+        'it.stats',
+        'it.parameters',
+        'profile.edit',
+        'vendor.profile.edit'
+      ]) ? 'desktop-scale-80' : ''); ?>">
         <?php echo $__env->yieldContent('content'); ?>
       </div>
     </div>

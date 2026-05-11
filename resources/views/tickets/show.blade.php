@@ -27,6 +27,7 @@
 
   /* Small helper for status badge */
   .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:5px 8px;font-size:11px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
+
 </style>
 @endpush
 
