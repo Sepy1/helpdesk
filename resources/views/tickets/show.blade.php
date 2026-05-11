@@ -106,8 +106,8 @@
           {{-- Hanya lampiran saat pembuatan/ubah tiket; lampiran komentar hanya di card komentar --}}
           @if($ticket->lampiran)
             <div>
-              <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: {{ basename($ticket->lampiran) }}</a>
-              <a href="{{ route('ticket.download',$ticket->id) }}" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+              <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: {{ basename($ticket->lampiran) }}</a>
+              <a href="{{ route('ticket.download',$ticket->id) }}" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
             </div>
           @else
             <div class="text-xs text-gray-400">-</div>
@@ -187,7 +187,7 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-1 min-h-[10rem] lg:min-h-[12rem]">
+      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-visible pr-1 min-h-[10rem] lg:min-h-[12rem] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
         @forelse($ticket->comments->sortBy('created_at') as $c)
           @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
           <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">

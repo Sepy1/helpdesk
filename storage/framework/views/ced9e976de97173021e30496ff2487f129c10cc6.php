@@ -27,6 +27,7 @@
 
   /* Small helper for status badge */
   .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:5px 8px;font-size:11px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
+
 </style>
 <?php $__env->stopPush(); ?>
 
@@ -105,8 +106,8 @@
           
           <?php if($ticket->lampiran): ?>
             <div>
-              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center rounded-md px-2 py-1 text-xs ring-1 ring-gray-200 hover:bg-indigo-50 text-indigo-600">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
-              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="ml-2 text-xs text-gray-600 hover:underline">Unduh</a>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
             </div>
           <?php else: ?>
             <div class="text-xs text-gray-400">-</div>
@@ -187,7 +188,7 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-1 min-h-[10rem] lg:min-h-[12rem]">
+      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-visible pr-1 min-h-[10rem] lg:min-h-[12rem] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
         <?php $__empty_1 = true; $__currentLoopData = $ticket->comments->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
           <?php $mine = auth()->check() && auth()->id() === $c->user_id; ?>
           <div id="c-<?php echo e($c->id); ?>" class="flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>" data-comment-ts="<?php echo e(optional($c->created_at)->format('c')); ?>">
