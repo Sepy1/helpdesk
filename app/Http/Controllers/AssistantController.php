@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -206,15 +207,32 @@ class AssistantController extends Controller
 
             if (! empty($branchFilter['kode'])) {
                 $kode = (string) $branchFilter['kode'];
-                $branchPeriodQuery->whereHas('user', function ($q) use ($kode) {
-                    $q->where('kode_kantor', $kode);
+                $branchPeriodQuery->where(function ($outer) use ($kode) {
+                    $outer->whereHas('user', function ($q) use ($kode) {
+                        $q->where('kode_kantor', $kode);
+                    });
+
+                    if ($this->ticketsHasCabangColumn()) {
+                        $outer->orWhere('cabang', 'like', '%' . $kode . '%');
+                    }
                 });
             }
 
             if (! empty($branchFilter['nama'])) {
                 $nama = (string) $branchFilter['nama'];
-                $branchPeriodQuery->whereHas('user.kodeKantor', function ($q) use ($nama) {
-                    $q->where('nama_kantor', 'like', '%' . $nama . '%');
+                $branchPeriodQuery->where(function ($outer) use ($nama) {
+                    $outer->whereHas('user.kodeKantor', function ($q) use ($nama) {
+                        $q->where('nama_kantor', 'like', '%' . $nama . '%');
+                    });
+
+                    // Fallback for environments where master kode_kantor is incomplete.
+                    $outer->orWhereHas('user', function ($q) use ($nama) {
+                        $q->where('kode_kantor', 'like', '%' . $nama . '%');
+                    });
+
+                    if ($this->ticketsHasCabangColumn()) {
+                        $outer->orWhere('cabang', 'like', '%' . $nama . '%');
+                    }
                 });
             }
 
@@ -316,6 +334,7 @@ class AssistantController extends Controller
                 'dibuat_oleh' => (string) ($ticket->user->name ?? '-'),
                 'kode_cabang_pembuat' => (string) ($ticket->user->kode_kantor ?? '-'),
                 'nama_cabang_pembuat' => (string) ($ticket->user?->kodeKantor?->nama_kantor ?? '-'),
+                'cabang_tiket' => (string) ($ticket->getAttribute('cabang') ?? '-'),
                 'it_handler' => (string) ($ticket->it->name ?? '-'),
                 'vendor' => (string) ($ticket->vendor->name ?? '-'),
                 'eskalasi' => (string) ($ticket->escalated ?? $ticket->eskalasi ?? '-'),
@@ -401,6 +420,22 @@ class AssistantController extends Controller
             'start' => $start,
             'end' => $end,
         ];
+    }
+
+    private function ticketsHasCabangColumn(): bool
+    {
+        static $hasCabang = null;
+        if ($hasCabang !== null) {
+            return $hasCabang;
+        }
+
+        try {
+            $hasCabang = Schema::hasColumn('tickets', 'cabang');
+        } catch (\Throwable $e) {
+            $hasCabang = false;
+        }
+
+        return $hasCabang;
     }
 }
 
