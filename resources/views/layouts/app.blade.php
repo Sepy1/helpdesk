@@ -18,6 +18,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.js"></script>
 
   <style>
+    :root{
+      --topbar-h: 4rem;
+      --sidebar-w: 16rem;
+      --content-pt: 1.5rem;
+    }
+
     .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     #nprogress .bar{background:#4f46e5!important;height:3px!important}
     #nprogress .peg{box-shadow:0 0 10px #4f46e5,0 0 5px #4f46e5!important}
@@ -42,14 +48,69 @@
       .desktop-scale-80{
         zoom: 80%;
       }
+      .ui-compact-80{
+        --topbar-h: 3.2rem;   /* 80% of 4rem */
+        --sidebar-w: 12.8rem; /* 80% of 16rem */
+        --content-pt: 1.2rem; /* 80% of 1.5rem */
+      }
+      .ui-compact-80 .topbar-inner{
+        height: var(--topbar-h);
+      }
+      .ui-compact-80 .layout-sidebar{
+        top: var(--topbar-h);
+        width: var(--sidebar-w);
+      }
+      .ui-compact-80 .layout-content{
+        padding-top: var(--content-pt);
+      }
+      .ui-compact-80 .layout-content.sidebar-open{
+        margin-left: var(--sidebar-w);
+      }
+      .ui-compact-80 .layout-content.sidebar-closed{
+        margin-left: 0;
+      }
+
+      /* Shrink topbar internals (icons, text, controls) */
+      .ui-compact-80 .topbar-inner .h-9{ height: 1.8rem; }
+      .ui-compact-80 .topbar-inner .w-9{ width: 1.8rem; }
+      .ui-compact-80 .topbar-inner .h-5{ height: 1rem; }
+      .ui-compact-80 .topbar-inner .w-5{ width: 1rem; }
+      .ui-compact-80 .topbar-inner .topbar-title{ font-size: .85rem; line-height: 1rem; }
+      .ui-compact-80 .topbar-inner .topbar-user{ font-size: .7rem; line-height: 1rem; }
+      .ui-compact-80 .topbar-inner .topbar-action{ font-size: .7rem; padding: .25rem .6rem; }
+
+      /* Shrink sidebar internals (font, icon, spacing) */
+      .ui-compact-80 .layout-sidebar .sidebar-shell{ padding: .8rem; }
+      .ui-compact-80 .layout-sidebar .text-sm{ font-size: .7rem; line-height: 1rem; }
+      .ui-compact-80 .layout-sidebar .text-xs{ font-size: .6rem; line-height: .9rem; }
+      .ui-compact-80 .layout-sidebar nav a{ padding: .5rem .6rem; gap: .55rem; border-radius: .5rem; }
+      .ui-compact-80 .layout-sidebar nav a svg{ width: 1rem; height: 1rem; }
+      .ui-compact-80 .layout-sidebar .h-8{ height: 1.6rem; }
+      .ui-compact-80 .layout-sidebar .w-8{ width: 1.6rem; }
     }
   </style>
 
   {{-- Styles dari child (mis. timeline) --}}
   @stack('styles')
 </head>
+@php
+  $isDesktopScaledRoute = request()->routeIs([
+    'ticket.show',
+    'it.ticket.create',
+    'cabang.dashboard',
+    'it.dashboard',
+    'it.my',
+    'cabang.tickets',
+    'vendor.tickets',
+    'it.stats',
+    'it.parameters',
+    'profile.edit',
+    'vendor.profile.edit'
+  ]);
+@endphp
+
 <body
-  class="h-full font-sans antialiased"
+  class="h-full font-sans antialiased {{ $isDesktopScaledRoute ? 'ui-compact-80' : '' }}"
   x-data="layoutState()"
   x-init="init()"
   :class="{ 'overflow-hidden': mobileOpen }"
@@ -57,12 +118,12 @@
 
   {{-- TOPBAR (gradient) --}}
 <header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 border-b sticky top-0 z-40">
-  <div class="w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+  <div class="topbar-inner w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
     <div class="flex items-center gap-2 min-w-0">
       <div class="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
         <span class="text-white font-bold">HD</span>
       </div>
-      <span class="font-semibold text-white truncate">Helpdesk</span>
+      <span class="topbar-title font-semibold text-white truncate">Helpdesk</span>
 
       <button type="button"
               class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
@@ -108,16 +169,16 @@
             </div>
           </div>
         </div>
-        <span class="hidden sm:inline text-white/80 truncate max-w-[40ch]">
+        <span class="topbar-user hidden sm:inline text-white/80 truncate max-w-[40ch]">
           {{ auth()->user()->name }} — <span class="uppercase">{{ auth()->user()->role }}</span>
         </span>
 
         {{-- Profile link for vendor or regular users --}}
         <div class="hidden sm:inline-block mr-2">
             @if(auth()->user()->role === 'VENDOR')
-                <a href="{{ route('vendor.profile.edit') }}" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+                <a href="{{ route('vendor.profile.edit') }}" class="topbar-action inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
             @else
-                <a href="{{ route('profile.edit') }}" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
+                <a href="{{ route('profile.edit') }}" class="topbar-action inline-flex items-center px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20">Profil</a>
             @endif
         </div>
 
@@ -126,7 +187,7 @@
 
     <button type="button"
         onclick="logoutMobile()"
-        class="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50">
+        class="topbar-action inline-flex items-center px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50">
         Logout
     </button>
 </form>
@@ -152,33 +213,21 @@ function logoutMobile() {
   <div class="relative">
     {{-- Sidebar (desktop) --}}
     <aside aria-label="Sidebar"
-           class="hidden md:block fixed z-30 top-16 bottom-0 left-0 w-64 border-r bg-white overflow-y-auto
+           class="layout-sidebar hidden md:block fixed z-30 top-16 bottom-0 left-0 w-64 border-r bg-white overflow-y-auto
                   transition-transform duration-200 will-change-transform"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-      <div class="h-full p-4">
+      <div class="sidebar-shell h-full p-4">
         @include('layouts.partials.sidebar')
       </div>
     </aside>
 
     {{-- Konten --}}
-    <div class="pt-6 px-4 sm:px-6 lg:px-8 transition-[margin] duration-200
+    <div class="layout-content pt-6 px-4 sm:px-6 lg:px-8 transition-[margin] duration-200
                 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-0"
-         :class="sidebarOpen ? 'md:ml-64' : 'md:ml-0'">
+         :class="sidebarOpen ? 'sidebar-open md:ml-64' : 'sidebar-closed md:ml-0'">
       {{-- Toast dipindah ke pojok kanan bawah (lihat container di bawah) --}}
 
-      <div id="page-root" class="page-root {{ request()->routeIs([
-        'ticket.show',
-        'it.ticket.create',
-        'cabang.dashboard',
-        'it.dashboard',
-        'it.my',
-        'cabang.tickets',
-        'vendor.tickets',
-        'it.stats',
-        'it.parameters',
-        'profile.edit',
-        'vendor.profile.edit'
-      ]) ? 'desktop-scale-80' : '' }}">
+      <div id="page-root" class="page-root {{ $isDesktopScaledRoute ? 'desktop-scale-80' : '' }}">
         @yield('content')
       </div>
     </div>

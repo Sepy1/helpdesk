@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Detail Tiket'); ?>
 
 <?php $__env->startPush('styles'); ?>
@@ -28,6 +27,18 @@
   /* Small helper for status badge */
   .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:5px 8px;font-size:11px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
 
+  /* Flat card style with stronger border */
+  .show-card{
+    border: 1px solid #cbd5e1;
+    box-shadow: none;
+    transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+  }
+  .show-card:hover{
+    border-color: #94a3b8;
+    background-color: #f9fafb;
+    transform: translateY(-1px);
+  }
+
 </style>
 <?php $__env->stopPush(); ?>
 
@@ -40,7 +51,7 @@
     
 
     
-    <div class="mt-0 shrink-0 bg-white rounded-2xl shadow-md ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
+    <div class="show-card mt-0 shrink-0 bg-white rounded-2xl p-3 text-xs sm:p-5 sm:text-sm">
       
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div class="min-w-0">
@@ -149,7 +160,7 @@
     
 
     
-    <div class="min-h-0 flex-1 bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm lg:min-h-0 lg:overflow-y-auto">
+    <div class="show-card min-h-0 flex-1 rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:overflow-y-auto">
       <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
       <dl class="text-[13px] text-gray-700 space-y-1">
         <div class="flex justify-between gap-2"><dt class="shrink-0">Nomor</dt><dd class="font-medium text-right">
@@ -179,7 +190,7 @@
 
   
   <aside class="flex min-h-[14rem] flex-col lg:min-h-0 lg:h-full">
-    <div class="flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 shadow-md ring-1 ring-gray-100 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:h-full lg:max-h-full">
+    <div class="show-card flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:h-full lg:max-h-full">
       <div class="shrink-0 flex items-center justify-between">
         <div class="flex items-center">
           <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
