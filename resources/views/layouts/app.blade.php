@@ -43,6 +43,10 @@
       .page-root,#page-loader,aside[aria-label="Sidebar"]>div{transition:none!important}
     }
 
+    /* Desktop AI assistant */
+    .ai-fab{box-shadow:0 12px 26px rgba(79,70,229,.28)}
+    .ai-panel{box-shadow:0 18px 40px rgba(15,23,42,.22)}
+
     /* Desktop scale-down for selected pages */
     @media (min-width: 1024px){
       .desktop-scale-80{
@@ -107,6 +111,15 @@
     'profile.edit',
     'vendor.profile.edit'
   ]);
+@endphp
+
+@php
+  $aiChatEnabled = true;
+  try {
+    $aiChatEnabled = \App\Models\AppSetting::getBool('ai_chat_enabled', true);
+  } catch (\Throwable $e) {
+    $aiChatEnabled = true;
+  }
 @endphp
 
 <body
@@ -301,10 +314,11 @@ function logoutMobile() {
             }catch(_){}
           }, true);
 
-          // submit form (kecuali target _blank)
+          // submit form (kecuali target _blank / form tertentu tanpa loader)
           document.addEventListener('submit', (e)=>{
             const f = e.target;
             if (f && f.target === '_blank') return;
+            if (f && f.dataset && f.dataset.noloader === '1') return;
             startLoading();
           }, true);
         },
@@ -421,6 +435,60 @@ function logoutMobile() {
     @endif
   </div>
 
+  @auth
+  @if($aiChatEnabled)
+  {{-- AI Assistant (desktop only) --}}
+  <div x-data="appAssistantState()" x-init="init()" x-cloak class="hidden md:block fixed bottom-5 right-5 z-[950]">
+    <button type="button"
+            @click="toggle()"
+            class="ai-fab inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
+      <span>AI</span>
+      <span>Assistant</span>
+    </button>
+
+    <div x-show="open"
+         x-transition.opacity
+         x-transition.scale.origin.bottom.right
+         @click.outside="open=false"
+         class="ai-panel absolute bottom-14 right-0 w-[22rem] overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div class="flex items-center justify-between border-b bg-gray-50 px-3 py-2">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">AI Assistant</p>
+          <p class="text-[11px] text-gray-500">Panduan operasional aplikasi</p>
+        </div>
+        <button @click="open=false" class="h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-700" aria-label="Tutup">✕</button>
+      </div>
+
+      <div class="max-h-80 space-y-2 overflow-y-auto bg-white p-3" x-ref="chatList">
+        <template x-for="(msg, idx) in messages" :key="idx">
+          <div :class="msg.role === 'user' ? 'text-right' : 'text-left'">
+            <div :class="msg.role === 'user'
+                          ? 'inline-block max-w-[92%] rounded-2xl rounded-br-sm bg-indigo-600 px-3 py-2 text-xs text-white'
+                          : 'inline-block max-w-[92%] rounded-2xl rounded-bl-sm bg-gray-100 px-3 py-2 text-xs text-gray-800'">
+              <span x-text="msg.text"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="border-t bg-white p-3">
+        <form @submit.prevent="submit()" data-noloader="1" class="flex items-end gap-2">
+          <textarea x-model="input"
+                    rows="2"
+                    placeholder="Tanya cara pakai aplikasi..."
+                    class="w-full resize-none rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+          <button type="submit"
+                  :disabled="isSending"
+                  class="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+            <span x-text="isSending ? 'Memproses pesan ...' : 'Kirim'"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  @endif
+  @endauth
+
   <script>
     // Auto-hide toasts after 3 seconds without shifting layout
     document.addEventListener('DOMContentLoaded', ()=>{
@@ -438,6 +506,112 @@ function logoutMobile() {
       }, 3000);
     });
   </script>
+
+  @auth
+  <script>
+    function appAssistantState(){
+      return {
+        open: false,
+        input: '',
+        messages: [],
+        isSending: false,
+        links: {
+          create: '{{ route(auth()->user()->role === 'IT' ? 'it.ticket.create' : 'cabang.dashboard') }}',
+          allTickets: '{{ auth()->user()->role === 'IT' ? route('it.dashboard') : (auth()->user()->role === 'VENDOR' ? route('vendor.tickets') : route('cabang.tickets')) }}',
+          myTickets: '{{ auth()->user()->role === 'IT' ? route('it.my') : (auth()->user()->role === 'VENDOR' ? route('vendor.tickets') : route('cabang.tickets')) }}',
+          stats: '{{ auth()->user()->role === 'IT' ? route('it.stats') : route('dashboard') }}',
+          params: '{{ auth()->user()->role === 'IT' ? route('it.parameters') : route('dashboard') }}',
+          profile: '{{ auth()->user()->role === 'VENDOR' ? route('vendor.profile.edit') : route('profile.edit') }}'
+        },
+        init(){
+          const name = @json(auth()->user()->name ?? 'User');
+          this.messages = [
+            { role:'assistant', text:`Halo ${name}. Saya bantu operasional Helpdesk. Coba tanya: "cara buat tiket", "update status", atau "kelola parameter".` }
+          ];
+        },
+        toggle(){
+          this.open = !this.open;
+          this.$nextTick(() => this.scrollToBottom());
+        },
+        submit(){
+          const q = (this.input || '').trim();
+          if(!q || this.isSending) return;
+          this.ask(q);
+          this.input = '';
+        },
+        async ask(q){
+          this.messages.push({ role:'user', text:q });
+          this.isSending = true;
+          this.messages.push({ role:'assistant', text:'Memproses pesan ...' });
+          this.$nextTick(() => this.scrollToBottom());
+          const reply = await this.requestAi(q);
+          this.messages[this.messages.length - 1] = { role:'assistant', text:reply };
+          this.isSending = false;
+          this.$nextTick(() => this.scrollToBottom());
+        },
+        async requestAi(raw){
+          const q = String(raw || '').trim();
+          const history = this.messages
+            .filter(m => (m.role === 'user' || m.role === 'assistant') && m.text !== 'Memproses pesan ...')
+            .slice(-8)
+            .map(m => ({ role: m.role, text: m.text }));
+
+          try{
+            const res = await fetch('{{ route('assistant.chat') }}', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+              },
+              body: JSON.stringify({ message: q, history }),
+            });
+            if (!res.ok) {
+              throw new Error('HTTP ' + res.status);
+            }
+            const json = await res.json();
+            const reply = (json && typeof json.reply === 'string') ? json.reply.trim() : '';
+            if (reply) return reply;
+          }catch(_){}
+
+          return this.fallbackAnswer(q);
+        },
+        fallbackAnswer(raw){
+          const q = String(raw || '').toLowerCase();
+          if (/(buat|create|input).*(tiket)|cara buat tiket|ticket baru/.test(q)) {
+            return `Untuk membuat tiket:\n1) Buka menu Input/Buat Tiket.\n2) Isi kategori, deskripsi, dan lampiran (opsional).\n3) Klik Simpan/Kirim.\nLink cepat: ${this.links.create}`;
+          }
+          if (/(all|semua|list).*(tiket)|dashboard tiket/.test(q)) {
+            return `Untuk melihat daftar tiket, buka halaman All Tiket.\nGunakan filter status/kategori untuk mempercepat pencarian.\nLink cepat: ${this.links.allTickets}`;
+          }
+          if (/(tiket saya|my ticket|my tiket)/.test(q)) {
+            return `Halaman Tiket Saya menampilkan tiket sesuai peran Anda.\nLink cepat: ${this.links.myTickets}`;
+          }
+          if (/(status|update|assign|vendor|close|reopen)/.test(q)) {
+            return 'Update tiket dilakukan dari halaman detail tiket:\n- tombol Update (ubah status/assign vendor)\n- tombol Close ticket untuk penutupan\n- tombol Re-open jika tiket sudah CLOSED.';
+          }
+          if (/(komentar|chat|lampiran)/.test(q)) {
+            return 'Di detail tiket, gunakan panel Komentar/Progres untuk kirim pesan dan lampiran. Anda juga bisa tempel gambar (Ctrl+V) langsung ke kolom komentar.';
+          }
+          if (/(statistik|stats|laporan|report)/.test(q)) {
+            return `Untuk statistik, buka menu Statistik lalu atur filter periode/status.\nLink cepat: ${this.links.stats}`;
+          }
+          if (/(parameter|kategori|subkategori|root cause)/.test(q)) {
+            return `Kelola kategori/subkategori/root cause di menu Parameter.\nLink cepat: ${this.links.params}`;
+          }
+          if (/(profil|profile|akun|password)/.test(q)) {
+            return `Pengaturan akun ada di halaman Profil.\nLink cepat: ${this.links.profile}`;
+          }
+          return 'Saya bisa bantu panduan operasional aplikasi Helpdesk. Coba kata kunci: buat tiket, all tiket, tiket saya, update status, komentar, statistik, parameter, atau profil.';
+        },
+        scrollToBottom(){
+          const el = this.$refs.chatList;
+          if(el){ el.scrollTop = el.scrollHeight; }
+        }
+      }
+    }
+  </script>
+  @endauth
 
   @stack('scripts')
 </body>

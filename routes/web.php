@@ -21,6 +21,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketCommentController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\AssistantController;
 use App\Services\FcmService;
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.readAll');
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markOne'])->name('notifications.readOne');
+        Route::post('/assistant/chat', [AssistantController::class, 'chat'])->name('assistant.chat');
     // ===== Profile =====
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -146,6 +148,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/rootcause/detail', [\App\Http\Controllers\ParameterController::class, 'storeRootCauseDetail'])->name('it.parameters.rootcause.detail.store');
         Route::post('/it/parameters/rootcause/detail/{detail}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCauseDetail'])->name('it.parameters.rootcause.detail.delete');
         Route::post('/it/parameters/it-visibility', [\App\Http\Controllers\ParameterController::class, 'saveItVisibility'])->name('it.parameters.it.visibility');
+        Route::post('/it/parameters/ai-chat', [\App\Http\Controllers\ParameterController::class, 'saveAiChatSetting'])->name('it.parameters.ai_chat');
 
         Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
         Route::post('/it/ticket/{ticket}/release',         [TicketController::class, 'release'])->name('it.ticket.release');

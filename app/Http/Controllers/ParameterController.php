@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -20,8 +21,9 @@ class ParameterController extends Controller
         $rootCauses = RootCause::with('details')->orderBy('sort')->orderBy('name')->get();
         $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
         $its = User::where('role', 'IT')->orderBy('name')->get();
+        $aiChatEnabled = AppSetting::getBool('ai_chat_enabled', true);
 
-        return view('it.parameters', compact('categories','rootCauses','vendors','its'));
+        return view('it.parameters', compact('categories','rootCauses','vendors','its','aiChatEnabled'));
     }
 
     public function saveItVisibility(Request $request)
@@ -42,6 +44,16 @@ class ParameterController extends Controller
         }
 
         return back()->with('success', 'Pengaturan tampilan IT pada form pembuatan tiket disimpan.');
+    }
+
+    public function saveAiChatSetting(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $enabled = $request->boolean('ai_chat_enabled');
+        AppSetting::setValue('ai_chat_enabled', $enabled ? '1' : '0');
+
+        return back()->with('success', 'Pengaturan AI chat berhasil disimpan.');
     }
 
     public function storeCategory(Request $request)

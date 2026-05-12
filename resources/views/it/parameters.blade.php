@@ -178,6 +178,31 @@
       </div>
     </section>
 
+    {{-- AI Chat --}}
+    <section class="{{ $card }}">
+      <form method="POST" action="{{ route('it.parameters.ai_chat') }}">
+        @csrf
+        <div class="{{ $cardHead }}">
+          <div>
+            <h2 class="{{ $cardTitle }}">AI Chat Assistant</h2>
+            <p class="mt-0.5 text-xs text-gray-500">Aktifkan atau nonaktifkan floating AI chat pada tampilan desktop.</p>
+          </div>
+          <button type="submit" class="{{ $btnPrimary }}">Simpan</button>
+        </div>
+        <div class="p-4 sm:p-5 space-y-4">
+          <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50/70 p-3">
+            <input type="hidden" name="ai_chat_enabled" value="0">
+            <input type="checkbox" name="ai_chat_enabled" value="1" @checked($aiChatEnabled ?? true)
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+            <span class="text-sm text-gray-700">
+              Tampilkan AI chat assistant untuk pengguna.
+              <span class="mt-0.5 block text-xs text-gray-500">Jika dimatikan, tombol AI di halaman utama disembunyikan dan endpoint chat menolak request.</span>
+            </span>
+          </label>
+        </div>
+      </form>
+    </section>
+
     {{-- Satu baris: Detail root cause | Vendor | Ditugaskan ke (IT) --}}
     <div class="min-w-0 md:col-span-2 lg:col-span-3 grid grid-cols-1 gap-6 md:grid-cols-3">
     {{-- Detail root cause (sama pola layout dengan Subkategori) --}}
