@@ -467,7 +467,7 @@ function logoutMobile() {
             <div :class="msg.role === 'user'
                           ? 'inline-block max-w-[92%] rounded-2xl rounded-br-sm bg-indigo-600 px-3 py-2 text-xs text-white'
                           : 'inline-block max-w-[92%] rounded-2xl rounded-bl-sm bg-gray-100 px-3 py-2 text-xs text-gray-800'">
-              <span x-text="msg.text"></span>
+              <span class="whitespace-pre-line break-words" x-text="msg.text"></span>
             </div>
           </div>
         </template>

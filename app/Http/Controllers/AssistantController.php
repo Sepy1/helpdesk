@@ -52,7 +52,8 @@ class AssistantController extends Controller
                     . "Jawab singkat, jelas, dalam Bahasa Indonesia. Jangan membuat data fiktif dan jangan membahas hal di luar aplikasi. "
                     . "Jika pertanyaan terkait data tiket, gunakan hanya DATA_TIKET_REALTIME yang diberikan. "
                     . "Gaya bahasa harus rapi, profesional, dan natural (bukan sekadar menyalin field mentah). "
-                    . "Saat menjelaskan tiket spesifik, tulis narasi ringkas 1-2 paragraf lalu ringkasan poin seperlunya; hindari markdown berlebihan.",
+                    . "Saat menjelaskan tiket spesifik, tulis narasi ringkas 1-2 paragraf lalu ringkasan poin seperlunya; hindari markdown berlebihan. "
+                    . "Jika menuliskan daftar, gunakan poin per baris diawali '- ' (dash), bukan nomor 1/2/3 dalam satu paragraf.",
             ],
             [
                 'role' => 'system',
@@ -98,6 +99,7 @@ class AssistantController extends Controller
             }
 
             $reply = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
+            $reply = $this->normalizeReplyFormatting($reply);
 
             if ($reply === '') {
                 return response()->json([
@@ -276,6 +278,24 @@ class AssistantController extends Controller
                 'closed_at' => optional($ticket->closed_at)->toDateTimeString(),
             ];
         })->values();
+    }
+
+    private function normalizeReplyFormatting(string $reply): string
+    {
+        if ($reply === '') {
+            return $reply;
+        }
+
+        // Insert line breaks before inline numbered items: "... 1. ... 2. ..."
+        $normalized = preg_replace('/\s+(\d+)\.\s+/u', "\n$1. ", $reply) ?? $reply;
+
+        // Convert numbered list to dash bullets for consistent style.
+        $normalized = preg_replace('/^\s*\d+\.\s+/m', '- ', $normalized) ?? $normalized;
+
+        // Tidy up excessive blank lines.
+        $normalized = preg_replace("/\n{3,}/", "\n\n", $normalized) ?? $normalized;
+
+        return trim($normalized);
     }
 }
 
