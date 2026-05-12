@@ -51,6 +51,7 @@ class AssistantController extends Controller
                     . "Fokus memberi panduan operasional penggunaan aplikasi (buat tiket, lihat tiket, update status, komentar, statistik, parameter, profil). "
                     . "Jawab singkat, jelas, dalam Bahasa Indonesia. Jangan membuat data fiktif dan jangan membahas hal di luar aplikasi. "
                     . "Jika pertanyaan terkait data tiket, gunakan hanya DATA_TIKET_REALTIME yang diberikan. "
+                    . "Untuk analisa cabang/kantor, gunakan field kode_cabang_pembuat dan nama_cabang_pembuat dari tiket. "
                     . "Gaya bahasa harus rapi, profesional, dan natural (bukan sekadar menyalin field mentah). "
                     . "Saat menjelaskan tiket spesifik, tulis narasi ringkas 1-2 paragraf lalu ringkasan poin seperlunya; hindari markdown berlebihan. "
                     . "Jika menuliskan daftar, gunakan poin per baris diawali '- ' (dash), bukan nomor 1/2/3 dalam satu paragraf.",
@@ -153,7 +154,7 @@ class AssistantController extends Controller
 
         $recentTickets = $this->formatTickets(
             (clone $baseQuery)
-                ->with(['user:id,name', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
+                ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
                 ->latest('updated_at')
                 ->limit(6)
                 ->get()
@@ -164,7 +165,7 @@ class AssistantController extends Controller
         if (! empty($ticketNumbers)) {
             $matchedTickets = $this->formatTickets(
                 (clone $baseQuery)
-                    ->with(['user:id,name', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
+                    ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
                     ->where(function ($q) use ($ticketNumbers) {
                         foreach ($ticketNumbers as $number) {
                             $q->orWhere('nomor_tiket', 'like', '%' . $number . '%');
@@ -178,7 +179,7 @@ class AssistantController extends Controller
 
         $fullTickets = $this->formatTickets(
             (clone $baseQuery)
-                ->with(['user:id,name', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
+                ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
                 ->withCount('comments')
                 ->latest('updated_at')
                 ->limit($analysisLimit)
@@ -261,6 +262,8 @@ class AssistantController extends Controller
                 'subkategori_master' => (string) ($ticket->subcategory->name ?? '-'),
                 'deskripsi' => (string) ($ticket->deskripsi ?? '-'),
                 'dibuat_oleh' => (string) ($ticket->user->name ?? '-'),
+                'kode_cabang_pembuat' => (string) ($ticket->user->kode_kantor ?? '-'),
+                'nama_cabang_pembuat' => (string) ($ticket->user?->kodeKantor?->nama_kantor ?? '-'),
                 'it_handler' => (string) ($ticket->it->name ?? '-'),
                 'vendor' => (string) ($ticket->vendor->name ?? '-'),
                 'eskalasi' => (string) ($ticket->escalated ?? $ticket->eskalasi ?? '-'),
