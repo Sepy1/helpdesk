@@ -479,6 +479,7 @@ function logoutMobile() {
       <div class="border-t bg-white p-3">
         <form @submit.prevent="submit()" data-noloader="1" class="flex items-end gap-2">
           <textarea x-model="input"
+                    @keydown.enter.prevent="submit()"
                     rows="2"
                     placeholder="Tanya cara pakai aplikasi..."
                     class="w-full resize-none rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500"></textarea>

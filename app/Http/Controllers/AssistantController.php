@@ -27,6 +27,10 @@ class AssistantController extends Controller
         $model = config('services.openai.model', 'gpt-4o-mini');
         $maxOutputTokens = (int) config('services.openai.max_output_tokens', 4000);
         $user = $request->user();
+        $messageText = (string) $validated['message'];
+        $requestedBranch = $this->extractBranchFilter($messageText);
+        $requestedPeriod = $this->extractPeriodFilter($messageText);
+        $isBranchPeriodQuery = ! empty($requestedBranch) || ! empty($requestedPeriod);
 
         if (! AppSetting::getBool('ai_chat_enabled', true)) {
             return response()->json([
@@ -53,7 +57,7 @@ class AssistantController extends Controller
         $name = $user?->name ?? 'User';
         $defaultAnalysisLimit = (int) config('services.openai.analysis_ticket_limit', 1000);
         $defaultBranchLimit = (int) config('services.openai.branch_query_ticket_limit', 1000);
-        $ticketContext = $this->buildTicketContext($user, (string) $validated['message'], $defaultAnalysisLimit, $defaultBranchLimit);
+        $ticketContext = $this->buildTicketContext($user, $messageText, $defaultAnalysisLimit, $defaultBranchLimit, ! $isBranchPeriodQuery);
 
         $messages = [
             [
@@ -97,7 +101,7 @@ class AssistantController extends Controller
             if ($this->isContextTooLargeError($response)) {
                 $compactAnalysisLimit = max(80, min(150, $defaultAnalysisLimit));
                 $compactBranchLimit = max(80, min(150, $defaultBranchLimit));
-                $compactContext = $this->buildTicketContext($user, (string) $validated['message'], $compactAnalysisLimit, $compactBranchLimit);
+                $compactContext = $this->buildTicketContext($user, $messageText, $compactAnalysisLimit, $compactBranchLimit, false);
 
                 $messages[2]['content'] = 'DATA_TIKET_REALTIME: ' . json_encode($compactContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $response = $this->requestOpenAi($apiKey, $model, $messages, $maxOutputTokens);
@@ -108,6 +112,13 @@ class AssistantController extends Controller
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
+                if ($isBranchPeriodQuery) {
+                    return response()->json([
+                        'reply' => $this->buildBranchPeriodLocalReply($ticketContext),
+                        'source' => 'local_fallback',
+                    ], 200);
+                }
 
                 return response()->json([
                     'reply' => 'AI sedang tidak tersedia. Coba beberapa saat lagi.',
@@ -133,6 +144,13 @@ class AssistantController extends Controller
             Log::warning('Assistant chat exception', [
                 'error' => $e->getMessage(),
             ]);
+
+            if ($isBranchPeriodQuery) {
+                return response()->json([
+                    'reply' => $this->buildBranchPeriodLocalReply($ticketContext),
+                    'source' => 'local_fallback',
+                ], 200);
+            }
 
             return response()->json([
                 'reply' => 'Terjadi gangguan saat menghubungi AI. Coba lagi sebentar.',
@@ -165,7 +183,7 @@ class AssistantController extends Controller
             || str_contains($body, 'too many tokens');
     }
 
-    private function buildTicketContext($user, string $message, int $analysisLimit = 1000, int $branchQueryLimit = 1000): array
+    private function buildTicketContext($user, string $message, int $analysisLimit = 1000, int $branchQueryLimit = 1000, bool $includeFullDataset = true): array
     {
         $baseQuery = $this->ticketQueryForUser($user);
         $branchFilter = $this->extractBranchFilter($message);
@@ -218,14 +236,17 @@ class AssistantController extends Controller
             );
         }
 
-        $fullTickets = $this->formatTickets(
-            (clone $baseQuery)
-                ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
-                ->withCount('comments')
-                ->latest('updated_at')
-                ->limit(max(100, $analysisLimit))
-                ->get()
-        );
+        $fullTickets = collect();
+        if ($includeFullDataset) {
+            $fullTickets = $this->formatTickets(
+                (clone $baseQuery)
+                    ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
+                    ->withCount('comments')
+                    ->latest('updated_at')
+                    ->limit(max(100, $analysisLimit))
+                    ->get()
+            );
+        }
 
         $totalScopedTickets = (clone $baseQuery)->count();
         $branchPeriodMatches = collect();
@@ -293,6 +314,7 @@ class AssistantController extends Controller
                 'total_available' => $totalScopedTickets,
                 'total_sent_to_ai' => $fullTickets->count(),
                 'truncated' => $totalScopedTickets > $fullTickets->count(),
+                'omitted_for_targeted_query' => ! $includeFullDataset,
                 'items' => $fullTickets,
             ],
             'branch_period_query' => [
@@ -450,6 +472,41 @@ class AssistantController extends Controller
             'start' => $start,
             'end' => $end,
         ];
+    }
+
+    private function buildBranchPeriodLocalReply(array $context): string
+    {
+        $query = $context['branch_period_query'] ?? [];
+        $requestedBranch = $query['requested_branch'] ?? [];
+        $requestedPeriod = $query['requested_period']['label'] ?? 'periode yang diminta';
+        $items = collect($query['items'] ?? []);
+        $count = (int) ($query['matches_count'] ?? $items->count());
+
+        $branchLabel = 'cabang yang diminta';
+        if (! empty($requestedBranch['nama'])) {
+            $branchLabel = 'cabang ' . $requestedBranch['nama'];
+        } elseif (! empty($requestedBranch['kode'])) {
+            $branchLabel = 'cabang kode ' . $requestedBranch['kode'];
+        }
+
+        if ($count <= 0) {
+            return "Tidak ada tiket yang ditemukan untuk {$branchLabel} pada {$requestedPeriod}.";
+        }
+
+        $lines = ["Ditemukan {$count} tiket untuk {$branchLabel} pada {$requestedPeriod}:"];
+        foreach ($items->take(20) as $t) {
+            $nomor = (string) ($t['nomor_tiket'] ?? '-');
+            $status = (string) ($t['status'] ?? '-');
+            $kategori = (string) ($t['kategori'] ?? '-');
+            $createdAt = (string) ($t['created_at'] ?? '-');
+            $lines[] = "- {$nomor} | {$status} | {$kategori} | dibuat {$createdAt}";
+        }
+
+        if ($count > 20) {
+            $lines[] = "- ... dan " . ($count - 20) . " tiket lainnya.";
+        }
+
+        return implode("\n", $lines);
     }
 
     private function ticketsHasCabangColumn(): bool
