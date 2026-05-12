@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id" class="h-full bg-grey-50 loading">
+<html lang="id" class="h-full bg-grey-50">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -28,12 +28,12 @@
     #nprogress .bar{background:#4f46e5!important;height:3px!important}
     #nprogress .peg{box-shadow:0 0 10px #4f46e5,0 0 5px #4f46e5!important}
 
-    /* konten smooth-in saat berpindah */
-    .page-root{opacity:1;transform:none;transition:opacity .32s ease, transform .36s ease;will-change:opacity,transform}
-    html.loading .page-root{opacity:0;transform:translateY(8px)}
+    /* Konten tetap stabil untuk mencegah flicker */
+    .page-root{opacity:1;transform:none;transition:none;will-change:auto}
+    html.loading .page-root{opacity:1;transform:none}
 
     /* overlay loader */
-    #page-loader{display:flex;opacity:0;pointer-events:none;transition:opacity .24s ease}
+    #page-loader{display:flex;opacity:0;pointer-events:none;transition:opacity .16s ease}
     html.loading #page-loader{opacity:1;pointer-events:auto}
 
     /* sidebar fade (opsional) */
@@ -249,14 +249,14 @@ function logoutMobile() {
 
   
   <div id="page-loader"
-       class="fixed inset-0 z-[9999] items-center justify-center bg-white/70 backdrop-blur-sm"
+       class="fixed inset-0 z-[9999] items-center justify-center bg-white/55"
        aria-live="polite" aria-busy="true">
-    <div class="flex flex-col items-center gap-3">
-      <svg class="h-8 w-8 text-indigo-600 spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+    <div class="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-sm ring-1 ring-gray-200">
+      <svg class="h-5 w-5 text-indigo-600 spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
       </svg>
-      <div class="text-sm text-gray-700">Memuat…</div>
+      <span class="text-xs font-medium text-gray-700">Memuat...</span>
     </div>
   </div>
 
@@ -317,15 +317,18 @@ function logoutMobile() {
     }
 
     function startLoading(){
-      // fallback auto-stop 15s agar tidak "menggantung" jika ada error
-      const s = document.documentElement;
-      s.classList.add('loading');
+      // Tampilkan spinner dengan sedikit delay agar navigasi cepat tidak "flash"
       if (window.NProgress) NProgress.start();
+      clearTimeout(window.__loaderShowDelay);
       clearTimeout(window.__loaderTimeout);
+      window.__loaderShowDelay = setTimeout(()=>{
+        document.documentElement.classList.add('loading');
+      }, 120);
       window.__loaderTimeout = setTimeout(stopLoading, 15000);
     }
 
     function stopLoading(){
+      clearTimeout(window.__loaderShowDelay);
       clearTimeout(window.__loaderTimeout);
       requestAnimationFrame(()=>{
         document.documentElement.classList.remove('loading');
