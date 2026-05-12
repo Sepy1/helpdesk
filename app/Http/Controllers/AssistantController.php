@@ -25,6 +25,7 @@ class AssistantController extends Controller
 
         $apiKey = config('services.openai.api_key');
         $model = config('services.openai.model', 'gpt-4o-mini');
+        $maxOutputTokens = (int) config('services.openai.max_output_tokens', 4000);
         $user = $request->user();
 
         if (! AppSetting::getBool('ai_chat_enabled', true)) {
@@ -93,6 +94,7 @@ class AssistantController extends Controller
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.3,
+                    'max_tokens' => max(500, $maxOutputTokens),
                     'messages' => $messages,
                 ]);
 
@@ -137,7 +139,8 @@ class AssistantController extends Controller
     private function buildTicketContext($user, string $message): array
     {
         $baseQuery = $this->ticketQueryForUser($user);
-        $analysisLimit = 200;
+        $analysisLimit = (int) config('services.openai.analysis_ticket_limit', 1000);
+        $branchQueryLimit = (int) config('services.openai.branch_query_ticket_limit', 1000);
         $branchFilter = $this->extractBranchFilter($message);
         $periodFilter = $this->extractPeriodFilter($message);
 
@@ -193,7 +196,7 @@ class AssistantController extends Controller
                 ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
                 ->withCount('comments')
                 ->latest('updated_at')
-                ->limit($analysisLimit)
+                ->limit(max(100, $analysisLimit))
                 ->get()
         );
 
@@ -243,7 +246,7 @@ class AssistantController extends Controller
             $branchPeriodMatches = $this->formatTickets(
                 $branchPeriodQuery
                     ->latest('created_at')
-                    ->limit(300)
+                    ->limit(max(100, $branchQueryLimit))
                     ->get()
             );
         }

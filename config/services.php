@@ -34,6 +34,9 @@ return [
     'openai' => [
         'api_key' => env('HELPDESK_OPENAI_API_KEY', env('OPENAI_API_KEY')),
         'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'max_output_tokens' => (int) env('OPENAI_MAX_OUTPUT_TOKENS', 4000),
+        'analysis_ticket_limit' => (int) env('OPENAI_ANALYSIS_TICKET_LIMIT', 1000),
+        'branch_query_ticket_limit' => (int) env('OPENAI_BRANCH_QUERY_TICKET_LIMIT', 1000),
     ],
 
 ];
