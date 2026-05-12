@@ -24,10 +24,18 @@ class AssistantController extends Controller
 
         $apiKey = config('services.openai.api_key');
         $model = config('services.openai.model', 'gpt-4o-mini');
+        $user = $request->user();
 
         if (! AppSetting::getBool('ai_chat_enabled', true)) {
             return response()->json([
                 'reply' => 'AI chat sedang dinonaktifkan oleh administrator.',
+                'source' => 'disabled',
+            ], 200);
+        }
+
+        if ($user && $user->ai_chat_enabled === false) {
+            return response()->json([
+                'reply' => 'Akses AI chat untuk akun Anda sedang dinonaktifkan oleh administrator.',
                 'source' => 'disabled',
             ], 200);
         }
@@ -39,7 +47,6 @@ class AssistantController extends Controller
             ], 200);
         }
 
-        $user = $request->user();
         $role = $user?->role ?? 'USER';
         $name = $user?->name ?? 'User';
         $ticketContext = $this->buildTicketContext($user, (string) $validated['message']);

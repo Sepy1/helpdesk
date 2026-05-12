@@ -23,6 +23,7 @@ class User extends Authenticatable
         'role',
         'kode_kantor',
         'visible_on_assign',
+        'ai_chat_enabled',
         'no_hp',
         'password',
     ];
@@ -45,6 +46,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'visible_on_assign' => 'boolean',
+        'ai_chat_enabled' => 'boolean',
     ];
 
     public function devices()

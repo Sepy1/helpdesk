@@ -199,6 +199,43 @@
               <span class="mt-0.5 block text-xs text-gray-500">Jika dimatikan, tombol AI di halaman utama disembunyikan dan endpoint chat menolak request.</span>
             </span>
           </label>
+
+          <div class="rounded-xl border border-gray-200">
+            <div class="border-b border-gray-100 bg-gray-50/80 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+              User yang diizinkan menggunakan AI chat
+            </div>
+            <div class="max-h-64 overflow-auto">
+              <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="sticky top-0 z-10 bg-white">
+                  <tr>
+                    <th class="{{ $th }} w-10">#</th>
+                    <th class="{{ $th }}">Nama</th>
+                    <th class="{{ $th }}">Email</th>
+                    <th class="{{ $th }} w-24">Role</th>
+                    <th class="{{ $th }} w-24">Enable</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  @forelse(($usersForAiChat ?? collect()) as $i => $u)
+                    <tr class="transition-colors hover:bg-gray-50/80">
+                      <td class="{{ $td }} text-gray-500">{{ $i + 1 }}</td>
+                      <td class="{{ $td }} font-medium text-gray-900">{{ $u->name }}</td>
+                      <td class="{{ $td }} break-all text-gray-600">{{ $u->email }}</td>
+                      <td class="{{ $td }} text-gray-600">{{ $u->role }}</td>
+                      <td class="{{ $td }}">
+                        <input type="checkbox" name="ai_chat_users[]" value="{{ $u->id }}" @checked($u->ai_chat_enabled)
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                      </td>
+                    </tr>
+                  @empty
+                    <tr>
+                      <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada user.</td>
+                    </tr>
+                  @endforelse
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </form>
     </section>

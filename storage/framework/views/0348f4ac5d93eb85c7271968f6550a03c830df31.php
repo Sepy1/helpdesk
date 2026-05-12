@@ -115,10 +115,15 @@
 
 <?php
   $aiChatEnabled = true;
+  $aiChatEnabledForUser = true;
   try {
     $aiChatEnabled = \App\Models\AppSetting::getBool('ai_chat_enabled', true);
+    if (auth()->check() && auth()->user()->ai_chat_enabled === false) {
+      $aiChatEnabledForUser = false;
+    }
   } catch (\Throwable $e) {
     $aiChatEnabled = true;
+    $aiChatEnabledForUser = true;
   }
 ?>
 
@@ -438,7 +443,7 @@ function logoutMobile() {
   </div>
 
   <?php if(auth()->guard()->check()): ?>
-  <?php if($aiChatEnabled): ?>
+  <?php if($aiChatEnabled && $aiChatEnabledForUser): ?>
   
   <div x-data="appAssistantState()" x-init="init()" x-cloak class="hidden md:block fixed bottom-5 right-5 z-[950]">
     <button type="button"

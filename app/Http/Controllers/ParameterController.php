@@ -21,9 +21,10 @@ class ParameterController extends Controller
         $rootCauses = RootCause::with('details')->orderBy('sort')->orderBy('name')->get();
         $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
         $its = User::where('role', 'IT')->orderBy('name')->get();
+        $usersForAiChat = User::query()->orderBy('role')->orderBy('name')->get(['id', 'name', 'email', 'role', 'ai_chat_enabled']);
         $aiChatEnabled = AppSetting::getBool('ai_chat_enabled', true);
 
-        return view('it.parameters', compact('categories','rootCauses','vendors','its','aiChatEnabled'));
+        return view('it.parameters', compact('categories','rootCauses','vendors','its','usersForAiChat','aiChatEnabled'));
     }
 
     public function saveItVisibility(Request $request)
@@ -50,10 +51,20 @@ class ParameterController extends Controller
     {
         if (auth()->user()->role !== 'IT') abort(403);
 
-        $enabled = $request->boolean('ai_chat_enabled');
-        AppSetting::setValue('ai_chat_enabled', $enabled ? '1' : '0');
+        $validated = $request->validate([
+            'ai_chat_users' => 'nullable|array',
+            'ai_chat_users.*' => 'integer|exists:users,id',
+        ]);
 
-        return back()->with('success', 'Pengaturan AI chat berhasil disimpan.');
+        $enabled = $request->boolean('ai_chat_enabled');
+        $enabledUsers = $validated['ai_chat_users'] ?? [];
+        AppSetting::setValue('ai_chat_enabled', $enabled ? '1' : '0');
+        User::query()->update(['ai_chat_enabled' => false]);
+        if (! empty($enabledUsers)) {
+            User::query()->whereIn('id', $enabledUsers)->update(['ai_chat_enabled' => true]);
+        }
+
+        return back()->with('success', 'Pengaturan AI chat dan daftar user berhasil disimpan.');
     }
 
     public function storeCategory(Request $request)

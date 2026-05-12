@@ -200,6 +200,43 @@
               <span class="mt-0.5 block text-xs text-gray-500">Jika dimatikan, tombol AI di halaman utama disembunyikan dan endpoint chat menolak request.</span>
             </span>
           </label>
+
+          <div class="rounded-xl border border-gray-200">
+            <div class="border-b border-gray-100 bg-gray-50/80 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
+              User yang diizinkan menggunakan AI chat
+            </div>
+            <div class="max-h-64 overflow-auto">
+              <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="sticky top-0 z-10 bg-white">
+                  <tr>
+                    <th class="<?php echo e($th); ?> w-10">#</th>
+                    <th class="<?php echo e($th); ?>">Nama</th>
+                    <th class="<?php echo e($th); ?>">Email</th>
+                    <th class="<?php echo e($th); ?> w-24">Role</th>
+                    <th class="<?php echo e($th); ?> w-24">Enable</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  <?php $__empty_1 = true; $__currentLoopData = ($usersForAiChat ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <tr class="transition-colors hover:bg-gray-50/80">
+                      <td class="<?php echo e($td); ?> text-gray-500"><?php echo e($i + 1); ?></td>
+                      <td class="<?php echo e($td); ?> font-medium text-gray-900"><?php echo e($u->name); ?></td>
+                      <td class="<?php echo e($td); ?> break-all text-gray-600"><?php echo e($u->email); ?></td>
+                      <td class="<?php echo e($td); ?> text-gray-600"><?php echo e($u->role); ?></td>
+                      <td class="<?php echo e($td); ?>">
+                        <input type="checkbox" name="ai_chat_users[]" value="<?php echo e($u->id); ?>" <?php if($u->ai_chat_enabled): echo 'checked'; endif; ?>
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                      </td>
+                    </tr>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    <tr>
+                      <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada user.</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </form>
     </section>
