@@ -51,7 +51,9 @@ class AssistantController extends Controller
 
         $role = $user?->role ?? 'USER';
         $name = $user?->name ?? 'User';
-        $ticketContext = $this->buildTicketContext($user, (string) $validated['message']);
+        $defaultAnalysisLimit = (int) config('services.openai.analysis_ticket_limit', 1000);
+        $defaultBranchLimit = (int) config('services.openai.branch_query_ticket_limit', 1000);
+        $ticketContext = $this->buildTicketContext($user, (string) $validated['message'], $defaultAnalysisLimit, $defaultBranchLimit);
 
         $messages = [
             [
@@ -89,14 +91,17 @@ class AssistantController extends Controller
         ];
 
         try {
-            $response = Http::withToken($apiKey)
-                ->timeout(45)
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $model,
-                    'temperature' => 0.3,
-                    'max_tokens' => max(500, $maxOutputTokens),
-                    'messages' => $messages,
-                ]);
+            $response = $this->requestOpenAi($apiKey, $model, $messages, $maxOutputTokens);
+
+            // Retry once with compact context when production data is too large.
+            if ($this->isContextTooLargeError($response)) {
+                $compactAnalysisLimit = max(80, min(150, $defaultAnalysisLimit));
+                $compactBranchLimit = max(80, min(150, $defaultBranchLimit));
+                $compactContext = $this->buildTicketContext($user, (string) $validated['message'], $compactAnalysisLimit, $compactBranchLimit);
+
+                $messages[2]['content'] = 'DATA_TIKET_REALTIME: ' . json_encode($compactContext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $response = $this->requestOpenAi($apiKey, $model, $messages, $maxOutputTokens);
+            }
 
             if (! $response->successful()) {
                 Log::warning('Assistant chat failed', [
@@ -136,11 +141,33 @@ class AssistantController extends Controller
         }
     }
 
-    private function buildTicketContext($user, string $message): array
+    private function requestOpenAi(string $apiKey, string $model, array $messages, int $maxOutputTokens)
+    {
+        return Http::withToken($apiKey)
+            ->timeout(45)
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => $model,
+                'temperature' => 0.3,
+                'max_tokens' => max(500, $maxOutputTokens),
+                'messages' => $messages,
+            ]);
+    }
+
+    private function isContextTooLargeError($response): bool
+    {
+        if (! $response || $response->status() !== 400) {
+            return false;
+        }
+
+        $body = strtolower((string) $response->body());
+        return str_contains($body, 'maximum context length')
+            || str_contains($body, 'context_length_exceeded')
+            || str_contains($body, 'too many tokens');
+    }
+
+    private function buildTicketContext($user, string $message, int $analysisLimit = 1000, int $branchQueryLimit = 1000): array
     {
         $baseQuery = $this->ticketQueryForUser($user);
-        $analysisLimit = (int) config('services.openai.analysis_ticket_limit', 1000);
-        $branchQueryLimit = (int) config('services.openai.branch_query_ticket_limit', 1000);
         $branchFilter = $this->extractBranchFilter($message);
         $periodFilter = $this->extractPeriodFilter($message);
 
