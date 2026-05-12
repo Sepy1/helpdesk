@@ -52,6 +52,7 @@ class AssistantController extends Controller
                     . "Jawab singkat, jelas, dalam Bahasa Indonesia. Jangan membuat data fiktif dan jangan membahas hal di luar aplikasi. "
                     . "Jika pertanyaan terkait data tiket, gunakan hanya DATA_TIKET_REALTIME yang diberikan. "
                     . "Untuk analisa cabang/kantor, gunakan field kode_cabang_pembuat dan nama_cabang_pembuat dari tiket. "
+                    . "Jika tersedia branch_period_query pada data, prioritaskan itu untuk menjawab pertanyaan terkait cabang/periode. "
                     . "Gaya bahasa harus rapi, profesional, dan natural (bukan sekadar menyalin field mentah). "
                     . "Saat menjelaskan tiket spesifik, tulis narasi ringkas 1-2 paragraf lalu ringkasan poin seperlunya; hindari markdown berlebihan. "
                     . "Jika menuliskan daftar, gunakan poin per baris diawali '- ' (dash), bukan nomor 1/2/3 dalam satu paragraf.",
@@ -129,6 +130,8 @@ class AssistantController extends Controller
     {
         $baseQuery = $this->ticketQueryForUser($user);
         $analysisLimit = 200;
+        $branchFilter = $this->extractBranchFilter($message);
+        $periodFilter = $this->extractPeriodFilter($message);
 
         $statusCounts = (clone $baseQuery)
             ->selectRaw('status, COUNT(*) as total')
@@ -187,6 +190,38 @@ class AssistantController extends Controller
         );
 
         $totalScopedTickets = (clone $baseQuery)->count();
+        $branchPeriodMatches = collect();
+
+        if (! empty($branchFilter) || ! empty($periodFilter)) {
+            $branchPeriodQuery = (clone $baseQuery)
+                ->with(['user:id,name,kode_kantor', 'user.kodeKantor:kode,nama_kantor', 'it:id,name', 'vendor:id,name', 'category:id,name', 'subcategory:id,name', 'rootCauseDetail:id,label'])
+                ->withCount('comments');
+
+            if (! empty($branchFilter['kode'])) {
+                $kode = (string) $branchFilter['kode'];
+                $branchPeriodQuery->whereHas('user', function ($q) use ($kode) {
+                    $q->where('kode_kantor', $kode);
+                });
+            }
+
+            if (! empty($branchFilter['nama'])) {
+                $nama = (string) $branchFilter['nama'];
+                $branchPeriodQuery->whereHas('user.kodeKantor', function ($q) use ($nama) {
+                    $q->where('nama_kantor', 'like', '%' . $nama . '%');
+                });
+            }
+
+            if (! empty($periodFilter['start']) && ! empty($periodFilter['end'])) {
+                $branchPeriodQuery->whereBetween('created_at', [$periodFilter['start'], $periodFilter['end']]);
+            }
+
+            $branchPeriodMatches = $this->formatTickets(
+                $branchPeriodQuery
+                    ->latest('created_at')
+                    ->limit(300)
+                    ->get()
+            );
+        }
 
         return [
             'generated_at' => now()->toDateTimeString(),
@@ -204,6 +239,16 @@ class AssistantController extends Controller
                 'total_sent_to_ai' => $fullTickets->count(),
                 'truncated' => $totalScopedTickets > $fullTickets->count(),
                 'items' => $fullTickets,
+            ],
+            'branch_period_query' => [
+                'requested_branch' => $branchFilter,
+                'requested_period' => [
+                    'label' => $periodFilter['label'] ?? null,
+                    'start' => isset($periodFilter['start']) ? $periodFilter['start']->toDateTimeString() : null,
+                    'end' => isset($periodFilter['end']) ? $periodFilter['end']->toDateTimeString() : null,
+                ],
+                'matches_count' => $branchPeriodMatches->count(),
+                'items' => $branchPeriodMatches,
             ],
             'matched_tickets_from_question' => $matchedTickets,
             'requested_ticket_numbers' => $ticketNumbers,
@@ -299,6 +344,56 @@ class AssistantController extends Controller
         $normalized = preg_replace("/\n{3,}/", "\n\n", $normalized) ?? $normalized;
 
         return trim($normalized);
+    }
+
+    private function extractBranchFilter(string $message): array
+    {
+        $out = [];
+
+        if (preg_match('/(?:cabang|kode(?:\s*cabang)?|kantor(?:\s*cabang)?)\s*(?:kode\s*)?([0-9]{3})\b/i', $message, $m)) {
+            $out['kode'] = trim((string) $m[1]);
+        }
+
+        if (preg_match('/(?:kantor\s+cabang|cabang)\s+([a-zA-Z][a-zA-Z\s\-]{2,})/i', $message, $m)) {
+            $name = trim((string) $m[1]);
+            $name = preg_split('/\b(pada|periode|bulan|tahun|di|untuk|dari)\b/i', $name)[0] ?? $name;
+            $name = trim($name);
+            if ($name !== '' && ! preg_match('/^\d+$/', $name)) {
+                $out['nama'] = $name;
+            }
+        }
+
+        return $out;
+    }
+
+    private function extractPeriodFilter(string $message): array
+    {
+        $monthMap = [
+            'januari' => 1, 'februari' => 2, 'maret' => 3, 'april' => 4, 'mei' => 5, 'juni' => 6,
+            'juli' => 7, 'agustus' => 8, 'september' => 9, 'oktober' => 10, 'november' => 11, 'desember' => 12,
+            'january' => 1, 'february' => 2, 'march' => 3, 'may' => 5, 'june' => 6, 'july' => 7,
+            'august' => 8, 'october' => 10, 'december' => 12,
+        ];
+
+        if (! preg_match('/(?:periode|bulan)?\s*(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|january|february|march|april|may|june|july|august|september|october|november|december)\s*(\d{4})?/i', $message, $m)) {
+            return [];
+        }
+
+        $monthName = strtolower((string) $m[1]);
+        $month = $monthMap[$monthName] ?? null;
+        if (! $month) {
+            return [];
+        }
+
+        $year = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : (int) now()->year;
+        $start = Carbon::create($year, $month, 1)->startOfMonth();
+        $end = (clone $start)->endOfMonth();
+
+        return [
+            'label' => ucfirst($monthName) . ' ' . $year,
+            'start' => $start,
+            'end' => $end,
+        ];
     }
 }
 
