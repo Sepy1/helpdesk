@@ -2,13 +2,222 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components{
-  .btn-primary{@apply inline-flex items-center justify-center px-3 py-2 rounded-lg text-white bg-brand hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand;}
-  .link-brand{@apply text-brand hover:underline;}
-  .badge-soft-brand{@apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-brand-50 text-brand;}
-  .ring-focus-brand{@apply focus:outline-none focus:ring-2 focus:ring-brand;}
-
+@layer base {
+    :root {
+        --hd-accent: #6366F1;
+        --hd-blue: #3B82F6;
+        --hd-bg: #F3F4F6;
+        --hd-topbar-from: #1d4ed8;
+        --hd-topbar-via: #4f46e5;
+        --hd-topbar-to: #7c3aed;
+    }
 }
 
+@layer components {
+    .hd-sidebar {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        background: linear-gradient(
+            180deg,
+            var(--hd-topbar-from) 0%,
+            var(--hd-topbar-via) 52%,
+            var(--hd-topbar-to) 100%
+        );
+        border-color: rgba(255, 255, 255, 0.14);
+        box-shadow:
+            inset -1px 0 0 rgba(255, 255, 255, 0.1),
+            8px 0 28px rgba(79, 70, 229, 0.28);
+        backdrop-filter: blur(16px) saturate(130%);
+        -webkit-backdrop-filter: blur(16px) saturate(130%);
+    }
 
+    .hd-sidebar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(ellipse 120% 45% at 0% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+            radial-gradient(ellipse 90% 40% at 100% 100%, rgba(255, 255, 255, 0.1), transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
 
+    .hd-sidebar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(
+            180deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.35) 35%,
+            rgba(224, 231, 255, 0.28) 65%,
+            transparent 100%
+        );
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .hd-sidebar-shell {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .hd-sidebar-body {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .hd-sidebar-art-wrap {
+        flex: 1 1 auto;
+        min-height: 8rem;
+        margin-top: 0.75rem;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        overflow: hidden;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .hd-sidebar-art {
+        width: 100%;
+        max-width: 13.5rem;
+        max-height: 100%;
+        object-fit: contain;
+        object-position: bottom center;
+        opacity: 0.94;
+        filter: drop-shadow(0 10px 28px rgba(15, 23, 42, 0.28));
+    }
+
+    .hd-sidebar-active {
+        @apply relative font-medium text-white;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.24) 0%,
+            rgba(255, 255, 255, 0.12) 55%,
+            rgba(255, 255, 255, 0.06) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        box-shadow:
+            0 4px 18px rgba(29, 78, 216, 0.22),
+            inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+
+    .hd-sidebar-active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 58%;
+        border-radius: 0 4px 4px 0;
+        background: linear-gradient(180deg, #ffffff 0%, #e0e7ff 45%, #c7d2fe 100%);
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.65);
+    }
+
+    .hd-sidebar-active svg {
+        color: #ffffff;
+        filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+    }
+
+    .hd-sidebar-link {
+        @apply text-white/85 hover:text-white;
+        border: 1px solid transparent;
+        transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hd-sidebar-link:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.14);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        transform: translateX(2px);
+    }
+
+    .hd-sidebar-link svg {
+        transition: color 0.2s ease, filter 0.2s ease;
+    }
+
+    .hd-sidebar-link:hover svg {
+        color: #ffffff;
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+    }
+
+    .hd-sidebar-brand {
+        @apply text-white;
+    }
+
+    .hd-sidebar-brand-sub {
+        @apply text-white/75;
+    }
+
+    .hd-sidebar-divider {
+        border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .hd-sidebar-footer {
+        @apply text-white/50;
+    }
+
+    .hd-link {
+        @apply text-blue-500 hover:text-blue-600 hover:underline;
+    }
+
+    .hd-btn-detail {
+        @apply inline-flex items-center rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600;
+    }
+
+    .hd-btn-take {
+        @apply rounded-lg bg-hd-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-hd-900;
+    }
+
+    .hd-btn-lepas {
+        @apply rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700;
+    }
+
+    .hd-btn-primary {
+        @apply inline-flex items-center justify-center rounded-lg bg-hd-500 px-4 py-2 text-sm font-medium text-white hover:bg-hd-600 focus:outline-none focus:ring-2 focus:ring-hd-500;
+    }
+
+    .hd-btn-export {
+        @apply inline-flex items-center rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700;
+    }
+
+    .hd-table-head {
+        @apply bg-blue-500 text-white;
+    }
+
+    .hd-table-head th {
+        @apply font-semibold;
+    }
+
+    .hd-focus {
+        @apply focus:border-hd-500 focus:ring-hd-500;
+    }
+
+    .hd-pagination-active {
+        @apply relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-white bg-hd-500 border border-hd-500 cursor-default leading-5;
+    }
+
+    .hd-ai-fab {
+        background: linear-gradient(135deg, #6366F1 0%, #5A4FCF 100%);
+        box-shadow: 0 12px 26px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-primary {
+        @apply hd-btn-primary;
+    }
+
+    .link-brand {
+        @apply hd-link;
+    }
+}

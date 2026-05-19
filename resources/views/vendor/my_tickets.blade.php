@@ -32,7 +32,7 @@
         @endforeach
       </select>
 
-      <button class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 text-white px-3 py-2">Filter</button>
+      <button class="hd-btn-primary px-3 py-2">Filter</button>
 
       @if(request()->hasAny(['q','kategori','status']))
         <a href="{{ route('vendor.tickets') }}" class="text-sm px-2 py-2 text-gray-600 hover:underline">Reset</a>
@@ -80,7 +80,7 @@
             <td class="py-3 px-4 whitespace-nowrap">{{ $t->created_at->format('d M Y H:i') }}</td>
             <td class="py-3 px-4">
               <a href="{{ route('ticket.show', $t->id) }}"
-                 class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-white hover:bg-gray-800">
+                 class="hd-btn-detail">
                 Detail
               </a>
             </td>

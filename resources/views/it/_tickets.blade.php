@@ -15,7 +15,7 @@
         <col style="width:13%">  <!-- IT Handler -->
         <col style="width:11%">  <!-- Aksi -->
       </colgroup>
-      <thead class="bg-gray-50 text-gray-600">
+      <thead class="hd-table-head">
         <tr>
           <th class="py-3 px-4 text-left whitespace-nowrap">#</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
@@ -31,11 +31,11 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         @foreach($tickets as $i => $t)
-        <tr class="hover:bg-gray-50">
+        <tr class="{{ $i % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-hd-50/60">
           <td class="py-3 px-4 text-gray-500">{{ $tickets->firstItem()+$i }}</td>
           <td class="py-3 px-4 whitespace-nowrap">{{ optional($t->created_at)->format('d M Y H:i') ?? '-' }}</td>
           <td class="py-3 px-4 font-medium truncate">
-            <a href="{{ route('ticket.show',$t->id) }}" class="text-indigo-600 hover:underline block truncate">{{ $t->nomor_tiket }}</a>
+            <a href="{{ route('ticket.show',$t->id) }}" class="hd-link block truncate">{{ $t->nomor_tiket }}</a>
           </td>
           <td class="py-3 px-4 truncate">{{ $t->kategori }}</td>
           <td class="py-3 px-4 truncate">{{ optional($t->subcategory)->name ?? '-' }}</td>
@@ -56,14 +56,14 @@
           </td>
           <td class="py-3 px-4 truncate">{{ $t->it->name ?? '-' }}</td>
           <td class="py-3 px-4 space-x-1 whitespace-nowrap">
-            <a href="{{ route('ticket.show',$t->id) }}" class="inline-flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-1.5 text-tulisan-50 hover:bg-gray-200">Detail</a>
+            <a href="{{ route('ticket.show',$t->id) }}" class="hd-btn-detail">Detail</a>
             @if($t->status !== 'CLOSED')
               <form method="POST" class="inline" action="{{ route('it.ticket.take',$t->id) }}">@csrf
-                <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Take</button>
+                <button class="hd-btn-take">Take</button>
               </form>
               @if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
                 <form method="POST" class="inline" action="{{ route('it.ticket.release',$t->id) }}">@csrf
-                  <button class="rounded-lg bg-brand-700 px-3 py-1.5 text-tulisan-50 hover:bg-gray-300">Lepas</button>
+                  <button class="hd-btn-lepas">Lepas</button>
                 </form>
               @endif
             @else
@@ -80,7 +80,7 @@
       <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <a href="{{ route('ticket.show',$t->id) }}" class="font-semibold text-indigo-600 hover:underline">
+            <a href="{{ route('ticket.show',$t->id) }}" class="font-semibold hd-link">
               {{ $t->nomor_tiket }}
             </a>
             <div class="mt-1 text-xs text-gray-500">
@@ -110,15 +110,15 @@
         </div>
 
         <div class="mt-3 flex flex-wrap gap-2">
-          <a href="{{ route('ticket.show',$t->id) }}" class="rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-3 py-2 text-tulisan-50 hover:bg-gray-800">Detail</a>
+          <a href="{{ route('ticket.show',$t->id) }}" class="hd-btn-detail px-3 py-2">Detail</a>
 
           @if($t->status !== 'CLOSED')
             <form method="POST" action="{{ route('it.ticket.take',$t->id) }}">@csrf
-              <button class="rounded-lg bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 w-full sm:w-auto">Ambil Alih</button>
+              <button class="hd-btn-take px-3 py-2 w-full sm:w-auto">Ambil Alih</button>
             </form>
             @if($t->it_id===auth()->id() && $t->status==='ON_PROGRESS')
               <form method="POST" action="{{ route('it.ticket.release',$t->id) }}">@csrf
-                <button class="rounded-lg bg-gray-200 px-3 py-2 text-gray-800 hover:bg-gray-300 w-full sm:w-auto">Lepas</button>
+                <button class="hd-btn-lepas px-3 py-2 w-full sm:w-auto">Lepas</button>
               </form>
               <form method="POST" action="{{ route('it.ticket.close',$t->id) }}">@csrf
                 <button class="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700 w-full sm:w-auto">Tutup</button>

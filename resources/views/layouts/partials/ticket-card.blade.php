@@ -18,7 +18,7 @@
   <div class="flex items-start justify-between gap-2">
     <div>
       <a href="{{ route('ticket.show', $ticket->id) }}"
-         class="text-xs sm:text-sm font-semibold text-indigo-600 hover:underline">
+         class="text-xs sm:text-sm font-semibold hd-link">
         #{{ $ticket->nomor_tiket }}
       </a>
       <div class="mt-0.5 text-[11px] text-gray-500">
@@ -48,7 +48,7 @@
 
   <div class="mt-2 flex items-center gap-2">
     <a href="{{ route('ticket.show', $ticket->id) }}"
-       class="inline-flex items-center rounded-md bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800">
+       class="hd-btn-detail px-2 py-1 text-xs">
       Detail
     </a>
 
@@ -56,14 +56,14 @@
       @if($ticket->status === 'OPEN')
         <form method="POST" action="{{ route('it.ticket.take', $ticket->id) }}">
           @csrf
-          <button class="rounded-md bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700">
+          <button class="hd-btn-take px-2 py-1 text-xs">
             Ambil
           </button>
         </form>
       @elseif($ticket->status === 'ON_PROGRESS' && $ticket->it_id === auth()->id())
         <form method="POST" action="{{ route('it.ticket.release', $ticket->id) }}">
           @csrf
-          <button class="rounded-md bg-gray-200 px-2 py-1 text-xs text-gray-800 hover:bg-gray-300">
+          <button class="hd-btn-lepas px-2 py-1 text-xs">
             Lepas
           </button>
         </form>

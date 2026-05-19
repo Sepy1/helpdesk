@@ -24,8 +24,8 @@
     $card = 'rounded-2xl bg-white shadow-md ring-1 ring-gray-100 min-w-0';
     $cardHead = 'flex flex-col gap-4 border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-white px-4 py-4 sm:px-5 sm:flex-row sm:items-center sm:justify-between';
     $cardTitle = 'text-base font-semibold text-gray-900';
-    $input = 'w-full min-w-0 rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500';
-    $btnPrimary = 'inline-flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-blue-600 hover:to-sky-600';
+    $input = 'w-full min-w-0 rounded-lg border-gray-300 shadow-sm text-sm hd-focus';
+    $btnPrimary = 'hd-btn-primary shadow-sm';
     $btnSecondary = 'inline-flex shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50';
     $tableWrap = 'max-h-56 overflow-x-auto overflow-y-auto sm:max-h-64';
     $th = 'px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500';

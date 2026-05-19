@@ -6,47 +6,36 @@ module.exports = {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
-         "./resources/**/*.blade.php",
-  "./resources/**/*.js",
-  "./resources/**/*.vue",
+        './resources/**/*.blade.php',
+        './resources/**/*.js',
+        './resources/**/*.vue',
     ],
 
     theme: {
-    extend: {
-      colors: {
-        // ganti sesuai palet yang kamu mau
-        tombol: {
-          DEFAULT: "#ff6600", // Blue-600
-          50:  "#2cb403ff",
-          100: "#10B981",
-          500: "#ff6600",
-          600: "#ff6600",
-          700: "#ff6600",
+        extend: {
+            colors: {
+                hd: {
+                    50:  '#eef0ff',
+                    100: '#dde1ff',
+                    200: '#c4c9f5',
+                    500: '#6366F1',
+                    600: '#5A4FCF',
+                    700: '#4a46b8',
+                    800: '#3F3D91',
+                    900: '#312e72',
+                },
+                brand: {
+                    DEFAULT: '#6366F1',
+                    50:  '#eef0ff',
+                    100: '#dde1ff',
+                    500: '#6366F1',
+                    600: '#5A4FCF',
+                    700: '#4a46b8',
+                    800: '#3F3D91',
+                },
+            },
         },
-
-        tulisan: {
-          DEFAULT: "#ffffffff", // Blue-600
-          50:  "#ffffffff",
-          100: "#ffffffff",
-          500: "rgba(255, 255, 255, 0.94)",
-          600: "#fdfdfdff",
-          700: "#0e0000ff",
-        },
-
-        brand: {
-          DEFAULT: "#064980", // Blue-600
-          50:  "#7018ecff",
-          100: "#064980",
-          500: "#064980",
-          600: "#064980",
-          700: "#e76228ff",
-        },
-
-        
-
-      },
     },
-  },
 
     plugins: [require('@tailwindcss/forms')],
 };

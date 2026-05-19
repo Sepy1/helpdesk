@@ -75,7 +75,7 @@
            Reset
          </a>
         <a href="<?php echo e(route('it.tickets.export', request()->query())); ?>"
-            class="shrink-0 h-10 inline-block text-center rounded-lg bg-emerald-600 px-4 text-white hover:bg-emerald-700 leading-10">
+            class="shrink-0 h-10 inline-block text-center rounded-lg hd-btn-export leading-10">
            Export Result
          </a>
       </div>

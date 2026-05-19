@@ -61,10 +61,10 @@
                             <?php $__currentLoopData = $element; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page => $url): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <?php if($page == $paginator->currentPage()): ?>
                                     <span aria-current="page">
-                                        <span class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-default leading-5"><?php echo e($page); ?></span>
+                                        <span class="hd-pagination-active"><?php echo e($page); ?></span>
                                     </span>
                                 <?php else: ?>
-                                    <a href="<?php echo e($url); ?>" class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 hover:text-gray-500 focus:z-10 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150" aria-label="<?php echo e(__('Go to page :page', ['page' => $page])); ?>">
+                                    <a href="<?php echo e($url); ?>" class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-hd-600 bg-white border border-gray-300 leading-5 hover:bg-hd-50 focus:z-10 focus:outline-none focus:ring ring-hd-200 focus:border-hd-300 active:bg-hd-50 active:text-hd-700 transition ease-in-out duration-150" aria-label="<?php echo e(__('Go to page :page', ['page' => $page])); ?>">
                                         <?php echo e($page); ?>
 
                                     </a>

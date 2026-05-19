@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="id" class="h-full bg-grey-50">
+<html lang="id" class="h-full bg-gray-100">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#3B82F6">
   <title><?php echo $__env->yieldContent('title','Helpdesk'); ?></title>
  <style>[x-cloak]{display:none!important}</style>
   <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css','resources/js/app.js']); ?>
@@ -25,8 +25,8 @@
     }
 
     .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-    #nprogress .bar{background:#4f46e5!important;height:3px!important}
-    #nprogress .peg{box-shadow:0 0 10px #4f46e5,0 0 5px #4f46e5!important}
+    #nprogress .bar{background:#6366F1!important;height:3px!important}
+    #nprogress .peg{box-shadow:0 0 10px #6366F1,0 0 5px #6366F1!important}
 
     /* Konten tetap stabil untuk mencegah flicker */
     .page-root{opacity:1;transform:none;transition:none;will-change:auto}
@@ -36,6 +36,13 @@
     #page-loader{display:flex;opacity:0;pointer-events:none;transition:opacity .16s ease}
     html.loading #page-loader{opacity:1;pointer-events:auto}
 
+    .layout-sidebar{
+      top: 0;
+    }
+    .layout-sidebar .sidebar-shell{
+      padding-top: var(--topbar-h);
+    }
+
     /* sidebar fade (opsional) */
     aside[aria-label="Sidebar"]>div{transition:opacity .25s ease}
 
@@ -44,7 +51,7 @@
     }
 
     /* Desktop AI assistant */
-    .ai-fab{box-shadow:0 12px 26px rgba(79,70,229,.28)}
+    .ai-fab{box-shadow:0 12px 26px rgba(99,102,241,.35)}
     .ai-panel{box-shadow:0 18px 40px rgba(15,23,42,.22)}
 
     /* Desktop scale-down for selected pages */
@@ -61,7 +68,6 @@
         height: var(--topbar-h);
       }
       .ui-compact-80 .layout-sidebar{
-        top: var(--topbar-h);
         width: var(--sidebar-w);
       }
       .ui-compact-80 .layout-content{
@@ -79,12 +85,16 @@
       .ui-compact-80 .topbar-inner .w-9{ width: 1.8rem; }
       .ui-compact-80 .topbar-inner .h-5{ height: 1rem; }
       .ui-compact-80 .topbar-inner .w-5{ width: 1rem; }
+      .ui-compact-80 .topbar-inner .topbar-logo{ height: 1.8rem; width: 1.8rem; }
       .ui-compact-80 .topbar-inner .topbar-title{ font-size: .85rem; line-height: 1rem; }
       .ui-compact-80 .topbar-inner .topbar-user{ font-size: .7rem; line-height: 1rem; }
       .ui-compact-80 .topbar-inner .topbar-action{ font-size: .7rem; padding: .25rem .6rem; }
 
       /* Shrink sidebar internals (font, icon, spacing) */
-      .ui-compact-80 .layout-sidebar .sidebar-shell{ padding: .8rem; }
+      .ui-compact-80 .layout-sidebar .sidebar-shell{
+        padding: .8rem;
+        padding-top: var(--topbar-h);
+      }
       .ui-compact-80 .layout-sidebar .text-sm{ font-size: .7rem; line-height: 1rem; }
       .ui-compact-80 .layout-sidebar .text-xs{ font-size: .6rem; line-height: .9rem; }
       .ui-compact-80 .layout-sidebar nav a{ padding: .5rem .6rem; gap: .55rem; border-radius: .5rem; }
@@ -98,6 +108,7 @@
   <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 <?php
+  $logoPath = asset('images/helpdesk.png');
   $isDesktopScaledRoute = request()->routeIs([
     'ticket.show',
     'it.ticket.create',
@@ -128,19 +139,17 @@
 ?>
 
 <body
-  class="h-full font-sans antialiased <?php echo e($isDesktopScaledRoute ? 'ui-compact-80' : ''); ?>"
+  class="h-full font-sans antialiased bg-gray-100 <?php echo e($isDesktopScaledRoute ? 'ui-compact-80' : ''); ?>"
   x-data="layoutState()"
   x-init="init()"
   :class="{ 'overflow-hidden': mobileOpen }"
 >
 
   
-<header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 border-b sticky top-0 z-40">
-  <div class="topbar-inner w-full h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+<header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 sticky top-0 z-40 h-[var(--topbar-h)]">
+  <div class="topbar-inner w-full h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
     <div class="flex items-center gap-2 min-w-0">
-      <div class="h-9 w-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-        <span class="text-white font-bold">HD</span>
-      </div>
+      <img src="<?php echo e($logoPath); ?>" alt="Logo Helpdesk" class="topbar-logo h-9 w-9 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" onerror="this.style.display='none'">
       <span class="topbar-title font-semibold text-white truncate">Helpdesk</span>
 
       <button type="button"
@@ -165,7 +174,7 @@
             <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
           </button>
           <div x-show="open" x-cloak @click.outside="open=false" @mouseenter="cancelAutoClose()" @mouseleave="scheduleAutoClose()"
-               class="fixed inset-x-2 top-16 md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
+               class="fixed inset-x-2 top-[var(--topbar-h)] md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
             <div class="flex items-center justify-between px-3 py-2 border-b">
               <div class="font-medium text-gray-800">Notifikasi</div>
               <button @click="markAll()" class="text-xs text-indigo-600 hover:underline">Tandai sudah dibaca</button>
@@ -197,7 +206,7 @@
             <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
           </button>
           <div x-show="open" x-cloak @click.outside="open=false"
-               class="fixed inset-x-2 top-16 md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
+               class="fixed inset-x-2 top-[var(--topbar-h)] md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
             <div class="flex items-center justify-between px-3 py-2 border-b">
               <div class="font-medium text-gray-800">Komentar</div>
               <button @click="markAll()" class="text-xs text-indigo-600 hover:underline">Tandai sudah dibaca</button>
@@ -263,10 +272,10 @@ function logoutMobile() {
   <div class="relative">
     
     <aside aria-label="Sidebar"
-           class="layout-sidebar hidden md:block fixed z-30 top-16 bottom-0 left-0 w-64 border-r bg-white overflow-y-auto
+           class="layout-sidebar hd-sidebar hidden md:block fixed z-30 bottom-0 left-0 w-64 border-r overflow-hidden
                   transition-transform duration-200 will-change-transform"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-      <div class="sidebar-shell h-full p-4">
+      <div class="sidebar-shell hd-sidebar-shell h-full p-4">
         <?php echo $__env->make('layouts.partials.sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
       </div>
     </aside>
@@ -287,10 +296,10 @@ function logoutMobile() {
   <div id="mobile-drawer" x-show="mobileOpen" x-cloak
        class="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu navigasi">
     <div class="absolute inset-0 bg-black/40" @click="mobileOpen=false" aria-hidden="true"></div>
-    <div class="absolute left-0 top-0 bottom-0 w-72 bg-white p-4 shadow-xl focus:outline-none">
-      <div class="mb-4 flex justify-between items-center">
-        <div class="font-semibold text-gray-800">Menu</div>
-        <button type="button" class="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100"
+    <div class="absolute left-0 top-0 bottom-0 w-72 hd-sidebar border-r p-4 shadow-2xl shadow-indigo-700/35 focus:outline-none">
+      <div class="mb-4 flex justify-between items-center hd-sidebar-shell">
+        <div class="font-semibold text-white">Menu</div>
+        <button type="button" class="h-8 w-8 inline-flex items-center justify-center rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                 @click="mobileOpen=false" aria-label="Tutup menu">✕</button>
       </div>
       <?php echo $__env->make('layouts.partials.sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
@@ -302,7 +311,7 @@ function logoutMobile() {
        class="fixed inset-0 z-[9999] items-center justify-center bg-white/55"
        aria-live="polite" aria-busy="true">
     <div class="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-sm ring-1 ring-gray-200">
-      <svg class="h-5 w-5 text-indigo-600 spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <svg class="h-5 w-5 text-hd-500 spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
       </svg>
@@ -531,7 +540,7 @@ function logoutMobile() {
   <div x-data="appAssistantState()" x-init="init()" x-cloak class="hidden md:block fixed bottom-5 right-5 z-[950]">
     <button type="button"
             @click="toggle()"
-            class="ai-fab inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
+            class="ai-fab hd-ai-fab inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-hd-400 focus:ring-offset-2">
       <span>AI</span>
       <span>Assistant</span>
     </button>
@@ -553,7 +562,7 @@ function logoutMobile() {
         <template x-for="(msg, idx) in messages" :key="idx">
           <div :class="msg.role === 'user' ? 'text-right' : 'text-left'">
             <div :class="msg.role === 'user'
-                          ? 'inline-block max-w-[92%] rounded-2xl rounded-br-sm bg-indigo-600 px-3 py-2 text-xs text-white'
+                          ? 'inline-block max-w-[92%] rounded-2xl rounded-br-sm bg-hd-500 px-3 py-2 text-xs text-white'
                           : 'inline-block max-w-[92%] rounded-2xl rounded-bl-sm bg-gray-100 px-3 py-2 text-xs text-gray-800'">
               <span class="whitespace-pre-line break-words" x-text="msg.text"></span>
             </div>
@@ -567,10 +576,10 @@ function logoutMobile() {
                     @keydown.enter.prevent="submit()"
                     rows="2"
                     placeholder="Tanya cara pakai aplikasi..."
-                    class="w-full resize-none rounded-lg border-gray-300 text-xs focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    class="w-full resize-none rounded-lg border-gray-300 text-xs hd-focus"></textarea>
           <button type="submit"
                   :disabled="isSending"
-                  class="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  class="shrink-0 rounded-lg bg-hd-500 px-3 py-2 text-xs font-medium text-white hover:bg-hd-600 disabled:cursor-not-allowed disabled:opacity-60">
             <span x-text="isSending ? 'Memproses pesan ...' : 'Kirim'"></span>
           </button>
         </form>

@@ -1,9 +1,8 @@
-@extends('layouts.app')
-@section('title','Statistik Tiket')
+<?php $__env->startSection('title','Statistik Tiket'); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="w-full max-w-none py-3 flex flex-col min-h-0 max-h-[calc(100dvh-var(--topbar-h,4rem)-1.25rem)] overflow-hidden">
-  {{-- Header + Filter (sticky di mobile tidak berlebihan) --}}
+  
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 shrink-0">
     <div>
       <h1 class="text-xl sm:text-2xl font-semibold text-gray-800">Statistik Tiket</h1>
@@ -20,9 +19,9 @@
         <label for="filterKodeKantor" class="sr-only">Kode kantor pembuat</label>
         <select id="filterKodeKantor" name="kode_kantor" class="w-full sm:w-48 rounded-md border border-gray-200 px-3 py-2 bg-white text-sm">
           <option value="">Semua Kantor</option>
-          @foreach(($kodeKantors ?? []) as $k)
-            <option value="{{ $k->kode }}">{{ $k->kode }} — {{ $k->nama_kantor }}</option>
-          @endforeach
+          <?php $__currentLoopData = ($kodeKantors ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <option value="<?php echo e($k->kode); ?>"><?php echo e($k->kode); ?> — <?php echo e($k->nama_kantor); ?></option>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </select>
 
         <div class="flex gap-2">
@@ -45,7 +44,7 @@
     </div>
   </div>
 
-  {{-- Loading overlay (hidden by default) --}}
+  
   <div id="loadingOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 hidden">
     <div class="bg-white rounded-lg p-4 flex items-center gap-3 shadow-lg">
       <svg class="animate-spin w-6 h-6 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
@@ -56,9 +55,9 @@
     </div>
   </div>
 
-  {{-- Grid utama: responsive: 1 col mobile, 2 col tablet, 3 col desktop --}}
+  
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:items-stretch flex-1 min-h-0 overflow-hidden">
-    {{-- KPI Card: Total, Open, Closed, Avg Res --}}
+    
     <div class="lg:col-span-1 col-span-1 min-h-0 flex">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 h-full w-full min-h-0 flex flex-col overflow-hidden">
         <h3 class="text-sm font-semibold text-gray-700 shrink-0">Ringkasan</h3>
@@ -101,7 +100,7 @@
       </div>
     </div>
 
-    {{-- Kategori + Top 5 kantor + Root cause (satu card) --}}
+    
     <div class="lg:col-span-2 md:col-span-1 col-span-1 min-h-0 flex">
       <div class="bg-white p-4 rounded-2xl shadow-sm ring-1 ring-gray-100 w-full flex flex-col gap-3 min-h-0 h-full overflow-hidden">
         <div class="shrink-0">
@@ -139,7 +138,7 @@
   </div>
 </div>
 
-{{-- Modal pilihan sumber Executive Summary --}}
+
 <div id="reportModeModal" class="fixed inset-0 z-[59] hidden" role="dialog" aria-modal="true" aria-labelledby="reportModeModalTitle">
   <div id="reportModeModalBackdrop" class="absolute inset-0 bg-black/40"></div>
   <div class="relative z-[60] flex min-h-full items-center justify-center p-4 pointer-events-none">
@@ -159,7 +158,7 @@
   </div>
 </div>
 
-{{-- Modal pratinjau Executive Summary sebelum PDF --}}
+
 <div id="reportSummaryModal" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="reportSummaryModalTitle">
   <div id="reportSummaryModalBackdrop" class="absolute inset-0 bg-black/40"></div>
   <div class="relative z-[61] flex min-h-full items-center justify-center p-4 pointer-events-none">
@@ -185,7 +184,7 @@
   </div>
 </div>
 
-{{-- Chart.js --}}
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
@@ -468,7 +467,7 @@
       if (to) params.set('date_to', to);
       const kodeKantor = document.getElementById('filterKodeKantor')?.value;
       if (kodeKantor) params.set('kode_kantor', kodeKantor);
-      const url = `{{ route('stats.data') }}?${params.toString()}`;
+      const url = `<?php echo e(route('stats.data')); ?>?${params.toString()}`;
       const res = await fetch(url, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
@@ -632,7 +631,7 @@
     if (to) params.set('date_to', to);
     const kodeKantor = document.getElementById('filterKodeKantor')?.value;
     if (kodeKantor) params.set('kode_kantor', kodeKantor);
-    const url = `{{ route('it.tickets.export') }}?${params.toString()}`;
+    const url = `<?php echo e(route('it.tickets.export')); ?>?${params.toString()}`;
     window.location.href = url;
   });
 
@@ -673,7 +672,7 @@
     const kodeKantor = document.getElementById('filterKodeKantor')?.value || '';
 
     try {
-      const res = await fetch(`{{ route('it.stats.report.summary_preview') }}`, {
+      const res = await fetch(`<?php echo e(route('it.stats.report.summary_preview')); ?>`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -752,7 +751,7 @@
       fd.append('kode_kantor', kodeKantor);
       fd.append('executive_summary', executiveSummary);
 
-      const res = await fetch(`{{ route('it.stats.report') }}`, {
+      const res = await fetch(`<?php echo e(route('it.stats.report')); ?>`, {
         method: 'POST',
         body: fd,
         headers: {
@@ -823,4 +822,6 @@
     });
   });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/stats.blade.php ENDPATH**/ ?>

@@ -17,8 +17,6 @@
   ];
 
   // Logo file (opsional). Taruh logo di public/images/logo-helpdesk.svg
-  $logoPath = asset('images/helpdesk.png');
-
   // Menu per role
   if ($role === 'IT') {
     $menu = [
@@ -48,27 +46,16 @@
   $icons['folder'] = '<path d="M3 7h6l2 2h10v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.8" fill="none"/>';
 ?>
 
+<div class="hd-sidebar-body">
 
-<div class="flex items-center gap-3 mb-3 px-2">
-  <img src="<?php echo e($logoPath); ?>" alt="Logo Helpdesk" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
-  <div>
-    <div class="text-sm font-semibold text-gray-900 leading-tight">Helpdesk</div>
-    <div class="text-xs text-gray-500 leading-tight"><?php echo e($user->name ?? '-'); ?></div>
-  </div>
-</div>
-
-
-<hr class="border-gray-100 mb-3">
-
-
-<nav class="space-y-1">
+<nav class="space-y-1 shrink-0">
   <?php $__currentLoopData = $menu; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
     <?php
       $active = $item['active'];
-      $base   = 'group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors';
+      $base   = 'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out';
       $cls    = $active
-        ? 'bg-indigo-50 text-indigo-700'
-        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900';
+        ? 'hd-sidebar-active'
+        : 'hd-sidebar-link';
     ?>
 
     <a href="<?php echo e(route($item['route'])); ?>" class="<?php echo e($base); ?> <?php echo e($cls); ?>" aria-current="<?php echo e($active ? 'page' : 'false'); ?>">
@@ -78,10 +65,22 @@
   <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </nav>
 
+<div class="hd-sidebar-art-wrap" aria-hidden="true">
+  <img
+    src="<?php echo e(asset('images/headset.png')); ?>"
+    alt=""
+    class="hd-sidebar-art"
+    loading="lazy"
+    decoding="async"
+    onerror="this.closest('.hd-sidebar-art-wrap')?.remove()"
+  >
+</div>
 
-<div class="mt-4 px-3">
-  <div class="text-[11px] text-gray-400">
+
+<div class="mt-3 shrink-0 px-1">
+  <div class="text-[11px] hd-sidebar-footer">
     © <?php echo e(date('Y')); ?> Helpdesk.
   </div>
+</div>
 </div>
 <?php /**PATH C:\laragon\www\helpdesk-app\resources\views/layouts/partials/sidebar.blade.php ENDPATH**/ ?>
