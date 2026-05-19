@@ -58,4 +58,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(KodeKantor::class, 'kode_kantor', 'kode');
     }
+
+    public function aiChatMessages()
+    {
+        return $this->hasMany(AiChatMessage::class);
+    }
 }

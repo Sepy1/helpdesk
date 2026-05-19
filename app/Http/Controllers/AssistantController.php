@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\AppSetting;
+use App\Models\AiChatMessage;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -14,6 +15,30 @@ use Illuminate\Support\Facades\Log;
 
 class AssistantController extends Controller
 {
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['messages' => []], 200);
+        }
+
+        $messages = AiChatMessage::query()
+            ->where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->limit(100)
+            ->get(['role', 'content', 'source', 'created_at'])
+            ->map(fn (AiChatMessage $msg) => [
+                'role' => $msg->role,
+                'text' => $msg->content,
+                'source' => $msg->source,
+                'created_at' => optional($msg->created_at)->toDateTimeString(),
+            ])
+            ->values();
+
+        return response()->json(['messages' => $messages], 200);
+    }
+
     public function chat(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -33,24 +58,15 @@ class AssistantController extends Controller
         $isBranchPeriodQuery = ! empty($requestedBranch) || ! empty($requestedPeriod);
 
         if (! AppSetting::getBool('ai_chat_enabled', true)) {
-            return response()->json([
-                'reply' => 'AI chat sedang dinonaktifkan oleh administrator.',
-                'source' => 'disabled',
-            ], 200);
+            return $this->chatResponse($user, $messageText, 'AI chat sedang dinonaktifkan oleh administrator.', 'disabled');
         }
 
         if ($user && $user->ai_chat_enabled === false) {
-            return response()->json([
-                'reply' => 'Akses AI chat untuk akun Anda sedang dinonaktifkan oleh administrator.',
-                'source' => 'disabled',
-            ], 200);
+            return $this->chatResponse($user, $messageText, 'Akses AI chat untuk akun Anda sedang dinonaktifkan oleh administrator.', 'disabled');
         }
 
         if (empty($apiKey)) {
-            return response()->json([
-                'reply' => 'API key AI belum terpasang. Hubungi admin untuk konfigurasi.',
-                'source' => 'fallback',
-            ], 200);
+            return $this->chatResponse($user, $messageText, 'API key AI belum terpasang. Hubungi admin untuk konfigurasi.', 'fallback');
         }
 
         $role = $user?->role ?? 'USER';
@@ -114,48 +130,75 @@ class AssistantController extends Controller
                 ]);
 
                 if ($isBranchPeriodQuery) {
-                    return response()->json([
-                        'reply' => $this->buildBranchPeriodLocalReply($ticketContext),
-                        'source' => 'local_fallback',
-                    ], 200);
+                    return $this->chatResponse(
+                        $user,
+                        $messageText,
+                        $this->buildBranchPeriodLocalReply($ticketContext),
+                        'local_fallback'
+                    );
                 }
 
-                return response()->json([
-                    'reply' => 'AI sedang tidak tersedia. Coba beberapa saat lagi.',
-                    'source' => 'fallback',
-                ], 200);
+                return $this->chatResponse($user, $messageText, 'AI sedang tidak tersedia. Coba beberapa saat lagi.', 'fallback');
             }
 
             $reply = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
             $reply = $this->normalizeReplyFormatting($reply);
 
             if ($reply === '') {
-                return response()->json([
-                    'reply' => 'Saya belum bisa menjawab saat ini. Coba pertanyaan lain.',
-                    'source' => 'fallback',
-                ], 200);
+                return $this->chatResponse($user, $messageText, 'Saya belum bisa menjawab saat ini. Coba pertanyaan lain.', 'fallback');
             }
 
-            return response()->json([
-                'reply' => $reply,
-                'source' => 'ai',
-            ], 200);
+            return $this->chatResponse($user, $messageText, $reply, 'ai');
         } catch (\Throwable $e) {
             Log::warning('Assistant chat exception', [
                 'error' => $e->getMessage(),
             ]);
 
             if ($isBranchPeriodQuery) {
-                return response()->json([
-                    'reply' => $this->buildBranchPeriodLocalReply($ticketContext),
-                    'source' => 'local_fallback',
-                ], 200);
+                return $this->chatResponse(
+                    $user,
+                    $messageText,
+                    $this->buildBranchPeriodLocalReply($ticketContext),
+                    'local_fallback'
+                );
             }
 
-            return response()->json([
-                'reply' => 'Terjadi gangguan saat menghubungi AI. Coba lagi sebentar.',
-                'source' => 'fallback',
-            ], 200);
+            return $this->chatResponse($user, $messageText, 'Terjadi gangguan saat menghubungi AI. Coba lagi sebentar.', 'fallback');
+        }
+    }
+
+    private function chatResponse($user, string $userMessage, string $reply, string $source): JsonResponse
+    {
+        if ($user) {
+            $this->persistChatTurn((int) $user->id, $userMessage, $reply, $source);
+        }
+
+        return response()->json([
+            'reply' => $reply,
+            'source' => $source,
+        ], 200);
+    }
+
+    private function persistChatTurn(int $userId, string $userMessage, string $reply, string $source): void
+    {
+        try {
+            AiChatMessage::create([
+                'user_id' => $userId,
+                'role' => 'user',
+                'content' => $userMessage,
+            ]);
+
+            AiChatMessage::create([
+                'user_id' => $userId,
+                'role' => 'assistant',
+                'content' => $reply,
+                'source' => $source,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to persist AI chat messages', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

@@ -534,6 +534,22 @@ function logoutMobile() {
           this.messages = [
             { role:'assistant', text:`Halo ${name}. Saya bantu operasional Helpdesk. Coba tanya: "cara buat tiket", "update status", atau "kelola parameter".` }
           ];
+          this.loadHistory();
+        },
+        async loadHistory(){
+          try{
+            const res = await fetch('{{ route('assistant.history') }}', {
+              headers: { 'Accept': 'application/json' },
+            });
+            if (!res.ok) return;
+            const json = await res.json();
+            const items = Array.isArray(json?.messages) ? json.messages : [];
+            if (!items.length) return;
+            this.messages = items.map(m => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              text: String(m.text || ''),
+            }));
+          }catch(_){}
         },
         toggle(){
           this.open = !this.open;
