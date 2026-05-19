@@ -2,26 +2,117 @@
 
 <?php $__env->startPush('styles'); ?>
 <style>
-  /* Timeline (garis vertikal + titik + panah antar item) */
-  .tl{position:relative;padding-left:1.5rem;background:linear-gradient(#e5e7eb,#e5e7eb) no-repeat;background-size:2px 100%;background-position:10px 0}
-  .tl:before{content:"";position:absolute;left:10px;top:0;bottom:0;width:0;background:transparent}
-  .tl-item{position:relative;padding-left:1rem;margin-left:.25rem}
-  .tl-item:before{
-    content:"";position:absolute;left:-6px;top:1.1rem;width:10px;height:10px;
-    background:#fff;border:3px solid var(--dot,#4f46e5);border-radius:9999px
+  /* History modal — timeline modern */
+  .history-modal-panel{
+    display:flex;
+    flex-direction:column;
+    max-height:min(88dvh,760px);
+    overflow:hidden;
   }
-  .tl-item:not(:last-child):after{
-    content:"";position:absolute;left:6px;bottom:-12px;
-    border-left:6px solid #e5e7eb;border-top:6px solid transparent;border-bottom:6px solid transparent
+  .history-modal-body{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:.75rem 1.25rem 1rem 1rem;
   }
-
-  /* Timeline card enhancements (accent border + label styling) */
-  .tl-card{border-left:4px solid var(--accent,#e5e7eb)}
-  .tl-label{display:inline-flex;align-items:center;gap:.375rem;padding:.125rem .5rem;border-radius:9999px;background:#f3f4f6;color:#374151;font-size:11px;font-weight:600}
-  @media (max-width: 640px){
-    .tl{padding-left:1.25rem;background-position:8px 0}
-    .tl-item{padding-left:.75rem}
-    .tl-item:before{left:-9px}
+  @media (min-width: 640px){
+    .history-modal-body{
+      padding:.75rem 1.5rem 1.25rem 1.25rem;
+    }
+  }
+  .history-modal-body::-webkit-scrollbar{width:6px}
+  .history-modal-body::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+  .history-timeline{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:1.25rem;
+    padding:.25rem .375rem .25rem .25rem;
+  }
+  .history-timeline::before{
+    content:"";
+    position:absolute;
+    left:15px;
+    top:12px;
+    bottom:12px;
+    width:2px;
+    background:linear-gradient(180deg,#c7d2fe 0%,#e2e8f0 55%,#cbd5e1 100%);
+    border-radius:999px;
+  }
+  .history-entry{
+    position:relative;
+    display:flex;
+    gap:1rem;
+  }
+  .history-entry-icon{
+    position:relative;
+    z-index:1;
+    display:inline-flex;
+    height:2rem;
+    width:2rem;
+    flex-shrink:0;
+    align-items:center;
+    justify-content:center;
+    border-radius:9999px;
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px rgba(15,23,42,.06),0 4px 10px rgba(15,23,42,.08);
+    color:#fff;
+  }
+  .history-entry-card{
+    flex:1 1 auto;
+    min-width:0;
+    border-radius:.875rem;
+    border:1px solid #e2e8f0;
+    background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);
+    padding:.875rem 1rem;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+    transition:border-color .15s ease,box-shadow .15s ease;
+  }
+  .history-entry-card:hover{
+    border-color:#cbd5e1;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
+  }
+  .history-entry-head{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:.5rem .75rem;
+  }
+  .history-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    border-radius:9999px;
+    padding:.2rem .65rem;
+    font-size:11px;
+    font-weight:600;
+    line-height:1.2;
+  }
+  .history-meta{font-size:11px;color:#64748b;line-height:1.35}
+  .history-note{
+    margin-top:.75rem;
+    border-radius:.625rem;
+    border:1px solid #e2e8f0;
+    background:#fff;
+    padding:.625rem .75rem;
+    font-size:13px;
+    line-height:1.45;
+    color:#334155;
+    white-space:pre-line;
+  }
+  .history-empty{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:.75rem;
+    border-radius:1rem;
+    border:1px dashed #cbd5e1;
+    background:#f8fafc;
+    padding:2.5rem 1.5rem;
+    text-align:center;
   }
 
   /* Small helper for status badge */
@@ -309,88 +400,135 @@
 <div x-data="{ open:false }"
   x-on:open-history.window="open=true"
   x-show="open" x-cloak
-  class="fixed inset-0 z-[110] flex items-start sm:items-center justify-center"
+  class="fixed inset-0 z-[110] flex items-center justify-center p-4"
      role="dialog" aria-modal="true" aria-label="Riwayat tiket"
      @keydown.escape.window="open=false">
 
-  
-  <div class="absolute inset-0 bg-black/10 backdrop-blur-sm" x-transition.opacity @click="open=false" aria-hidden="true"></div>
+  <div class="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]" x-transition.opacity @click="open=false" aria-hidden="true"></div>
 
-  
-  <div id="history-panel" class="relative w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto mx-4 mt-4 sm:mt-0 rounded-2xl bg-white shadow-xl p-3 sm:p-5 text-xs sm:text-sm"
+  <div id="history-panel"
+       class="history-modal-panel relative w-full max-w-[min(100%,32rem)] sm:max-w-xl lg:max-w-2xl rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 text-sm"
+       @click.stop
        x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
-       x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
        x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-       x-transition:leave-end="opacity-0 scale-95 -translate-y-1">
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95">
 
-    <div class="flex items-start justify-between mb-4">
-      <h3 class="text-lg font-semibold text-gray-800">History Tiket</h3>
-      <div class="flex items-center gap-2">
-        <button type="button" class="px-3 h-8 inline-flex items-center rounded-lg text-sm text-indigo-600 ring-1 ring-indigo-200 hover:bg-indigo-50" onclick="window.downloadHistoryPanel && window.downloadHistoryPanel()">Download</button>
-        <button class="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100" @click="open=false" aria-label="Tutup">✕</button>
+    <div class="shrink-0 border-b border-slate-100 px-4 py-4 sm:px-5">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-600">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+            </span>
+            Riwayat Tiket
+          </div>
+          <h3 class="mt-1 text-lg font-semibold text-slate-900 truncate">#<?php echo e($ticket->nomor_tiket); ?></h3>
+          <p class="mt-0.5 text-xs text-slate-500"><?php echo e($ticket->histories->count()); ?> aktivitas tercatat</p>
+        </div>
+        <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700" @click="open=false" aria-label="Tutup">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
     </div>
 
-    <ul id="history-list" class="tl space-y-5 max-h-80 overflow-auto pr-1">
+    <div id="history-list" class="history-modal-body history-timeline">
       <?php
         $labels = [
-          'created' => 'Dibuat',
+          'created' => 'Tiket dibuat',
           'taken' => 'Diambil IT',
-          'released' => 'Dilepas ke Antrian',
+          'released' => 'Dilepas ke antrian',
           'progress' => 'Progres IT',
-          'assigned_vendor' => 'Assign ke Vendor',
-          'assign_vendor_cleared' => 'Hapus Assign Vendor',
-          'vendor_followup' => 'Tindak Lanjut Vendor',
-          'closed' => 'Ditutup',
-          'reopened' => 'Dibuka Kembali',
+          'assigned_vendor' => 'Assign vendor',
+          'assign_vendor_cleared' => 'Vendor dihapus',
+          'vendor_followup' => 'Tindak lanjut vendor',
+          'closed' => 'Tiket ditutup',
+          'reopened' => 'Dibuka kembali',
+          'status_changed' => 'Status diubah',
+          'category_override' => 'Kategori diubah',
         ];
         $colors = [
-          'created' => '#4f46e5',
-          'taken' => '#f59e0b',
-          'released' => '#6b7280',
-          'progress' => '#f59e0b',
-          'assigned_vendor' => '#a21caf',
-          'assign_vendor_cleared' => '#6b7280',
-          'vendor_followup' => '#a21caf',
-          'closed' => '#059669',
-          'reopened' => '#0ea5e9',
+          'created' => ['dot' => '#4f46e5', 'bg' => '#eef2ff', 'text' => '#4338ca'],
+          'taken' => ['dot' => '#d97706', 'bg' => '#fffbeb', 'text' => '#b45309'],
+          'released' => ['dot' => '#64748b', 'bg' => '#f1f5f9', 'text' => '#475569'],
+          'progress' => ['dot' => '#ea580c', 'bg' => '#fff7ed', 'text' => '#c2410c'],
+          'assigned_vendor' => ['dot' => '#a21caf', 'bg' => '#fdf4ff', 'text' => '#86198f'],
+          'assign_vendor_cleared' => ['dot' => '#64748b', 'bg' => '#f1f5f9', 'text' => '#475569'],
+          'vendor_followup' => ['dot' => '#9333ea', 'bg' => '#faf5ff', 'text' => '#7e22ce'],
+          'closed' => ['dot' => '#059669', 'bg' => '#ecfdf5', 'text' => '#047857'],
+          'reopened' => ['dot' => '#0284c7', 'bg' => '#f0f9ff', 'text' => '#0369a1'],
+          'status_changed' => ['dot' => '#2563eb', 'bg' => '#eff6ff', 'text' => '#1d4ed8'],
+          'category_override' => ['dot' => '#6366f1', 'bg' => '#eef2ff', 'text' => '#4f46e5'],
+        ];
+        $icons = [
+          'created' => '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+          'taken' => '<path d="M16 11V7a4 4 0 00-8 0v4M5 11h14v8H5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+          'released' => '<path d="M7 7l10 10M17 7v10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+          'progress' => '<path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>',
+          'assigned_vendor' => '<path d="M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zM8 13c-2.761 0-5 1.79-5 4v1h10v-1c0-2.21-2.239-4-5-4zM16 13c-.29 0-.572.02-.845.06 1.754.758 2.845 2.216 2.845 3.94V18h5v-1c0-2.21-2.239-4-5-4z" fill="currentColor"/>',
+          'assign_vendor_cleared' => '<path d="M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 13c-2.761 0-5 1.79-5 4v1h10v-1c0-2.21-2.239-4-5-4z" fill="currentColor"/>',
+          'vendor_followup' => '<path d="M4 4h16v12H5.17L4 17.17V4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+          'closed' => '<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>',
+          'reopened' => '<path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 9a8 8 0 00-14-2M4 15a8 8 0 0014 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+          'status_changed' => '<path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+          'category_override' => '<path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
         ];
       ?>
 
       <?php $__empty_1 = true; $__currentLoopData = $ticket->histories->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $h): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
         <?php
-          $dot = $colors[$h->action] ?? '#4b5563';
-          $label = $labels[$h->action] ?? ucfirst(str_replace('_',' ', $h->action));
+          $palette = $colors[$h->action] ?? ['dot' => '#64748b', 'bg' => '#f1f5f9', 'text' => '#475569'];
+          $label = $labels[$h->action] ?? ucfirst(str_replace('_', ' ', $h->action));
           $meta = $h->meta ?? [];
+          $icon = $icons[$h->action] ?? '<circle cx="12" cy="12" r="3" fill="currentColor"/>';
         ?>
-        <li id="h-<?php echo e($h->id); ?>" class="tl-item" style="--dot: <?php echo e($dot); ?>; --accent: <?php echo e($dot); ?>" data-history-ts="<?php echo e(optional($h->created_at)->format('c')); ?>">
-          <div class="tl-card rounded-xl border border-gray-200 bg-white p-4 shadow-md">
-            <div class="flex items-center justify-between gap-3">
-              <span class="tl-label"><?php echo e($label); ?></span>
-              <div class="shrink-0 text-xs text-gray-500"><?php echo e(optional($h->created_at)->format('d M Y H:i') ?? '-'); ?></div>
+        <article id="h-<?php echo e($h->id); ?>" class="history-entry" data-history-ts="<?php echo e(optional($h->created_at)->format('c')); ?>">
+          <div class="history-entry-icon" style="background-color: <?php echo e($palette['dot']); ?>">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><?php echo $icon; ?></svg>
+          </div>
+          <div class="history-entry-card">
+            <div class="history-entry-head">
+              <span class="history-badge" style="background: <?php echo e($palette['bg']); ?>; color: <?php echo e($palette['text']); ?>"><?php echo e($label); ?></span>
+              <time class="history-meta shrink-0" datetime="<?php echo e(optional($h->created_at)->format('c')); ?>">
+                <?php echo e(optional($h->created_at)->format('d M Y · H:i') ?? '-'); ?>
+
+              </time>
             </div>
-            <div class="mt-1 text-xs text-gray-500">Oleh: <?php echo e(optional($h->user)->name ?? '-'); ?></div>
+            <div class="history-meta mt-1.5">Oleh <span class="font-medium text-slate-700"><?php echo e(optional($h->user)->name ?? '—'); ?></span></div>
             <?php if($h->action === 'assigned_vendor' && (!empty($meta['vendor_name']) || !empty($meta['vendor_id']))): ?>
-              <div class="mt-2 inline-flex items-center rounded-full bg-fuchsia-50 px-2 py-0.5 text-[11px] font-medium text-fuchsia-700 ring-1 ring-fuchsia-100">
+              <div class="mt-2 inline-flex items-center rounded-full bg-fuchsia-50 px-2.5 py-0.5 text-[11px] font-medium text-fuchsia-700 ring-1 ring-fuchsia-100">
                 <?php echo e($meta['vendor_name'] ?? ('Vendor ID '.$meta['vendor_id'])); ?>
 
               </div>
             <?php endif; ?>
             <?php if($h->note): ?>
-              <div class="mt-2 text-sm text-gray-800 whitespace-pre-line"><?php echo e($h->note); ?></div>
+              <div class="history-note"><?php echo e($h->note); ?></div>
             <?php endif; ?>
           </div>
-        </li>
+        </article>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-        <li class="tl-item" style="--dot:#6b7280; --accent:#6b7280">
-          <div class="tl-card rounded-xl border border-gray-200 bg-white p-4 shadow-md">
-            <div class="text-sm text-gray-600">Belum ada log.</div>
+        <div class="history-empty">
+          <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
           </div>
-        </li>
+          <div>
+            <p class="text-sm font-medium text-slate-700">Belum ada riwayat</p>
+            <p class="mt-1 text-xs text-slate-500">Aktivitas tiket akan muncul di sini.</p>
+          </div>
+        </div>
       <?php endif; ?>
-    </ul>
+    </div>
+
+    <div class="shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5 rounded-b-2xl">
+      <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50" onclick="window.downloadHistoryPanel && window.downloadHistoryPanel()">
+        Download PNG
+      </button>
+      <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700" @click="open=false">
+        Tutup
+      </button>
+    </div>
   </div>
 </div>
 
@@ -566,12 +704,13 @@
             s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
           });
         }
-        const classesToRemove = ['max-h-80','overflow-auto','pr-1'];
+        const classesToRemove = ['history-modal-body'];
         const removed = [];
         classesToRemove.forEach(c=>{ if(list.classList.contains(c)){ list.classList.remove(c); removed.push(c);} });
-        const prevStyle = { maxHeight: list.style.maxHeight, overflow: list.style.overflow };
+        const prevStyle = { maxHeight: list.style.maxHeight, overflow: list.style.overflow, flex: list.style.flex };
         list.style.maxHeight = 'none';
         list.style.overflow = 'visible';
+        list.style.flex = 'none';
         await new Promise(r=>setTimeout(r,0));
         const canvas = await html2canvas(panel, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
         const link = document.createElement('a');
@@ -583,6 +722,7 @@
         // restore
         list.style.maxHeight = prevStyle.maxHeight;
         list.style.overflow = prevStyle.overflow;
+        list.style.flex = prevStyle.flex;
         removed.forEach(c=>list.classList.add(c));
       }catch(e){ console.error('Download PNG failed', e); }
     }
