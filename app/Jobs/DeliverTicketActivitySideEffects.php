@@ -12,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Mail;
 
 class DeliverTicketActivitySideEffects implements ShouldQueue
 {
@@ -30,15 +30,40 @@ class DeliverTicketActivitySideEffects implements ShouldQueue
             return;
         }
 
+        $this->sendMail($user);
+        $this->sendFcm($user);
+    }
+
+    private function sendMail(User $user): void
+    {
+        if (empty($user->email)) {
+            return;
+        }
+
         try {
-            Notification::sendNow($user, new TicketActivity($this->data), ['mail']);
+            $mail = (new TicketActivity($this->data))->toMail($user);
+
+            Mail::send(
+                'emails.notifications.ticket_activity',
+                [
+                    'data' => $this->data,
+                    'notifiable' => $user,
+                ],
+                function ($message) use ($user, $mail) {
+                    $message->to($user->email, $user->name ?? null)
+                        ->subject($mail->subject ?? ($this->data['title'] ?? 'Notifikasi Tiket'));
+                }
+            );
         } catch (\Throwable $e) {
             Log::error('TicketActivity mail failed', [
                 'user_id' => $this->userId,
                 'error' => $e->getMessage(),
             ]);
         }
+    }
 
+    private function sendFcm(User $user): void
+    {
         try {
             $tokens = DB::table('user_devices')
                 ->where('user_id', $user->id)

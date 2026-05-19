@@ -20,7 +20,7 @@ use App\Mail\TicketSubmitted;
 use Illuminate\Support\Facades\Schema;
 use App\Mail\TicketClosed;
 use Illuminate\Support\Facades\Log;
-use App\Notifications\TicketActivity;
+use App\Support\TicketActivityNotifier;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class TicketController extends Controller
@@ -69,7 +69,7 @@ class TicketController extends Controller
                 'created_at'  => now()->toIso8601String(),
             ];
             foreach ($recipients as $user) {
-                $user->notify(new TicketActivity($payload));
+                TicketActivityNotifier::notify($user, $payload);
             }
         } catch (\Throwable $e) {
             // ignore notification errors
@@ -317,7 +317,7 @@ public function store(Request $request)
                     'created_at' => now()->toIso8601String(),
                 ];
 
-                $itUser->notify(new \App\Notifications\TicketActivity($payload));
+                TicketActivityNotifier::notify($itUser, $payload);
                 Log::info('TicketStore: notifikasi dikirim ke IT yang ditugaskan', ['it_id' => $itUser->id, 'ticket_id' => $ticket->id]);
             }
         }
@@ -1204,7 +1204,7 @@ public function store(Request $request)
             ];
 
             foreach ($recipients as $user) {
-                $user->notify(new \App\Notifications\TicketActivity($payload));
+                TicketActivityNotifier::notify($user, $payload);
             }
         }
     } catch (\Throwable $e) {
@@ -1297,7 +1297,7 @@ public function store(Request $request)
             ];
 
             foreach ($recipients as $user) {
-                $user->notify(new \App\Notifications\TicketActivity($payload));
+                TicketActivityNotifier::notify($user, $payload);
             }
         }
     } catch (\Throwable $e) {

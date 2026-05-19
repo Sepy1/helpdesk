@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ticket;
 use App\Models\TicketComment;
-use App\Notifications\TicketActivity;
+use App\Support\TicketActivityNotifier;
 
 class TicketCommentController extends Controller
 {
@@ -89,7 +89,7 @@ class TicketCommentController extends Controller
             ];
 
             foreach ($recipients as $user) {
-                $user->notify(new TicketActivity($payload));
+                TicketActivityNotifier::notify($user, $payload);
             }
 
             if ($autoTaken) {

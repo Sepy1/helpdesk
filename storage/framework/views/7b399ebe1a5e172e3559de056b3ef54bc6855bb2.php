@@ -165,7 +165,7 @@ unset($__errorArgs, $__bag); ?>
     </div>
 
     <div class="pt-2">
-      <button class="block w-full items-center rounded-lg bg-brand-50 px-4 sm:px-8 py-1.5 text-sm text-white hover:bg-indigo-700">
+      <button type="submit" class="hd-btn-primary block w-full justify-center px-4 sm:px-8 py-2.5 text-sm font-medium shadow-sm">
         Kirim Tiket
       </button>
     </div>

@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Jobs\DeliverTicketActivitySideEffects;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -34,8 +33,6 @@ class TicketActivity extends Notification
 
     public function toArray(object $notifiable): array
     {
-        DeliverTicketActivitySideEffects::dispatch($notifiable->id, $this->data)->afterResponse();
-
         return $this->data;
     }
 }
