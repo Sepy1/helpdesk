@@ -821,50 +821,6 @@ public function store(Request $request)
         return back()->with('error', 'Gagal menutup tiket. Silakan coba lagi.');
     }
 
-    // Kirim notifikasi email ke pemilik tiket (jika ada)
-    try {
-        // prioritas: relationship user -> email, fallback ke kolom email di tabel tickets (jika ada)
-        $recipientEmail = optional($ticket->user)->email ?? ($ticket->email ?? null);
-
-        Log::info('TicketClose: persiapan kirim email', [
-            'ticket_id' => $ticket->id,
-            'recipient' => $recipientEmail,
-            'queue_default' => config('queue.default')
-        ]);
-
-        if (empty($recipientEmail)) {
-            Log::warning('TicketClose: tidak ada email penerima, melewatkan pengiriman', [
-                'ticket_id' => $ticket->id
-            ]);
-        } else {
-            if (config('queue.default') === 'sync') {
-                // kirim langsung (sinkron)
-                Mail::to($recipientEmail)->send(new \App\Mail\TicketClosed($ticket));
-                Log::info('TicketClose: Mail::send() dipanggil (sync)', [
-                    'ticket_id' => $ticket->id,
-                    'recipient' => $recipientEmail
-                ]);
-            } else {
-                // gunakan queue (butuh queue worker berjalan)
-                Mail::to($recipientEmail)->queue(new \App\Mail\TicketClosed($ticket));
-                Log::info('TicketClose: Mail::queue() dipanggil (queued)', [
-                    'ticket_id' => $ticket->id,
-                    'recipient' => $recipientEmail
-                ]);
-            }
-        }
-    } catch (\Throwable $e) {
-        // Log error agar tidak mengganggu UX
-        Log::error("Gagal mengirim email tiket closed (ticket_id: {$ticket->id}): " . $e->getMessage(), [
-            'ticket_id' => $ticket->id,
-            'exception' => $e
-        ]);
-    }
-
-    Log::info('TicketClose: selesai close(), kembali ke halaman sebelumnya', [
-        'ticket_id' => $ticket->id
-    ]);
-
     return back()->with('success', 'Tiket ditutup.');
 }
 

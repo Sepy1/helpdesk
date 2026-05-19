@@ -3,18 +3,22 @@
 namespace App\Services;
 
 use Google\Auth\Credentials\ServiceAccountCredentials;
+use Illuminate\Support\Facades\Cache;
 
 class FcmService
 {
-    protected static function getAccessToken()
+    protected static function getAccessToken(): string
     {
-        $credentials = new ServiceAccountCredentials(
-            ['https://www.googleapis.com/auth/firebase.messaging'],
-            storage_path('app/firebase-service-account.json')
-        );
+        return Cache::remember('fcm_access_token', now()->addMinutes(50), function () {
+            $credentials = new ServiceAccountCredentials(
+                ['https://www.googleapis.com/auth/firebase.messaging'],
+                storage_path('app/firebase-service-account.json')
+            );
 
-        $token = $credentials->fetchAuthToken();
-        return $token['access_token'];
+            $token = $credentials->fetchAuthToken();
+
+            return $token['access_token'];
+        });
     }
 
    public static function sendToToken($token, $title, $body, $data = [])
@@ -48,6 +52,8 @@ class FcmService
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($message));
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
     $result = curl_exec($ch);
     curl_close($ch);
@@ -55,5 +61,5 @@ class FcmService
     return $result;
 }
 
-    
+
 }

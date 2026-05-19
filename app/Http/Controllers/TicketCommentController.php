@@ -54,90 +54,63 @@ class TicketCommentController extends Controller
 
         $comment = TicketComment::create($data);
 
-        // Notify participants (owner, IT, vendor) except the actor
         try {
             $actor = $request->user();
-            $ticket->loadMissing(['user','it','vendor']);
+            $ticket->loadMissing(['user', 'it', 'vendor']);
             $recipients = collect([$ticket->user, $ticket->it, $ticket->vendor])
                 ->filter()
                 ->unique('id')
-                ->reject(fn($u) => $actor && $u->id === $actor->id);
+                ->reject(fn ($u) => $actor && $u->id === $actor->id);
+
+            $autoTaken = $actor
+                && ($actor->role === 'IT')
+                && $ticket->status === 'OPEN';
 
             $url = route('ticket.show', $ticket->id) . '#c-' . $comment->id;
+            $commentBody = (trim((string) $comment->body) !== '')
+                ? (string) str($comment->body)->limit(140)
+                : '[Gambar]';
+
             $payload = [
-                'ticket_id'  => $ticket->id,
-                'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
-                'kind'       => 'comment',
-                'title'      => 'Komentar baru pada tiket ' . ($ticket->nomor_tiket ?? $ticket->id),
-                'body'       => (trim((string) $comment->body) !== '')
-                    ? (string) str($comment->body)->limit(140)
-                    : '[Gambar]',
-                'url'        => $url,
-                'actor_id'   => $actor?->id,
+                'ticket_id' => $ticket->id,
+                'ticket_no' => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                'kind' => 'comment',
+                'title' => $autoTaken
+                    ? 'Komentar baru & tiket diambil IT'
+                    : 'Komentar baru pada tiket ' . ($ticket->nomor_tiket ?? $ticket->id),
+                'body' => $autoTaken
+                    ? $commentBody . ' — Tiket sedang ditangani oleh ' . ($actor->name ?? 'IT')
+                    : $commentBody,
+                'url' => $url,
+                'actor_id' => $actor?->id,
                 'actor_name' => $actor?->name,
                 'comment_id' => $comment->id,
                 'created_at' => now()->toIso8601String(),
             ];
+
             foreach ($recipients as $user) {
                 $user->notify(new TicketActivity($payload));
             }
-        } catch (\Throwable $e) {
-            // ignore notification errors
-        }
 
-        // Jika yang menulis komentar adalah IT dan tiket masih OPEN,
-        // ubah status menjadi ON_PROGRESS, set it_id bila belum, catat history dan kirim notifikasi history.
-        try {
-            $actor = $request->user();
-            if ($actor && ($actor->role === 'IT') && $ticket->status === 'OPEN') {
+            if ($autoTaken) {
                 $ticket->status = 'ON_PROGRESS';
                 $ticket->it_id = $ticket->it_id ?: $actor->id;
                 $ticket->taken_at = $ticket->taken_at ?: now();
                 $ticket->save();
 
-                $h = \App\Models\TicketHistory::create([
+                \App\Models\TicketHistory::create([
                     'ticket_id' => $ticket->id,
-                    'user_id'   => $actor->id,
-                    'action'    => 'taken',
-                    'note'      => 'Tiket diambil oleh IT (komentar)',
+                    'user_id' => $actor->id,
+                    'action' => 'taken',
+                    'note' => 'Tiket diambil oleh IT (komentar)',
                 ]);
-
-                // notify participants about history (reuse recipients logic)
-                $recipients = collect([$ticket->user, $ticket->it, $ticket->vendor])
-                    ->filter()
-                    ->unique('id')
-                    ->reject(fn($u) => $actor && $u->id === $actor->id);
-
-                $url = route('ticket.show', $ticket->id) . '#h-' . $h->id;
-                $payload = [
-                    'ticket_id'  => $ticket->id,
-                    'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
-                    'kind'       => 'history',
-                    'title'      => 'Tiket diambil oleh IT',
-                    'body'       => 'Tiket sedang ditangani oleh ' . ($actor->name ?? 'IT'),
-                    'url'        => $url,
-                    'actor_id'   => $actor?->id,
-                    'actor_name' => $actor?->name,
-                    'history_id' => $h->id,
-                    'action'     => $h->action,
-                    'created_at' => now()->toIso8601String(),
-                ];
-
-                foreach ($recipients as $user) {
-                    $user->notify(new TicketActivity($payload));
-                }
             }
         } catch (\Throwable $e) {
-            // ignore errors
+            // ignore notification errors
         }
 
         return redirect()
             ->route('ticket.show', $ticket->id)
             ->with('success', 'Komentar berhasil ditambahkan');
     }
-
-    
-    
-
-    
 }
