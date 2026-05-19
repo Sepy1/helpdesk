@@ -86,6 +86,7 @@
       .ui-compact-80 .topbar-inner .h-5{ height: 1rem; }
       .ui-compact-80 .topbar-inner .w-5{ width: 1rem; }
       .ui-compact-80 .topbar-inner .topbar-logo{ height: 1.8rem; width: 1.8rem; }
+      .ui-compact-80 .topbar-inner .topbar-art{ height: 1.8rem; max-width: 6.4rem; }
       .ui-compact-80 .topbar-inner .topbar-title{ font-size: .85rem; line-height: 1rem; }
       .ui-compact-80 .topbar-inner .topbar-user{ font-size: .7rem; line-height: 1rem; }
       .ui-compact-80 .topbar-inner .topbar-action{ font-size: .7rem; padding: .25rem .6rem; }
@@ -109,6 +110,7 @@
 </head>
 @php
   $logoPath = asset('images/helpdesk.png');
+  $topbarArtPath = asset('images/topbar.png');
   $isDesktopScaledRoute = request()->routeIs([
     'ticket.show',
     'it.ticket.create',
@@ -147,22 +149,34 @@
 
   {{-- TOPBAR (gradient) --}}
 <header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 sticky top-0 z-40 h-[var(--topbar-h)]">
-  <div class="topbar-inner w-full h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-    <div class="flex items-center gap-2 min-w-0">
+  <div class="topbar-inner relative z-[1] w-full h-full flex items-center justify-between">
+    <div class="topbar-brand flex items-center gap-2 min-w-0 h-full pl-4 pr-2 md:w-[var(--sidebar-w)] md:shrink-0 md:pr-3">
       <img src="{{ $logoPath }}" alt="Logo Helpdesk" class="topbar-logo h-9 w-9 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" onerror="this.style.display='none'">
-      <span class="topbar-title font-semibold text-white truncate">Helpdesk</span>
+      <span class="topbar-title flex-1 min-w-0 font-semibold text-white truncate">Sambatan</span>
 
       <button type="button"
-              class="hidden md:inline-flex ml-2 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
+              class="hidden md:inline-flex shrink-0 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
               @click="toggleSidebar()" :aria-pressed="sidebarOpen.toString()"
               aria-label="Tampilkan/sembunyikan menu">☰</button>
 
       <button type="button"
-              class="inline-flex md:hidden ml-1 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
+              class="inline-flex md:hidden shrink-0 h-9 w-9 items-center justify-center rounded-lg hover:bg-white/10 text-white"
               @click="mobileOpen = true" aria-controls="mobile-drawer" aria-expanded="true" aria-label="Buka menu">☰</button>
     </div>
 
-    <nav class="flex items-center gap-3 text-sm min-w-0">
+    @auth
+    <img
+      src="{{ $topbarArtPath }}"
+      alt=""
+      class="topbar-art hidden md:block h-9 w-auto max-w-[8rem] object-contain shrink-0 drop-shadow-[0_0_6px_rgba(255,255,255,0.25)] ml-2 md:ml-3"
+      loading="lazy"
+      decoding="async"
+      aria-hidden="true"
+      onerror="this.style.display='none'"
+    >
+    @endauth
+
+    <nav class="flex items-center gap-3 text-sm min-w-0 ml-auto pr-4 sm:pr-6 lg:pr-8">
       @auth
         <div x-data="notifState()" x-init="init()" class="relative">
           <button @click="toggle()" @keydown.escape.window="open=false" type="button"

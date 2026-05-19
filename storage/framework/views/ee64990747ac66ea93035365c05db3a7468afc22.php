@@ -79,7 +79,7 @@
 
 <div class="mt-3 shrink-0 px-1">
   <div class="text-[11px] hd-sidebar-footer">
-    © <?php echo e(date('Y')); ?> Helpdesk.
+    © <?php echo e(date('Y')); ?> Divisi Operasional
   </div>
 </div>
 </div>
