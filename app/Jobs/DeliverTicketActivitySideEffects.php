@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Mail\TicketActivityMail;
 use App\Models\User;
-use App\Notifications\TicketActivity;
 use App\Services\FcmService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,22 +41,11 @@ class DeliverTicketActivitySideEffects implements ShouldQueue
         }
 
         try {
-            $mail = (new TicketActivity($this->data))->toMail($user);
-
-            Mail::send(
-                'emails.notifications.ticket_activity',
-                [
-                    'data' => $this->data,
-                    'notifiable' => $user,
-                ],
-                function ($message) use ($user, $mail) {
-                    $message->to($user->email, $user->name ?? null)
-                        ->subject($mail->subject ?? ($this->data['title'] ?? 'Notifikasi Tiket'));
-                }
-            );
+            Mail::to($user->email)->send(new TicketActivityMail($this->data, $user));
         } catch (\Throwable $e) {
             Log::error('TicketActivity mail failed', [
                 'user_id' => $this->userId,
+                'email' => $user->email,
                 'error' => $e->getMessage(),
             ]);
         }
