@@ -116,6 +116,19 @@
     text-align:center;
   }
 
+  .history-modal-panel.history-panel--exporting{
+    max-height:none !important;
+    overflow:visible !important;
+    height:auto !important;
+  }
+  .history-modal-panel.history-panel--exporting #history-list{
+    max-height:none !important;
+    overflow:visible !important;
+    flex:none !important;
+    min-height:auto !important;
+    height:auto !important;
+  }
+
   /* Small helper for status badge */
   .status-badge {display:inline-flex;align-items:center;border-radius:9999px;padding:5px 8px;font-size:11px;font-weight:600;box-shadow:0 0 0 1px rgba(0,0,0,0.03) inset;}
 
@@ -518,7 +531,7 @@
       @endforelse
     </div>
 
-    <div class="shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5 rounded-b-2xl">
+    <div id="history-export-footer" class="shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5 rounded-b-2xl">
       <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50" onclick="window.downloadHistoryPanel && window.downloadHistoryPanel()">
         Download PNG
       </button>
@@ -690,10 +703,15 @@
     window.rootCauseDetailsByRoot = @json($rootCauseDetailsByRootName ?? []);
     window.selectedRootCauseDetailId = @json(old('root_cause_detail_id', $ticket->root_cause_detail_id));
     window.downloadHistoryPanel = async function(){
+      const panel = document.getElementById('history-panel');
+      const list = document.getElementById('history-list');
+      const footer = document.getElementById('history-export-footer');
+      if(!panel || !list){ return; }
+
+      const prevScroll = list.scrollTop;
+      let exporting = false;
+
       try{
-        const panel = document.getElementById('history-panel');
-        const list = document.getElementById('history-list');
-        if(!panel || !list){ return; }
         if(!window.html2canvas){
           await new Promise((resolve, reject)=>{
             const s = document.createElement('script');
@@ -701,27 +719,45 @@
             s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
           });
         }
-        const classesToRemove = ['history-modal-body'];
-        const removed = [];
-        classesToRemove.forEach(c=>{ if(list.classList.contains(c)){ list.classList.remove(c); removed.push(c);} });
-        const prevStyle = { maxHeight: list.style.maxHeight, overflow: list.style.overflow, flex: list.style.flex };
-        list.style.maxHeight = 'none';
-        list.style.overflow = 'visible';
-        list.style.flex = 'none';
-        await new Promise(r=>setTimeout(r,0));
-        const canvas = await html2canvas(panel, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+
+        exporting = true;
+        list.scrollTop = 0;
+        if (footer) footer.style.display = 'none';
+        panel.classList.add('history-panel--exporting');
+
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const exportHeight = panel.scrollHeight;
+        const exportWidth = panel.scrollWidth;
+
+        const canvas = await html2canvas(panel, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          width: exportWidth,
+          height: exportHeight,
+          windowWidth: exportWidth,
+          windowHeight: exportHeight,
+        });
+
         const link = document.createElement('a');
         link.download = 'history_{{ Str::slug($ticket->nomor_tiket ?? "tiket") }}.png';
         link.href = canvas.toDataURL('image/png');
         document.body.appendChild(link);
         link.click();
         link.remove();
-        // restore
-        list.style.maxHeight = prevStyle.maxHeight;
-        list.style.overflow = prevStyle.overflow;
-        list.style.flex = prevStyle.flex;
-        removed.forEach(c=>list.classList.add(c));
-      }catch(e){ console.error('Download PNG failed', e); }
+      }catch(e){
+        console.error('Download PNG failed', e);
+      }finally{
+        if (exporting) {
+          panel.classList.remove('history-panel--exporting');
+          if (footer) footer.style.display = '';
+          list.scrollTop = prevScroll;
+        }
+      }
     }
     // Auto-scroll chat to bottom on load
     document.addEventListener('DOMContentLoaded', function(){
