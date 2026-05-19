@@ -28,6 +28,45 @@ class NotificationController extends Controller
         return response()->json(['unread' => $unread, 'items' => $latest]);
     }
 
+    public function comments(Request $request)
+    {
+        $user = $request->user();
+        $unread = $user->unreadNotifications()->where('data->kind', 'comment')->count();
+        $latest = $user->notifications()
+            ->where('data->kind', 'comment')
+            ->latest()
+            ->limit(15)
+            ->get()
+            ->map(function ($n) {
+                $d = $n->data ?? [];
+                return [
+                    'id' => $n->id,
+                    'read_at' => $n->read_at,
+                    'created_at' => optional($n->created_at)->toIso8601String(),
+                    'title' => $d['title'] ?? 'Komentar baru',
+                    'body' => $d['body'] ?? null,
+                    'url' => $d['url'] ?? null,
+                    'ticket_id' => $d['ticket_id'] ?? null,
+                    'ticket_no' => $d['ticket_no'] ?? null,
+                    'kind' => $d['kind'] ?? 'comment',
+                    'actor_name' => $d['actor_name'] ?? null,
+                ];
+            });
+
+        return response()->json(['unread' => $unread, 'items' => $latest]);
+    }
+
+    public function markCommentsReadAll(Request $request)
+    {
+        $user = $request->user();
+        $user->unreadNotifications()
+            ->where('data->kind', 'comment')
+            ->get()
+            ->markAsRead();
+
+        return response()->json(['ok' => true]);
+    }
+
     public function markAllRead(Request $request)
     {
         $user = $request->user();

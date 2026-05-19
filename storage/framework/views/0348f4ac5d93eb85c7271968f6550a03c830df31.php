@@ -187,6 +187,38 @@
             </div>
           </div>
         </div>
+        <div x-data="commentNotifState()" x-init="init()" class="relative">
+          <button @click="toggle()" @keydown.escape.window="open=false" type="button"
+                  class="relative h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-white/10 text-white"
+                  aria-label="Komentar">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M4 4h16a2 2 0 012 2v10a2 2 0 01-2 2H8l-4 4V6a2 2 0 012-2z"/>
+            </svg>
+            <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
+          </button>
+          <div x-show="open" x-cloak @click.outside="open=false"
+               class="fixed inset-x-2 top-16 md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
+            <div class="flex items-center justify-between px-3 py-2 border-b">
+              <div class="font-medium text-gray-800">Komentar</div>
+              <button @click="markAll()" class="text-xs text-indigo-600 hover:underline">Tandai sudah dibaca</button>
+            </div>
+            <div class="max-h-[70vh] md:max-h-80 overflow-auto">
+              <template x-if="items.length===0">
+                <div class="px-3 py-4 text-sm text-gray-500">Tidak ada komentar.</div>
+              </template>
+              <template x-for="n in items" :key="n.id">
+                <a :href="n.url || '#'"
+                   class="block px-3 py-2 hover:bg-gray-50 break-words whitespace-normal"
+                   :class="(n.read_at ? 'opacity-60' : 'bg-yellow-50 ring-1 ring-yellow-200')"
+                   @click.prevent="open=false; markOne(n);">
+                  <div class="text-sm font-medium text-gray-800" x-text="n.title"></div>
+                  <div class="text-xs text-gray-600 mt-0.5" x-text="n.body"></div>
+                  <div class="text-[11px] text-gray-400 mt-0.5" x-text="formatTime(n.created_at)"></div>
+                </a>
+              </template>
+            </div>
+          </div>
+        </div>
         <span class="topbar-user hidden sm:inline text-white/80 truncate max-w-[40ch]">
           <?php echo e(auth()->user()->name); ?> — <span class="uppercase"><?php echo e(auth()->user()->role); ?></span>
         </span>
@@ -424,6 +456,57 @@ function logoutMobile() {
         }
       }
     }
+
+    function commentNotifState(){
+      return {
+        open: false,
+        count: 0,
+        items: [],
+        timer: null,
+        init(){ this.fetchNow(); this.timer = setInterval(()=>this.fetchNow(), 30000); },
+        toggle(){ this.open = !this.open; if(this.open) this.fetchNow(); },
+        badgeText(){ return this.count>99 ? '99+' : String(this.count); },
+        async fetchNow(){
+          try{
+            const res = await fetch('<?php echo e(route('notifications.comments')); ?>', { headers: { 'Accept':'application/json' } });
+            if(!res.ok) return;
+            const json = await res.json();
+            this.count = json.unread || 0;
+            this.items = json.items || [];
+          }catch(_){ }
+        },
+        async markAll(){
+          try{
+            const res = await fetch('<?php echo e(route('notifications.comments.readAll')); ?>', {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept':'application/json'
+              }
+            });
+            if(res.ok){ this.count = 0; this.fetchNow(); }
+          }catch(_){ }
+        },
+        async markOne(n){
+          try{
+            const res = await fetch('<?php echo e(route('notifications.readOne', ':id')); ?>'.replace(':id', encodeURIComponent(n.id)), {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content,
+                'Accept':'application/json'
+              }
+            });
+            if(this.count>0) this.count--;
+            if(n.url){
+              window.location.href = n.url;
+            }
+          }catch(_){ if(n.url){ window.location.href = n.url; } }
+        },
+        formatTime(iso){
+          try{ const d = new Date(iso); return d.toLocaleString(); }catch(_){ return ''; }
+        }
+      }
+    }
   </script>
 
   
@@ -536,6 +619,22 @@ function logoutMobile() {
           this.messages = [
             { role:'assistant', text:`Halo ${name}. Saya bantu operasional Helpdesk. Coba tanya: "cara buat tiket", "update status", atau "kelola parameter".` }
           ];
+          this.loadHistory();
+        },
+        async loadHistory(){
+          try{
+            const res = await fetch('<?php echo e(route('assistant.history')); ?>', {
+              headers: { 'Accept': 'application/json' },
+            });
+            if (!res.ok) return;
+            const json = await res.json();
+            const items = Array.isArray(json?.messages) ? json.messages : [];
+            if (!items.length) return;
+            this.messages = items.map(m => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              text: String(m.text || ''),
+            }));
+          }catch(_){}
         },
         toggle(){
           this.open = !this.open;

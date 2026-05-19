@@ -78,7 +78,9 @@ Route::middleware(['auth'])->group(function () {
 
         // ===== Notifications (server-side)
         Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/comments', [\App\Http\Controllers\NotificationController::class, 'comments'])->name('notifications.comments');
         Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+        Route::post('/notifications/comments/read-all', [\App\Http\Controllers\NotificationController::class, 'markCommentsReadAll'])->name('notifications.comments.readAll');
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markOne'])->name('notifications.readOne');
         Route::post('/assistant/chat', [AssistantController::class, 'chat'])->name('assistant.chat');
         Route::get('/assistant/history', [AssistantController::class, 'history'])->name('assistant.history');
