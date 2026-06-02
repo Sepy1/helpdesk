@@ -237,6 +237,348 @@ class StatsController extends Controller
     }
 }
 
+    /** JSON modern untuk dashboard statistik IT. */
+    public function reportDashboardData(Request $request)
+    {
+        Log::info('StatsController::reportDashboardData called', [
+            'month' => $request->query('month'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+        ]);
+
+        $month = $request->query('month', null);
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $periodStart = null;
+        $periodEnd = null;
+        $rangeLabel = 'Semua data';
+
+        $formatDuration = static function ($seconds): array {
+            if ($seconds === null) {
+                return ['human' => '-', 'hours' => null];
+            }
+
+            $seconds = (float) $seconds;
+            $hoursValue = $seconds / 3600.0;
+
+            if ($seconds < 60) {
+                $human = round($seconds).' detik';
+            } elseif ($seconds < 3600) {
+                $human = round($seconds / 60).' menit';
+            } elseif ($seconds < 86400) {
+                $hours = floor($seconds / 3600);
+                $mins = floor(($seconds % 3600) / 60);
+                $human = $hours.' jam'.($mins ? ' '.$mins.' mnt' : '');
+            } else {
+                $days = floor($seconds / 86400);
+                $hours = floor(($seconds % 86400) / 3600);
+                $human = $days.' hari'.($hours ? ' '.$hours.' jam' : '');
+            }
+
+            return ['human' => $human, 'hours' => round($hoursValue, 2)];
+        };
+
+        try {
+            $tickets = Ticket::query();
+
+            $this->applyKantorFilterToTickets($tickets, $request);
+
+            if ($dateFrom || $dateTo) {
+                if ($dateFrom) {
+                    try {
+                        $periodStart = Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay();
+                    } catch (\Exception $e) {
+                        return response()->json(['message' => 'Format date_from tidak valid'], 422);
+                    }
+                    $tickets->where('tickets.created_at', '>=', $periodStart);
+                }
+
+                if ($dateTo) {
+                    try {
+                        $periodEnd = Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay();
+                    } catch (\Exception $e) {
+                        return response()->json(['message' => 'Format date_to tidak valid'], 422);
+                    }
+                    $tickets->where('tickets.created_at', '<=', $periodEnd);
+                }
+
+                if ($periodStart && $periodEnd) {
+                    $rangeLabel = $periodStart->format('d/m/Y').' - '.$periodEnd->format('d/m/Y');
+                } elseif ($periodStart) {
+                    $rangeLabel = 'Mulai '.$periodStart->format('d/m/Y');
+                } elseif ($periodEnd) {
+                    $rangeLabel = 'Sampai '.$periodEnd->format('d/m/Y');
+                }
+            } elseif ($month && $month !== 'all') {
+                try {
+                    $periodStart = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                    $periodEnd = (clone $periodStart)->endOfMonth();
+                    $tickets->whereBetween('tickets.created_at', [$periodStart, $periodEnd]);
+                    $rangeLabel = $periodStart->format('m/Y');
+                } catch (\Exception $e) {
+                    Log::warning('Invalid month format in stats request', ['month' => $month]);
+
+                    return response()->json(['message' => 'Format bulan tidak valid'], 422);
+                }
+            }
+
+            $selectedKodeKantor = trim((string) $request->input('kode_kantor', $request->query('kode_kantor', '')));
+            $scopeLabel = 'Semua kantor';
+            if ($selectedKodeKantor !== '') {
+                $namaKantor = KodeKantor::where('kode', $selectedKodeKantor)->value('nama_kantor');
+                $scopeLabel = $selectedKodeKantor.' - '.($namaKantor ?: $selectedKodeKantor);
+            }
+
+            $kpiTotal = (clone $tickets)->count();
+            $kpiClosed = (clone $tickets)->where('status', 'CLOSED')->count();
+            $kpiActive = max(0, $kpiTotal - $kpiClosed);
+            $kpiOpenQueue = (clone $tickets)->where('status', 'OPEN')->count();
+            $kpiInProgress = (clone $tickets)->where('status', 'ON_PROGRESS')->count();
+            $kpiEscalated = (clone $tickets)->where('status', 'ESKALASI_VENDOR')->count();
+            $kpiVendorResolved = (clone $tickets)->where('status', 'VENDOR_RESOLVED')->count();
+            $kpiUnassigned = (clone $tickets)->where('status', 'OPEN')->whereNull('it_id')->count();
+            $completionRate = $kpiTotal > 0 ? round(($kpiClosed / $kpiTotal) * 100, 1) : 0.0;
+
+            $avgResolution = $formatDuration(
+                (clone $tickets)
+                    ->whereNotNull('closed_at')
+                    ->select(DB::raw('AVG(TIMESTAMPDIFF(SECOND, tickets.created_at, tickets.closed_at)) as avg_seconds'))
+                    ->value('avg_seconds')
+            );
+
+            $avgResponse = $formatDuration(
+                (clone $tickets)
+                    ->whereNotNull('taken_at')
+                    ->select(DB::raw('AVG(TIMESTAMPDIFF(SECOND, tickets.created_at, tickets.taken_at)) as avg_response_seconds'))
+                    ->value('avg_response_seconds')
+            );
+
+            $kategori = (clone $tickets)
+                ->leftJoin('categories', 'tickets.category_id', '=', 'categories.id')
+                ->select(DB::raw('COALESCE(categories.name, tickets.kategori, "Lainnya") as category_name'), DB::raw('count(tickets.id) as total'))
+                ->groupBy('category_name')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+            $kategoriRows = $kategori
+                ->map(fn ($row) => [
+                    'label' => (string) ($row->category_name ?: 'Lainnya'),
+                    'total' => (int) $row->total,
+                    'percent' => $kpiTotal > 0 ? round(((int) $row->total / $kpiTotal) * 100, 1) : 0,
+                ])
+                ->values();
+
+            $statusRaw = (clone $tickets)
+                ->select('status', DB::raw('count(*) as total'))
+                ->groupBy('status')
+                ->get()
+                ->keyBy('status');
+
+            $statusOrder = ['OPEN', 'ON_PROGRESS', 'ESKALASI_VENDOR', 'VENDOR_RESOLVED', 'CLOSED'];
+            $statusRows = collect($statusOrder)
+                ->map(function ($status) use ($statusRaw, $kpiTotal) {
+                    $total = (int) optional($statusRaw->get($status))->total;
+
+                    return [
+                        'status' => $status,
+                        'total' => $total,
+                        'percent' => $kpiTotal > 0 ? round(($total / $kpiTotal) * 100, 1) : 0,
+                    ];
+                })
+                ->concat(
+                    $statusRaw
+                        ->keys()
+                        ->diff($statusOrder)
+                        ->map(function ($status) use ($statusRaw, $kpiTotal) {
+                            $total = (int) optional($statusRaw->get($status))->total;
+
+                            return [
+                                'status' => $status,
+                                'total' => $total,
+                                'percent' => $kpiTotal > 0 ? round(($total / $kpiTotal) * 100, 1) : 0,
+                            ];
+                        })
+                )
+                ->filter(fn ($row) => $row['total'] > 0)
+                ->values();
+
+            $top = (clone $tickets)
+                ->join('users', 'tickets.user_id', '=', 'users.id')
+                ->select('users.kode_kantor', DB::raw('count(tickets.id) as total'))
+                ->groupBy('users.kode_kantor')
+                ->orderByDesc('total')
+                ->limit(8)
+                ->get();
+
+            $kodeList = $top->pluck('kode_kantor')->filter()->values();
+            $namaByKode = KodeKantor::whereIn('kode', $kodeList)->pluck('nama_kantor', 'kode');
+            $topRows = $top
+                ->map(function ($row) use ($namaByKode, $kpiTotal) {
+                    $kode = (string) ($row->kode_kantor ?? '');
+                    $label = $kode === '' ? 'Tanpa kantor' : $kode.' - '.($namaByKode[$kode] ?? $kode);
+
+                    return [
+                        'kode' => $kode !== '' ? $kode : null,
+                        'label' => $label,
+                        'total' => (int) $row->total,
+                        'percent' => $kpiTotal > 0 ? round(((int) $row->total / $kpiTotal) * 100, 1) : 0,
+                    ];
+                })
+                ->values();
+
+            $root = (clone $tickets)
+                ->select('root_cause', DB::raw('count(*) as total'))
+                ->where('status', 'CLOSED')
+                ->whereNotNull('root_cause')
+                ->where('root_cause', '!=', '')
+                ->groupBy('root_cause')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+            $rootRows = $root
+                ->map(fn ($row) => [
+                    'label' => (string) ($row->root_cause ?: 'Tidak ditentukan'),
+                    'total' => (int) $row->total,
+                    'percent' => $kpiClosed > 0 ? round(((int) $row->total / $kpiClosed) * 100, 1) : 0,
+                ])
+                ->values();
+
+            $trendEnd = $periodEnd ? (clone $periodEnd) : now()->endOfDay();
+            $trendStart = $periodStart ? (clone $periodStart) : (clone $trendEnd)->subDays(29)->startOfDay();
+            if ($trendStart->greaterThan($trendEnd)) {
+                $tmp = $trendStart;
+                $trendStart = (clone $trendEnd)->startOfDay();
+                $trendEnd = (clone $tmp)->endOfDay();
+            }
+
+            $trendGranularity = $trendStart->diffInDays($trendEnd) > 62 ? 'month' : 'day';
+            if ($trendGranularity === 'month') {
+                $trendStart = (clone $trendStart)->startOfMonth();
+                $trendEnd = (clone $trendEnd)->endOfMonth();
+            }
+
+            $trendExpr = $trendGranularity === 'month'
+                ? 'DATE_FORMAT(tickets.created_at, "%Y-%m")'
+                : 'DATE(tickets.created_at)';
+
+            $trendQuery = Ticket::query()
+                ->select(
+                    DB::raw($trendExpr.' as period_key'),
+                    DB::raw('count(tickets.id) as total'),
+                    DB::raw("SUM(CASE WHEN tickets.status = 'CLOSED' THEN 1 ELSE 0 END) as closed_total")
+                )
+                ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+                ->groupBy('period_key')
+                ->orderBy('period_key');
+            $this->applyKantorFilterToTickets($trendQuery, $request);
+            $trendRows = $trendQuery->get()->keyBy('period_key');
+
+            $trendLabels = [];
+            $trendKeys = [];
+            $cursor = (clone $trendStart);
+            while ($cursor <= $trendEnd) {
+                if ($trendGranularity === 'month') {
+                    $trendKeys[] = $cursor->format('Y-m');
+                    $trendLabels[] = $cursor->format('M y');
+                    $cursor->addMonth();
+                } else {
+                    $trendKeys[] = $cursor->toDateString();
+                    $trendLabels[] = $cursor->format('d/m');
+                    $cursor->addDay();
+                }
+            }
+
+            $trendCreated = [];
+            $trendClosed = [];
+            foreach ($trendKeys as $key) {
+                $row = $trendRows->get($key);
+                $trendCreated[] = (int) optional($row)->total;
+                $trendClosed[] = (int) optional($row)->closed_total;
+            }
+
+            $now = now();
+            $oneDayAgo = (clone $now)->subDay();
+            $threeDaysAgo = (clone $now)->subDays(3);
+            $sevenDaysAgo = (clone $now)->subDays(7);
+            $activeTickets = (clone $tickets)->where('status', '!=', 'CLOSED');
+
+            $agingRows = collect([
+                ['label' => '0-1 hari', 'total' => (clone $activeTickets)->where('tickets.created_at', '>=', $oneDayAgo)->count()],
+                ['label' => '1-3 hari', 'total' => (clone $activeTickets)->where('tickets.created_at', '<', $oneDayAgo)->where('tickets.created_at', '>=', $threeDaysAgo)->count()],
+                ['label' => '3-7 hari', 'total' => (clone $activeTickets)->where('tickets.created_at', '<', $threeDaysAgo)->where('tickets.created_at', '>=', $sevenDaysAgo)->count()],
+                ['label' => '> 7 hari', 'total' => (clone $activeTickets)->where('tickets.created_at', '<', $sevenDaysAgo)->count()],
+            ])
+                ->map(fn ($row) => [
+                    'label' => $row['label'],
+                    'total' => (int) $row['total'],
+                    'percent' => $kpiActive > 0 ? round(((int) $row['total'] / $kpiActive) * 100, 1) : 0,
+                ])
+                ->values();
+            $agingCritical = $agingRows->firstWhere('label', '> 7 hari');
+            $agingCriticalTotal = is_array($agingCritical) ? (int) $agingCritical['total'] : 0;
+
+            return response()->json([
+                'meta' => [
+                    'range_label' => $rangeLabel,
+                    'scope_label' => $scopeLabel,
+                    'generated_at' => now()->format('d/m/Y H:i'),
+                    'trend_label' => $trendGranularity === 'month'
+                        ? $trendStart->format('M Y').' - '.$trendEnd->format('M Y')
+                        : $trendStart->format('d/m/Y').' - '.$trendEnd->format('d/m/Y'),
+                    'trend_granularity' => $trendGranularity,
+                ],
+                'kpi' => [
+                    'total' => $kpiTotal,
+                    'open' => $kpiActive,
+                    'active' => $kpiActive,
+                    'open_queue' => $kpiOpenQueue,
+                    'in_progress' => $kpiInProgress,
+                    'escalated' => $kpiEscalated,
+                    'vendor_resolved' => $kpiVendorResolved,
+                    'closed' => $kpiClosed,
+                    'unassigned' => $kpiUnassigned,
+                    'completion_rate' => $completionRate,
+                    'avg_resolution' => $avgResolution['human'],
+                    'avg_resolution_hours' => $avgResolution['hours'],
+                    'avg_response' => $avgResponse['human'],
+                    'avg_response_hours' => $avgResponse['hours'],
+                    'aging_over_7_days' => $agingCriticalTotal,
+                ],
+                'trend' => [
+                    'labels' => $trendLabels,
+                    'created' => $trendCreated,
+                    'closed' => $trendClosed,
+                ],
+                'statusRows' => $statusRows,
+                'kategoriRows' => $kategoriRows,
+                'topRows' => $topRows,
+                'rootRows' => $rootRows,
+                'agingRows' => $agingRows,
+                'kategoriLabels' => $kategoriRows->pluck('label')->all(),
+                'kategoriData' => $kategoriRows->pluck('total')->all(),
+                'statusLabels' => $statusRows->pluck('status')->all(),
+                'statusData' => $statusRows->pluck('total')->all(),
+                'topLabels' => $topRows->pluck('label')->all(),
+                'topData' => $topRows->pluck('total')->all(),
+                'rootLabels' => $rootRows->pluck('label')->all(),
+                'rootData' => $rootRows->pluck('total')->all(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('StatsController::reportDashboardData error: '.$e->getMessage(), [
+                'exception' => $e,
+                'month' => $month,
+            ]);
+
+            if (app()->environment('local') || app()->environment('development')) {
+                return response()->json(['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
+            }
+
+            return response()->json(['message' => 'Server error'], 500);
+        }
+    }
+
     /** JSON: ringkasan eksekutif AI untuk pratinjau sebelum generate PDF */
     public function reportSummaryPreview(Request $request)
     {

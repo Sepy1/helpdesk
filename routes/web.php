@@ -178,7 +178,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
     });
 
     // Data statistik (JSON) — IT saja (sama cakupan dengan halaman /it/stats)
-    Route::get('/statistics/data', [StatsController::class, 'data'])
+    Route::get('/statistics/data', [StatsController::class, 'reportDashboardData'])
         ->middleware('role:IT')
         ->name('stats.data');
 });

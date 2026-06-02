@@ -1,7 +1,6 @@
-@extends('layouts.app')
-@section('title','Report Statistik Tiket')
+<?php $__env->startSection('title','Report Statistik Tiket'); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="w-full max-w-none pb-8">
   <div class="space-y-4">
     <section class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -40,9 +39,9 @@
           <label for="filterKodeKantor" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Kantor pembuat</label>
           <select id="filterKodeKantor" name="kode_kantor" class="w-full rounded-lg border-slate-200 bg-white text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             <option value="">Semua Kantor</option>
-            @foreach(($kodeKantors ?? []) as $k)
-              <option value="{{ $k->kode }}">{{ $k->kode }} - {{ $k->nama_kantor }}</option>
-            @endforeach
+            <?php $__currentLoopData = ($kodeKantors ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+              <option value="<?php echo e($k->kode); ?>"><?php echo e($k->kode); ?> - <?php echo e($k->nama_kantor); ?></option>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
           </select>
         </div>
         <div class="flex gap-2">
@@ -701,7 +700,7 @@
       const kodeKantor = document.getElementById('filterKodeKantor')?.value;
       if (kodeKantor) params.set('kode_kantor', kodeKantor);
 
-      const res = await fetch(`{{ route('stats.data') }}?${params.toString()}`, {
+      const res = await fetch(`<?php echo e(route('stats.data')); ?>?${params.toString()}`, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin',
       });
@@ -751,7 +750,7 @@
     if (from) params.set('date_from', from);
     if (to) params.set('date_to', to);
     if (kodeKantor) params.set('kode_kantor', kodeKantor);
-    window.location.href = `{{ route('it.tickets.export') }}?${params.toString()}`;
+    window.location.href = `<?php echo e(route('it.tickets.export')); ?>?${params.toString()}`;
   });
 
   function csrfToken() {
@@ -792,7 +791,7 @@
     const { from, to, kodeKantor } = selectedRange();
 
     try {
-      const res = await fetch(`{{ route('it.stats.report.summary_preview') }}`, {
+      const res = await fetch(`<?php echo e(route('it.stats.report.summary_preview')); ?>`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -878,7 +877,7 @@
       fd.append('kode_kantor', kodeKantor);
       fd.append('executive_summary', executiveSummary);
 
-      const res = await fetch(`{{ route('it.stats.report') }}`, {
+      const res = await fetch(`<?php echo e(route('it.stats.report')); ?>`, {
         method: 'POST',
         body: fd,
         headers: {
@@ -936,4 +935,6 @@
     });
   });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/stats.blade.php ENDPATH**/ ?>
