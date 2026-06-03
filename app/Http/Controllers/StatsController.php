@@ -445,6 +445,24 @@ class StatsController extends Controller
                 ])
                 ->values();
 
+            $officeTotals = (clone $tickets)
+                ->join('users', 'tickets.user_id', '=', 'users.id')
+                ->leftJoin('kode_kantor', 'users.kode_kantor', '=', 'kode_kantor.kode')
+                ->select(
+                    DB::raw('IFNULL(users.kode_kantor, "") as kode'),
+                    DB::raw('CASE WHEN IFNULL(MAX(users.kode_kantor), "") = "" THEN "Tanpa kantor" ELSE CONCAT(MAX(users.kode_kantor), " - ", COALESCE(MAX(kode_kantor.nama_kantor), MAX(users.kode_kantor))) END as label'),
+                    DB::raw('count(tickets.id) as total')
+                )
+                ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'))
+                ->orderByRaw('IFNULL(users.kode_kantor, "") asc')
+                ->get()
+                ->map(fn ($row) => [
+                    'kode' => (string) ($row->kode ?: 'Tanpa'),
+                    'label' => (string) ($row->label ?: 'Tanpa kantor'),
+                    'total' => (int) $row->total,
+                ])
+                ->values();
+
             $trendEnd = $periodEnd ? (clone $periodEnd) : now()->endOfDay();
             $trendStart = $periodStart ? (clone $periodStart) : (clone $trendEnd)->subDays(29)->startOfDay();
             if ($trendStart->greaterThan($trendEnd)) {
@@ -564,20 +582,6 @@ class StatsController extends Controller
             $this->applyKantorFilterToTickets($rootCauseTrendQuery, $request);
             $rootCauseTrendDatasets = $buildTrendDatasets($rootCauseTrendQuery->get());
 
-            $officeTrendQuery = Ticket::query()
-                ->join('users', 'tickets.user_id', '=', 'users.id')
-                ->leftJoin('kode_kantor', 'users.kode_kantor', '=', 'kode_kantor.kode')
-                ->select(
-                    DB::raw('CASE WHEN IFNULL(users.kode_kantor, "") = "" THEN "Tanpa kantor" ELSE CONCAT(users.kode_kantor, " - ", COALESCE(kode_kantor.nama_kantor, users.kode_kantor)) END as series_label'),
-                    DB::raw($trendExpr.' as period_key'),
-                    DB::raw('count(tickets.id) as total')
-                )
-                ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
-                ->groupBy('series_label', 'period_key')
-                ->orderBy('period_key');
-            $this->applyKantorFilterToTickets($officeTrendQuery, $request);
-            $officeTrendDatasets = $buildTrendDatasets($officeTrendQuery->get());
-
             $now = now();
             $oneDayAgo = (clone $now)->subDay();
             $threeDaysAgo = (clone $now)->subDays(3);
@@ -645,7 +649,9 @@ class StatsController extends Controller
                         ],
                         'kantor' => [
                             'label' => 'Cabang',
-                            'datasets' => $officeTrendDatasets,
+                            'labels' => $officeTotals->pluck('kode')->all(),
+                            'data' => $officeTotals->pluck('total')->all(),
+                            'tooltips' => $officeTotals->pluck('label')->all(),
                         ],
                     ],
                 ],

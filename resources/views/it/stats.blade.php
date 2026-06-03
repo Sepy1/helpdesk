@@ -430,12 +430,75 @@
       .map((row, index) => trendDataset(row, index, false));
   }
 
+  function renderOfficeTrendChart(json) {
+    const office = json?.trend?.breakdowns?.kantor || {};
+    const labels = office.labels || [];
+    const data = office.data || [];
+    const tooltips = office.tooltips || [];
+
+    setText('trendTitle', TREND_META.kantor.title);
+    setText('trendCaption', json?.meta?.range_label || 'Semua data');
+    toggleEmpty('chartTrendEmpty', !hasChartData(data));
+
+    upsertChart('chartTrend', {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Jumlah tiket',
+          data,
+          backgroundColor: 'rgba(8, 145, 178, 0.82)',
+          borderColor: '#0891b2',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 42,
+        }],
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) {
+                const index = items?.[0]?.dataIndex ?? 0;
+                return tooltips[index] || labels[index] || '-';
+              },
+              label: function(item) {
+                return `Jumlah tiket: ${number(item.parsed.y)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b', maxRotation: 0, autoSkip: labels.length > 12, font: { size: 11 } },
+            title: { display: true, text: 'Kode cabang', color: '#64748b', font: { size: 11, weight: '600' } },
+            border: { display: false },
+          },
+          y: {
+            ...valueAxis,
+            title: { display: true, text: 'Jumlah tiket', color: '#64748b', font: { size: 11, weight: '600' } },
+          },
+        },
+      },
+    });
+  }
+
   function renderTrendChart(json) {
     const mode = selectedTrendMode();
+    if (mode === 'kantor') {
+      renderOfficeTrendChart(json);
+      return;
+    }
+
     const labels = json?.trend?.labels || [];
     const datasets = trendDatasets(json, mode);
 
     setText('trendTitle', TREND_META[mode]?.title || TREND_META.volume.title);
+    setText('trendCaption', json?.meta?.trend_label || '30 hari terakhir');
     toggleEmpty('chartTrendEmpty', !hasDatasetData(datasets));
 
     upsertChart('chartTrend', {
