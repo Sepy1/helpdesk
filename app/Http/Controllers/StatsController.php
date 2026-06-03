@@ -498,6 +498,72 @@ class StatsController extends Controller
                 $trendClosed[] = (int) optional($row)->closed_total;
             }
 
+            $buildTrendDatasets = static function ($rows) use ($trendKeys) {
+                $topLabels = $rows
+                    ->groupBy('series_label')
+                    ->map(fn ($group) => (int) $group->sum('total'))
+                    ->sortDesc()
+                    ->take(5);
+
+                return $topLabels
+                    ->map(function ($total, $label) use ($rows, $trendKeys) {
+                        $periodMap = $rows
+                            ->where('series_label', $label)
+                            ->pluck('total', 'period_key');
+
+                        return [
+                            'label' => (string) ($label ?: 'Tidak ditentukan'),
+                            'total' => (int) $total,
+                            'data' => collect($trendKeys)
+                                ->map(fn ($key) => (int) ($periodMap[$key] ?? 0))
+                                ->values()
+                                ->all(),
+                        ];
+                    })
+                    ->values();
+            };
+
+            $categoryTrendQuery = Ticket::query()
+                ->leftJoin('categories', 'tickets.category_id', '=', 'categories.id')
+                ->select(
+                    DB::raw('COALESCE(categories.name, tickets.kategori, "Lainnya") as series_label'),
+                    DB::raw($trendExpr.' as period_key'),
+                    DB::raw('count(tickets.id) as total')
+                )
+                ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+                ->groupBy('series_label', 'period_key')
+                ->orderBy('period_key');
+            $this->applyKantorFilterToTickets($categoryTrendQuery, $request);
+            $categoryTrendDatasets = $buildTrendDatasets($categoryTrendQuery->get());
+
+            $subcategoryTrendQuery = Ticket::query()
+                ->leftJoin('subcategories', 'tickets.subcategory_id', '=', 'subcategories.id')
+                ->select(
+                    DB::raw('COALESCE(subcategories.name, "Tidak ditentukan") as series_label'),
+                    DB::raw($trendExpr.' as period_key'),
+                    DB::raw('count(tickets.id) as total')
+                )
+                ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+                ->groupBy('series_label', 'period_key')
+                ->orderBy('period_key');
+            $this->applyKantorFilterToTickets($subcategoryTrendQuery, $request);
+            $subcategoryTrendDatasets = $buildTrendDatasets($subcategoryTrendQuery->get());
+
+            $rootCauseTrendQuery = Ticket::query()
+                ->select(
+                    DB::raw('COALESCE(NULLIF(tickets.root_cause, ""), "Tidak ditentukan") as series_label'),
+                    DB::raw($trendExpr.' as period_key'),
+                    DB::raw('count(tickets.id) as total')
+                )
+                ->whereBetween('tickets.created_at', [$trendStart, $trendEnd])
+                ->where('tickets.status', 'CLOSED')
+                ->whereNotNull('tickets.root_cause')
+                ->where('tickets.root_cause', '!=', '')
+                ->groupBy('series_label', 'period_key')
+                ->orderBy('period_key');
+            $this->applyKantorFilterToTickets($rootCauseTrendQuery, $request);
+            $rootCauseTrendDatasets = $buildTrendDatasets($rootCauseTrendQuery->get());
+
             $now = now();
             $oneDayAgo = (clone $now)->subDay();
             $threeDaysAgo = (clone $now)->subDays(3);
@@ -550,6 +616,20 @@ class StatsController extends Controller
                     'labels' => $trendLabels,
                     'created' => $trendCreated,
                     'closed' => $trendClosed,
+                    'breakdowns' => [
+                        'kategori' => [
+                            'label' => 'Kategori',
+                            'datasets' => $categoryTrendDatasets,
+                        ],
+                        'subkategori' => [
+                            'label' => 'Sub kategori',
+                            'datasets' => $subcategoryTrendDatasets,
+                        ],
+                        'root_cause' => [
+                            'label' => 'Root cause',
+                            'datasets' => $rootCauseTrendDatasets,
+                        ],
+                    ],
                 ],
                 'statusRows' => $statusRows,
                 'kategoriRows' => $kategoriRows,

@@ -118,12 +118,21 @@
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
       <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm xl:col-span-8">
-        <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 class="text-base font-semibold text-slate-900">Tren Volume Tiket</h2>
+            <h2 id="trendTitle" class="text-base font-semibold text-slate-900">Tren Volume Tiket</h2>
             <p id="trendCaption" class="text-sm text-slate-500">30 hari terakhir</p>
           </div>
-          <span id="periodLabel" class="inline-flex w-fit rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">Semua data</span>
+          <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+            <label for="trendMode" class="sr-only">Jenis tren</label>
+            <select id="trendMode" class="h-9 rounded-lg border-slate-200 bg-white pl-3 pr-8 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <option value="volume">Volume tiket</option>
+              <option value="kategori">Kategori</option>
+              <option value="subkategori">Sub kategori</option>
+              <option value="root_cause">Root cause</option>
+            </select>
+            <span id="periodLabel" class="inline-flex h-9 w-fit items-center rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">Semua data</span>
+          </div>
         </div>
         <div class="relative mt-4 h-72 w-full">
           <canvas id="chartTrend" class="absolute inset-0 h-full w-full"></canvas>
@@ -164,10 +173,6 @@
           </div>
           <span class="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">Kategori</span>
         </div>
-        <div class="relative mt-4 h-64">
-          <canvas id="chartKategori" class="absolute inset-0 h-full w-full"></canvas>
-          <div id="chartKategoriEmpty" class="absolute inset-0 hidden items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">Belum ada data kategori.</div>
-        </div>
         <div id="categoryList" class="mt-4 space-y-3"></div>
       </article>
 
@@ -179,10 +184,6 @@
           </div>
           <span class="rounded-md bg-cyan-50 px-2 py-1 text-xs font-medium text-cyan-700">Kantor</span>
         </div>
-        <div class="relative mt-4 h-64">
-          <canvas id="chartTopUser" class="absolute inset-0 h-full w-full"></canvas>
-          <div id="chartTopUserEmpty" class="absolute inset-0 hidden items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">Belum ada data kantor.</div>
-        </div>
         <div id="officeList" class="mt-4 space-y-3"></div>
       </article>
 
@@ -193,10 +194,6 @@
             <p class="text-sm text-slate-500">Penyebab terbanyak pada tiket selesai</p>
           </div>
           <span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Analisa</span>
-        </div>
-        <div class="relative mt-4 h-64">
-          <canvas id="chartRootCause" class="absolute inset-0 h-full w-full"></canvas>
-          <div id="chartRootCauseEmpty" class="absolute inset-0 hidden items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">Belum ada data root cause.</div>
         </div>
         <div id="rootList" class="mt-4 space-y-3"></div>
       </article>
@@ -291,6 +288,7 @@
   }
 
   const charts = {};
+  let latestStats = null;
   const nf = new Intl.NumberFormat('id-ID');
   const pf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 
@@ -301,6 +299,19 @@
     VENDOR_RESOLVED: { label: 'Selesai vendor', color: '#06b6d4', soft: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
     CLOSED: { label: 'Selesai', color: '#10b981', soft: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
   };
+  const TREND_META = {
+    volume: { title: 'Tren Volume Tiket' },
+    kategori: { title: 'Tren Berdasarkan Kategori' },
+    subkategori: { title: 'Tren Berdasarkan Sub Kategori' },
+    root_cause: { title: 'Tren Berdasarkan Root Cause' },
+  };
+  const TREND_COLORS = [
+    { border: '#2563eb', background: 'rgba(37, 99, 235, 0.12)' },
+    { border: '#10b981', background: 'rgba(16, 185, 129, 0.10)' },
+    { border: '#f59e0b', background: 'rgba(245, 158, 11, 0.10)' },
+    { border: '#8b5cf6', background: 'rgba(139, 92, 246, 0.10)' },
+    { border: '#ef4444', background: 'rgba(239, 68, 68, 0.10)' },
+  ];
 
   function number(value) {
     return nf.format(Number(value) || 0);
@@ -339,11 +350,6 @@
     return STATUS_META[String(status || '')]?.color || fallback[index % fallback.length];
   }
 
-  function shortLabel(label, max = 26) {
-    const value = String(label || '-');
-    return value.length > max ? `${value.slice(0, max - 1)}...` : value;
-  }
-
   function showLoading(on = true) {
     const el = document.getElementById('loadingOverlay');
     if (!el) return;
@@ -360,6 +366,10 @@
 
   function hasChartData(values) {
     return (values || []).some((value) => Number(value) > 0);
+  }
+
+  function hasDatasetData(datasets) {
+    return (datasets || []).some((dataset) => hasChartData(dataset.data || []));
   }
 
   function upsertChart(id, config) {
@@ -383,48 +393,54 @@
     ticks: { color: '#64748b', precision: 0, font: { size: 11 } },
     border: { display: false },
   };
-  const categoryAxis = {
-    grid: { display: false, drawBorder: false },
-    ticks: {
-      color: '#64748b',
-      font: { size: 11 },
-      callback: function(value) {
-        return shortLabel(this.getLabelForValue(value), 24);
-      },
-    },
-    border: { display: false },
-  };
 
-  function lineChart(labels, created, closed) {
-    toggleEmpty('chartTrendEmpty', !hasChartData(created) && !hasChartData(closed));
+  function selectedTrendMode() {
+    const mode = document.getElementById('trendMode')?.value || 'volume';
+    return TREND_META[mode] ? mode : 'volume';
+  }
+
+  function trendDataset(row, index, fill = false) {
+    const color = TREND_COLORS[index % TREND_COLORS.length];
+
+    return {
+      label: row.label || '-',
+      data: row.data || [],
+      borderColor: color.border,
+      backgroundColor: color.background,
+      fill,
+      tension: 0.35,
+      borderWidth: 2,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+    };
+  }
+
+  function trendDatasets(json, mode) {
+    const trend = json?.trend || {};
+    if (mode === 'volume') {
+      return [
+        trendDataset({ label: 'Tiket masuk', data: trend.created || [] }, 0, true),
+        trendDataset({ label: 'Tiket selesai', data: trend.closed || [] }, 1, true),
+      ];
+    }
+
+    return (trend.breakdowns?.[mode]?.datasets || [])
+      .map((row, index) => trendDataset(row, index, false));
+  }
+
+  function renderTrendChart(json) {
+    const mode = selectedTrendMode();
+    const labels = json?.trend?.labels || [];
+    const datasets = trendDatasets(json, mode);
+
+    setText('trendTitle', TREND_META[mode]?.title || TREND_META.volume.title);
+    toggleEmpty('chartTrendEmpty', !hasDatasetData(datasets));
+
     upsertChart('chartTrend', {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'Tiket masuk',
-            data: created,
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.12)',
-            fill: true,
-            tension: 0.35,
-            borderWidth: 2,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-          },
-          {
-            label: 'Tiket selesai',
-            data: closed,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            fill: true,
-            tension: 0.35,
-            borderWidth: 2,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-          },
-        ],
+        datasets,
       },
       options: {
         interaction: { mode: 'index', intersect: false },
@@ -460,36 +476,6 @@
         plugins: {
           legend: { display: false },
           datalabels: { display: false },
-        },
-      },
-    });
-  }
-
-  function horizontalBarChart(id, rows, color, emptyId) {
-    const dataRows = rows || [];
-    const data = dataRows.map((row) => Number(row.total) || 0);
-    toggleEmpty(emptyId, !hasChartData(data));
-    upsertChart(id, {
-      type: 'bar',
-      data: {
-        labels: dataRows.map((row) => row.label),
-        datasets: [{
-          data,
-          backgroundColor: color,
-          borderRadius: 6,
-          borderSkipped: false,
-          maxBarThickness: 24,
-        }],
-      },
-      options: {
-        indexAxis: 'y',
-        plugins: {
-          legend: { display: false },
-          datalabels: { display: false },
-        },
-        scales: {
-          x: valueAxis,
-          y: categoryAxis,
         },
       },
     });
@@ -655,6 +641,7 @@
   }
 
   function updateDashboard(json) {
+    latestStats = json;
     const kpi = json.kpi || {};
     const meta = json.meta || {};
 
@@ -675,11 +662,8 @@
     setText('statusCenterTotal', number(kpi.total));
     setWidth('completionBar', kpi.completion_rate);
 
-    lineChart(json.trend?.labels || [], json.trend?.created || [], json.trend?.closed || []);
+    renderTrendChart(json);
     donutChart(json.statusRows || []);
-    horizontalBarChart('chartKategori', json.kategoriRows || [], '#2563eb', 'chartKategoriEmpty');
-    horizontalBarChart('chartTopUser', json.topRows || [], '#0891b2', 'chartTopUserEmpty');
-    horizontalBarChart('chartRootCause', json.rootRows || [], '#10b981', 'chartRootCauseEmpty');
 
     renderStatus(json.statusRows || [], kpi);
     renderRankList('categoryList', json.kategoriRows || [], '#2563eb', 'Belum ada data kategori.');
@@ -733,6 +717,12 @@
     event.preventDefault();
     const { from, to } = selectedRange();
     fetchStats(from, to);
+  });
+
+  document.getElementById('trendMode')?.addEventListener('change', () => {
+    if (latestStats) {
+      renderTrendChart(latestStats);
+    }
   });
 
   document.getElementById('btnReset')?.addEventListener('click', () => {
