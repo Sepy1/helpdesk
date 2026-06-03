@@ -130,6 +130,7 @@
               <option value="kategori">Kategori</option>
               <option value="subkategori">Sub kategori</option>
               <option value="root_cause">Root cause</option>
+              <option value="kantor">Cabang</option>
             </select>
             <span id="periodLabel" class="inline-flex h-9 w-fit items-center rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">Semua data</span>
           </div>
@@ -304,6 +305,7 @@
     kategori: { title: 'Tren Berdasarkan Kategori' },
     subkategori: { title: 'Tren Berdasarkan Sub Kategori' },
     root_cause: { title: 'Tren Berdasarkan Root Cause' },
+    kantor: { title: 'Tren Jumlah Tiket Tiap Cabang' },
   };
   const TREND_COLORS = [
     { border: '#2563eb', background: 'rgba(37, 99, 235, 0.12)' },
