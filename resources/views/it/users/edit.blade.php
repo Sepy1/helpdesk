@@ -2,55 +2,81 @@
 @section('title','Edit User')
 
 @section('content')
-<div class="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-3 sm:p-5 text-xs sm:text-sm">
-  <h2 class="text-lg font-semibold text-gray-800 mb-4">Edit User</h2>
+@php
+  $roles = ['IT', 'CABANG', 'VENDOR', 'ADMIN'];
+  $input = 'mt-1 h-10 w-full rounded-lg border-slate-200 bg-white text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:ring-blue-500';
+  $label = 'text-xs font-semibold uppercase tracking-wide text-slate-500';
+  $btnPrimary = 'inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  $btnSecondary = 'inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500';
+@endphp
 
-  <form method="POST" action="{{ route('it.users.update', $user) }}" class="space-y-4">
-    @csrf @method('PUT')
-    <div>
-      <label class="text-sm font-medium text-gray-700">Username</label>
-      <input type="text" name="username" value="{{ old('username', $user->username) }}" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required />
-      @error('username')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div>
-      <label class="text-sm font-medium text-gray-700">Nama</label>
-      <input type="text" name="name" value="{{ old('name', $user->name) }}" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required />
-      @error('name')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div>
-      <label class="text-sm font-medium text-gray-700">Email</label>
-      <input type="email" name="email" value="{{ old('email', $user->email) }}" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required />
-      @error('email')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div>
-      <label class="text-sm font-medium text-gray-700">Role</label>
-      <select name="role" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
-        @foreach(['IT','CABANG','VENDOR','ADMIN'] as $r)
-          <option value="{{ $r }}" @selected(old('role',$user->role)===$r)>{{ $r }}</option>
-        @endforeach
-      </select>
-      @error('role')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div>
-      <label class="text-sm font-medium text-gray-700">Kode kantor</label>
-      <select name="kode_kantor" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-        <option value="">— Tidak dipilih —</option>
-        @foreach($kodeKantors as $kk)
-          <option value="{{ $kk->kode }}" @selected(old('kode_kantor', $user->kode_kantor) === $kk->kode)>{{ $kk->kode }} — {{ $kk->nama_kantor }}</option>
-        @endforeach
-      </select>
-      <p class="mt-1 text-xs text-gray-500">Opsional.</p>
-      @error('kode_kantor')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div>
-      <label class="text-sm font-medium text-gray-700">Password Baru (opsional)</label>
-      <input type="password" name="password" class="mt-1 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" />
-      @error('password')<div class="text-xs text-red-600 mt-1">{{ $message }}</div>@enderror
-    </div>
-    <div class="flex justify-end gap-2">
-      <a href="{{ route('it.users.index') }}" class="rounded-lg px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50">Batal</a>
-      <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">Simpan</button>
-    </div>
-  </form>
+<div class="w-full max-w-5xl pb-8">
+  <div class="space-y-4">
+    <section class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div class="text-xs font-medium text-slate-500">User Access</div>
+        <h1 class="mt-2 text-2xl font-semibold tracking-normal text-slate-900 sm:text-3xl">Edit User</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ $user->name }} - {{ $user->email }}</p>
+      </div>
+      <a href="{{ route('it.users.index') }}" class="{{ $btnSecondary }}">Kembali</a>
+    </section>
+
+    @if($errors->any())
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">{{ $errors->first() }}</div>
+    @endif
+
+    <section class="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <form method="POST" action="{{ route('it.users.update', $user) }}" class="p-4 sm:p-5">
+        @csrf
+        @method('PUT')
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label for="username" class="{{ $label }}">Username</label>
+            <input id="username" type="text" name="username" value="{{ old('username', $user->username) }}" class="{{ $input }}" required>
+            @error('username')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+          <div>
+            <label for="name" class="{{ $label }}">Nama</label>
+            <input id="name" type="text" name="name" value="{{ old('name', $user->name) }}" class="{{ $input }}" required>
+            @error('name')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+          <div>
+            <label for="email" class="{{ $label }}">Email</label>
+            <input id="email" type="email" name="email" value="{{ old('email', $user->email) }}" class="{{ $input }}" required>
+            @error('email')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+          <div>
+            <label for="role" class="{{ $label }}">Role</label>
+            <select id="role" name="role" class="{{ $input }}" required>
+              @foreach($roles as $role)
+                <option value="{{ $role }}" @selected(old('role', $user->role) === $role)>{{ $role }}</option>
+              @endforeach
+            </select>
+            @error('role')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+          <div>
+            <label for="kode_kantor" class="{{ $label }}">Kode kantor</label>
+            <select id="kode_kantor" name="kode_kantor" class="{{ $input }}">
+              <option value="">Tidak dipilih</option>
+              @foreach($kodeKantors as $office)
+                <option value="{{ $office->kode }}" @selected(old('kode_kantor', $user->kode_kantor) === $office->kode)>{{ $office->kode }} - {{ $office->nama_kantor }}</option>
+              @endforeach
+            </select>
+            @error('kode_kantor')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+          <div>
+            <label for="password" class="{{ $label }}">Password baru</label>
+            <input id="password" type="password" name="password" class="{{ $input }}" placeholder="Kosongkan jika tidak diganti">
+            @error('password')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+          <a href="{{ route('it.users.index') }}" class="{{ $btnSecondary }}">Batal</a>
+          <button type="submit" class="{{ $btnPrimary }}">Simpan Perubahan</button>
+        </div>
+      </form>
+    </section>
+  </div>
 </div>
 @endsection

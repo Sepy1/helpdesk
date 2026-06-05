@@ -12,6 +12,9 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('it.users.index');
         Route::get('/create', [\App\Http\Controllers\UserManagementController::class, 'create'])->name('it.users.create');
         Route::post('/', [\App\Http\Controllers\UserManagementController::class, 'store'])->name('it.users.store');
+        Route::get('/export', [\App\Http\Controllers\UserManagementController::class, 'export'])->name('it.users.export');
+        Route::post('/import', [\App\Http\Controllers\UserManagementController::class, 'import'])->name('it.users.import');
+        Route::patch('/{user}/ai-chat', [\App\Http\Controllers\UserManagementController::class, 'updateAiChat'])->name('it.users.ai-chat');
         Route::get('/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('it.users.edit');
         Route::put('/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('it.users.update');
         Route::delete('/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('it.users.destroy');

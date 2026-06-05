@@ -59,6 +59,13 @@
       .desktop-scale-80{
         zoom: 80%;
       }
+      @supports not (zoom: 1){
+        .desktop-scale-80{
+          transform: scale(.8);
+          transform-origin: top left;
+          width: 125%;
+        }
+      }
       .ui-compact-80{
         --topbar-h: 3.2rem;   /* 80% of 4rem */
         --sidebar-w: 12.8rem; /* 80% of 16rem */
@@ -121,6 +128,7 @@
     'vendor.tickets',
     'it.stats',
     'it.parameters',
+    'it.users.*',
     'profile.edit',
     'vendor.profile.edit'
   ]);
