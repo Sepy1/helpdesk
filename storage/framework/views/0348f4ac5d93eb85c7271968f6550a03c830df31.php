@@ -199,9 +199,9 @@
             type="button"
             @click="toggleDesktopNotifications()"
             class="ml-2 hidden xl:inline-flex h-9 items-center rounded-lg bg-white/10 px-3 text-xs font-medium text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 disabled:cursor-default disabled:opacity-60"
-            :title="browserNotifEnabled() ? 'Matikan notifikasi desktop' : 'Aktifkan notifikasi desktop browser'">
-            <span x-show="browserNotifEnabled()" x-cloak>Notif Aktif</span>
-            <span x-show="!browserNotifEnabled()" x-cloak>Aktifkan Notif Desktop</span>
+            :title="desktopNotifOn ? 'Matikan notifikasi desktop' : 'Aktifkan notifikasi desktop browser'">
+            <span x-show="desktopNotifOn" x-cloak>Matikan Notif Desktop</span>
+            <span x-show="!desktopNotifOn" x-cloak>Aktifkan Notif Desktop</span>
           </button>
           <div x-show="open" x-cloak @click.outside="open=false" @mouseenter="cancelAutoClose()" @mouseleave="scheduleAutoClose()"
                class="fixed inset-x-2 top-[var(--topbar-h)] md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
@@ -607,9 +607,11 @@ function logoutMobile() {
         items: [],
         timer: null,
         _sessionStartedAt: Date.now(),
+        desktopNotifOn: true,
         init(){
           setupBrowserNotifPermissionHint(requestBrowserNotifPermission);
-          setBrowserNotifEnabled(browserNotifEnabled());
+          this.desktopNotifOn = browserNotifEnabled();
+          setBrowserNotifEnabled(this.desktopNotifOn);
           this._sessionStartedAt = Date.now();
           this.fetchNow();
           this.timer = setInterval(()=>this.fetchNow(), 30000);
@@ -617,32 +619,21 @@ function logoutMobile() {
         toggle(){ this.open = !this.open; if(this.open) this.fetchNow(); },
         badgeText(){ return this.count>99 ? '99+' : String(this.count); },
         async toggleDesktopNotifications(){
-          if (browserNotifEnabled()) {
+          if (this.desktopNotifOn) {
+            this.desktopNotifOn = false;
             setBrowserNotifEnabled(false);
-            this.desktopNotificationFeedback('error');
             return;
           }
 
           const perm = await requestBrowserNotifPermission();
           if (perm === 'granted') {
+            this.desktopNotifOn = true;
             setBrowserNotifEnabled(true);
             this.desktopNotificationFeedback('success', true);
             this.fetchNow();
           } else if (perm === 'denied') {
+            this.desktopNotifOn = false;
             setBrowserNotifEnabled(false);
-            this.desktopNotificationFeedback('error');
-          }
-        },
-        async enableDesktopNotifications(){
-          if (browserNotifPermission() === 'granted') {
-            this.desktopNotificationFeedback('success', true);
-            return;
-          }
-          const perm = await requestBrowserNotifPermission();
-          if (perm === 'granted') {
-            this.desktopNotificationFeedback('success', true);
-            this.fetchNow();
-          } else if (perm === 'denied') {
             this.desktopNotificationFeedback('error');
           }
         },
