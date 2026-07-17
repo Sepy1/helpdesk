@@ -1,3 +1,4 @@
+
 <?php $__env->startSection('title', 'Detail Tiket'); ?>
 
 <?php $__env->startPush('styles'); ?>

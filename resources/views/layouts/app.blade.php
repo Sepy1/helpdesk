@@ -195,6 +195,14 @@
             </svg>
             <span x-show="count>0" x-cloak class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold" x-text="badgeText()"></span>
           </button>
+          <button
+            type="button"
+            @click="toggleDesktopNotifications()"
+            class="ml-2 hidden xl:inline-flex h-9 items-center rounded-lg bg-white/10 px-3 text-xs font-medium text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 disabled:cursor-default disabled:opacity-60"
+            :title="browserNotifEnabled() ? 'Matikan notifikasi desktop' : 'Aktifkan notifikasi desktop browser'">
+            <span x-show="browserNotifEnabled()" x-cloak>Notif Aktif</span>
+            <span x-show="!browserNotifEnabled()" x-cloak>Aktifkan Notif Desktop</span>
+          </button>
           <div x-show="open" x-cloak @click.outside="open=false" @mouseenter="cancelAutoClose()" @mouseleave="scheduleAutoClose()"
                class="fixed inset-x-2 top-[var(--topbar-h)] md:absolute md:inset-auto md:right-0 md:w-80 md:top-auto w-auto bg-white rounded-xl shadow-lg ring-1 ring-gray-200 z-50">
             <div class="flex items-center justify-between px-3 py-2 border-b">
@@ -345,6 +353,163 @@ function logoutMobile() {
   @include('layouts.partials.bottomnav')
 
   <script>
+    function browserNotifSupport(){
+      return typeof window !== 'undefined' && 'Notification' in window;
+    }
+
+    function browserNotifPermission(){
+      return browserNotifSupport() ? window.Notification.permission : 'unsupported';
+    }
+
+    function browserNotifEnabledKey(){
+      return 'desktop-notif:enabled';
+    }
+
+    function browserNotifEnabled(){
+      try{
+        const raw = localStorage.getItem(browserNotifEnabledKey());
+        if (raw === null) return true;
+        return raw === '1';
+      }catch(_){
+        return true;
+      }
+    }
+
+    function setBrowserNotifEnabled(enabled){
+      try{
+        localStorage.setItem(browserNotifEnabledKey(), enabled ? '1' : '0');
+      }catch(_){}
+    }
+
+    function browserNotifStorageKey(kind){
+      return kind === 'comment' ? 'desktop-notif:last-comment-id' : 'desktop-notif:last-notification-id';
+    }
+
+    function browserNotifSeenIdsKey(kind){
+      return kind === 'comment' ? 'desktop-notif:seen-comment-ids' : 'desktop-notif:seen-notification-ids';
+    }
+
+    function readJsonArray(key){
+      try{
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(_){
+        return [];
+      }
+    }
+
+    function writeJsonArray(key, value){
+      try{
+        localStorage.setItem(key, JSON.stringify(Array.isArray(value) ? value : []));
+      }catch(_){}
+    }
+
+    function notifyBrowser(kind, item){
+      if (!browserNotifSupport() || browserNotifPermission() !== 'granted' || !browserNotifEnabled()) return;
+      const title = item?.title || (kind === 'comment' ? 'Komentar baru' : 'Aktivitas tiket');
+      const body = [item?.ticket_no ? `#${item.ticket_no}` : null, item?.body || null].filter(Boolean).join(' - ');
+      const icon = '{{ asset('images/logo.png') }}';
+      const n = new window.Notification(title, {
+        body: body || title,
+        icon,
+        tag: `${kind}:${item?.id || item?.ticket_id || title}`,
+        renotify: true,
+      });
+
+      n.onclick = () => {
+        try{ window.focus(); }catch(_){}
+        if (item?.url) {
+          window.location.href = item.url;
+        }
+        try{ n.close(); }catch(_){}
+      };
+    }
+
+    function playNotificationSound(){
+      try{
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!window.__helpdeskNotifAudioCtx) {
+          window.__helpdeskNotifAudioCtx = new AudioContextClass();
+        }
+        const ctx = window.__helpdeskNotifAudioCtx;
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(()=>{});
+        }
+
+        const now = ctx.currentTime;
+        const makeTone = (freq, start, duration, gainValue) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(gainValue, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + duration + 0.02);
+        };
+
+        makeTone(880, now, 0.12, 0.08);
+        makeTone(1320, now + 0.14, 0.14, 0.06);
+      }catch(_){}
+    }
+
+    async function requestBrowserNotifPermission(){
+      if (!browserNotifSupport() || browserNotifPermission() !== 'default') return browserNotifPermission();
+      try{
+        return await window.Notification.requestPermission();
+      }catch(_){
+        return browserNotifPermission();
+      }
+    }
+
+    function notifyFromResponse(kind, payload, state){
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const unread = Number(payload?.unread || 0);
+      const seenKey = browserNotifSeenIdsKey(kind);
+      const seenIds = new Set(readJsonArray(seenKey).map(String));
+      const sessionStartedAt = Number(state._sessionStartedAt || Date.now());
+
+      state.count = unread;
+      state.items = items;
+
+      if (!browserNotifSupport() || browserNotifPermission() !== 'granted' || !browserNotifEnabled()) {
+        return;
+      }
+
+      const fresh = items.filter(item => {
+        if (!item || !item.id) return false;
+        if (seenIds.has(String(item.id))) return false;
+        const createdAt = Date.parse(item.created_at || '');
+        if (Number.isFinite(createdAt) && createdAt <= sessionStartedAt) return false;
+        return true;
+      });
+
+      fresh.slice().reverse().forEach(item => {
+        playNotificationSound();
+        notifyBrowser(kind, item);
+        seenIds.add(String(item.id));
+      });
+
+      writeJsonArray(seenKey, Array.from(seenIds));
+    }
+
+    function setupBrowserNotifPermissionHint(requestFn){
+      if (!browserNotifSupport()) return;
+      if (browserNotifPermission() !== 'default') return;
+      const once = async () => {
+        await requestFn();
+        window.removeEventListener('click', once, true);
+        window.removeEventListener('keydown', once, true);
+      };
+      window.addEventListener('click', once, true);
+      window.addEventListener('keydown', once, true);
+    }
+
     function layoutState(){
       return {
         sidebarOpen: true,
@@ -441,16 +606,85 @@ function logoutMobile() {
         count: 0,
         items: [],
         timer: null,
-        init(){ this.fetchNow(); this.timer = setInterval(()=>this.fetchNow(), 30000); },
+        _sessionStartedAt: Date.now(),
+        init(){
+          setupBrowserNotifPermissionHint(requestBrowserNotifPermission);
+          setBrowserNotifEnabled(browserNotifEnabled());
+          this._sessionStartedAt = Date.now();
+          this.fetchNow();
+          this.timer = setInterval(()=>this.fetchNow(), 30000);
+        },
         toggle(){ this.open = !this.open; if(this.open) this.fetchNow(); },
         badgeText(){ return this.count>99 ? '99+' : String(this.count); },
+        async toggleDesktopNotifications(){
+          if (browserNotifEnabled()) {
+            setBrowserNotifEnabled(false);
+            this.desktopNotificationFeedback('error');
+            return;
+          }
+
+          const perm = await requestBrowserNotifPermission();
+          if (perm === 'granted') {
+            setBrowserNotifEnabled(true);
+            this.desktopNotificationFeedback('success', true);
+            this.fetchNow();
+          } else if (perm === 'denied') {
+            setBrowserNotifEnabled(false);
+            this.desktopNotificationFeedback('error');
+          }
+        },
+        async enableDesktopNotifications(){
+          if (browserNotifPermission() === 'granted') {
+            this.desktopNotificationFeedback('success', true);
+            return;
+          }
+          const perm = await requestBrowserNotifPermission();
+          if (perm === 'granted') {
+            this.desktopNotificationFeedback('success', true);
+            this.fetchNow();
+          } else if (perm === 'denied') {
+            this.desktopNotificationFeedback('error');
+          }
+        },
+        desktopNotificationFeedback(type, instant = false){
+          if (type === 'success') {
+            if (instant) {
+              playNotificationSound();
+              if (browserNotifEnabled() && browserNotifPermission() === 'granted') {
+                notifyBrowser('notification', {
+                  title: 'Notifikasi diaktifkan',
+                  body: 'Popup desktop berhasil diaktifkan.',
+                  url: window.location.href,
+                  id: `notif-success-${Date.now()}`,
+                  ticket_no: '-',
+                  created_at: new Date().toISOString(),
+                });
+              }
+              return;
+            }
+
+            playNotificationSound();
+            return;
+          }
+
+          playNotificationSound();
+          if (browserNotifEnabled() && browserNotifPermission() === 'granted') {
+            notifyBrowser('notification', {
+              title: 'Notifikasi diblokir',
+              body: 'Popup desktop diblokir oleh browser.',
+              url: window.location.href,
+              id: `notif-error-${Date.now()}`,
+              ticket_no: '-',
+              created_at: new Date().toISOString(),
+            });
+          }
+        },
         async fetchNow(){
           try{
             const res = await fetch('{{ route('notifications.index') }}', { headers: { 'Accept':'application/json' } });
             if(!res.ok) return;
             const json = await res.json();
-            this.count = json.unread || 0;
-            this.items = json.items || [];
+            notifyFromResponse('notification', json, this);
           }catch(_){ }
         },
         async markAll(){
@@ -494,7 +728,12 @@ function logoutMobile() {
         count: 0,
         items: [],
         timer: null,
-        init(){ this.fetchNow(); this.timer = setInterval(()=>this.fetchNow(), 30000); },
+        _sessionStartedAt: Date.now(),
+        init(){
+          this._sessionStartedAt = Date.now();
+          this.fetchNow();
+          this.timer = setInterval(()=>this.fetchNow(), 30000);
+        },
         toggle(){ this.open = !this.open; if(this.open) this.fetchNow(); },
         badgeText(){ return this.count>99 ? '99+' : String(this.count); },
         async fetchNow(){
@@ -502,8 +741,7 @@ function logoutMobile() {
             const res = await fetch('{{ route('notifications.comments') }}', { headers: { 'Accept':'application/json' } });
             if(!res.ok) return;
             const json = await res.json();
-            this.count = json.unread || 0;
-            this.items = json.items || [];
+            notifyFromResponse('comment', json, this);
           }catch(_){ }
         },
         async markAll(){
