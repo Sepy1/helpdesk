@@ -97,6 +97,8 @@ class UserManagementController extends Controller
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
             'kode_kantor' => $data['kode_kantor'] ?? null,
+            'email_notifications_enabled' => true,
+            'android_notifications_enabled' => true,
         ]);
         return redirect()->route('it.users.index')->with('success', 'User dibuat.');
     }
@@ -122,12 +124,16 @@ class UserManagementController extends Controller
             'role' => 'required|in:IT,CABANG,VENDOR,ADMIN',
             'password' => 'nullable|string|min:8',
             'kode_kantor' => 'nullable|string|size:3|exists:kode_kantor,kode',
+            'email_notifications_enabled' => ['nullable', 'boolean'],
+            'android_notifications_enabled' => ['nullable', 'boolean'],
         ]);
         $user->username = $data['username'];
         $user->name = $data['name'];
         $user->email = $data['email'];
         $user->role = $data['role'];
         $user->kode_kantor = $data['kode_kantor'] ?? null;
+        $user->email_notifications_enabled = (bool) ($data['email_notifications_enabled'] ?? false);
+        $user->android_notifications_enabled = (bool) ($data['android_notifications_enabled'] ?? false);
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
@@ -147,6 +153,38 @@ class UserManagementController extends Controller
         $user->save();
 
         return redirect()->route('it.users.index', $request->query())->with('success', 'Status AI user diperbarui.');
+    }
+
+    public function updateEmailNotifications(Request $request, User $user)
+    {
+        $this->ensureIT();
+
+        $data = $request->validate([
+            'email_notifications_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $user->email_notifications_enabled = (bool) ($data['email_notifications_enabled'] ?? false);
+        $user->save();
+
+        return redirect()->route('it.users.index', $request->query())->with('success', 'Status notifikasi email user diperbarui.');
+    }
+
+    public function updateAndroidNotifications(Request $request, User $user)
+    {
+        $this->ensureIT();
+
+        $data = $request->validate([
+            'android_notifications_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $user->android_notifications_enabled = (bool) ($data['android_notifications_enabled'] ?? false);
+        $user->save();
+
+        if (! $user->android_notifications_enabled) {
+            $user->devices()->delete();
+        }
+
+        return redirect()->route('it.users.index', $request->query())->with('success', 'Status notifikasi Android user diperbarui.');
     }
 
     public function export(Request $request)
@@ -170,6 +208,8 @@ class UserManagementController extends Controller
             'password',
             'visible_on_assign',
             'ai_chat_enabled',
+            'email_notifications_enabled',
+            'android_notifications_enabled',
         ];
 
         foreach ($headers as $index => $header) {
@@ -186,6 +226,8 @@ class UserManagementController extends Controller
             $sheet->setCellValue('F' . $rowNum, '');
             $sheet->setCellValue('G' . $rowNum, $user->visible_on_assign ? '1' : '0');
             $sheet->setCellValue('H' . $rowNum, $user->ai_chat_enabled ? '1' : '0');
+            $sheet->setCellValue('I' . $rowNum, $user->email_notifications_enabled ? '1' : '0');
+            $sheet->setCellValue('J' . $rowNum, $user->android_notifications_enabled ? '1' : '0');
             $rowNum++;
         }
 
@@ -238,6 +280,9 @@ class UserManagementController extends Controller
         foreach ($rows as $rowNumber => $row) {
             $line = $rowNumber + 2;
             $value = function (string $key) use ($row, $headerMap): string {
+                if (! array_key_exists($key, $headerMap)) {
+                    return '';
+                }
                 return trim((string) ($row[$headerMap[$key]] ?? ''));
             };
 
@@ -250,6 +295,8 @@ class UserManagementController extends Controller
                 'password' => $value('password'),
                 'visible_on_assign' => $value('visible_on_assign') !== '' ? $value('visible_on_assign') : '0',
                 'ai_chat_enabled' => $value('ai_chat_enabled') !== '' ? $value('ai_chat_enabled') : '0',
+                'email_notifications_enabled' => $value('email_notifications_enabled') !== '' ? $value('email_notifications_enabled') : '1',
+                'android_notifications_enabled' => $value('android_notifications_enabled') !== '' ? $value('android_notifications_enabled') : '1',
             ];
 
             if (collect($payload)->except(['visible_on_assign', 'ai_chat_enabled'])->filter(fn ($item) => $item !== null && $item !== '')->isEmpty()) {
@@ -269,6 +316,8 @@ class UserManagementController extends Controller
                 'password' => [$existing ? 'nullable' : 'required', 'string', 'min:8'],
                 'visible_on_assign' => ['nullable', 'boolean'],
                 'ai_chat_enabled' => ['nullable', 'boolean'],
+                'email_notifications_enabled' => ['nullable', 'boolean'],
+                'android_notifications_enabled' => ['nullable', 'boolean'],
             ];
 
             $validator = validator($payload, $rules);
@@ -286,6 +335,8 @@ class UserManagementController extends Controller
             $user->kode_kantor = $payload['kode_kantor'];
             $user->visible_on_assign = (bool) $payload['visible_on_assign'];
             $user->ai_chat_enabled = (bool) $payload['ai_chat_enabled'];
+            $user->email_notifications_enabled = (bool) $payload['email_notifications_enabled'];
+            $user->android_notifications_enabled = (bool) $payload['android_notifications_enabled'];
             if ($payload['password'] !== '') {
                 $user->password = Hash::make($payload['password']);
             }

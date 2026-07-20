@@ -24,6 +24,8 @@ class User extends Authenticatable
         'kode_kantor',
         'visible_on_assign',
         'ai_chat_enabled',
+        'email_notifications_enabled',
+        'android_notifications_enabled',
         'no_hp',
         'password',
     ];
@@ -47,6 +49,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'visible_on_assign' => 'boolean',
         'ai_chat_enabled' => 'boolean',
+        'email_notifications_enabled' => 'boolean',
+        'android_notifications_enabled' => 'boolean',
     ];
 
     public function devices()

@@ -36,7 +36,7 @@ class DeliverTicketActivitySideEffects implements ShouldQueue
 
     private function sendMail(User $user): void
     {
-        if (empty($user->email)) {
+        if (empty($user->email) || ! $user->email_notifications_enabled) {
             return;
         }
 
@@ -53,6 +53,10 @@ class DeliverTicketActivitySideEffects implements ShouldQueue
 
     private function sendFcm(User $user): void
     {
+        if (! $user->android_notifications_enabled) {
+            return;
+        }
+
         try {
             $tokens = DB::table('user_devices')
                 ->where('user_id', $user->id)

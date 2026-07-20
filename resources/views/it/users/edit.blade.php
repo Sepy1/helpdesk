@@ -69,6 +69,24 @@
             <input id="password" type="password" name="password" class="{{ $input }}" placeholder="Kosongkan jika tidak diganti">
             @error('password')<div class="mt-1 text-xs text-red-600">{{ $message }}</div>@enderror
           </div>
+          <div class="md:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
+              <input type="hidden" name="email_notifications_enabled" value="0">
+              <input type="checkbox" name="email_notifications_enabled" value="1" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('email_notifications_enabled', $user->email_notifications_enabled))>
+              <span>
+                <span class="block text-sm font-semibold text-slate-800">Notifikasi Email</span>
+                <span class="block text-xs text-slate-500">Aktifkan atau matikan email notifikasi</span>
+              </span>
+            </label>
+            <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
+              <input type="hidden" name="android_notifications_enabled" value="0">
+              <input type="checkbox" name="android_notifications_enabled" value="1" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" @checked(old('android_notifications_enabled', $user->android_notifications_enabled))>
+              <span>
+                <span class="block text-sm font-semibold text-slate-800">Notifikasi Android</span>
+                <span class="block text-xs text-slate-500">Aktifkan atau matikan push Android</span>
+              </span>
+            </label>
+          </div>
         </div>
 
         <div class="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">

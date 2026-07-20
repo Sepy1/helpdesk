@@ -15,6 +15,8 @@ Route::middleware(['auth'])->group(function(){
         Route::get('/export', [\App\Http\Controllers\UserManagementController::class, 'export'])->name('it.users.export');
         Route::post('/import', [\App\Http\Controllers\UserManagementController::class, 'import'])->name('it.users.import');
         Route::patch('/{user}/ai-chat', [\App\Http\Controllers\UserManagementController::class, 'updateAiChat'])->name('it.users.ai-chat');
+        Route::patch('/{user}/email-notifications', [\App\Http\Controllers\UserManagementController::class, 'updateEmailNotifications'])->name('it.users.email-notifications');
+        Route::patch('/{user}/android-notifications', [\App\Http\Controllers\UserManagementController::class, 'updateAndroidNotifications'])->name('it.users.android-notifications');
         Route::get('/{user}/edit', [\App\Http\Controllers\UserManagementController::class, 'edit'])->name('it.users.edit');
         Route::put('/{user}', [\App\Http\Controllers\UserManagementController::class, 'update'])->name('it.users.update');
         Route::delete('/{user}', [\App\Http\Controllers\UserManagementController::class, 'destroy'])->name('it.users.destroy');

@@ -1,8 +1,8 @@
-@extends('layouts.app')
-@section('title','Manajemen User')
 
-@section('content')
-@php
+<?php $__env->startSection('title','Manajemen User'); ?>
+
+<?php $__env->startSection('content'); ?>
+<?php
   $roles = ['IT', 'CABANG', 'VENDOR', 'ADMIN'];
   $perPageOptions = [10, 25, 50, 100];
   $btnText = 'inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-violet-50 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500';
@@ -11,7 +11,7 @@
   $modalLabel = 'text-xs font-semibold uppercase tracking-wide text-slate-500';
   $firstItem = $users->firstItem() ?? 0;
   $lastItem = $users->lastItem() ?? 0;
-@endphp
+?>
 
 <div
   class="w-full max-w-none pb-4 text-[13px]"
@@ -44,7 +44,7 @@
   <div class="space-y-3">
     <section class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex min-w-0 items-center gap-2 text-base font-semibold text-slate-900">
-        <a href="{{ route('dashboard') }}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-violet-500 hover:bg-violet-50" title="Dashboard">
+        <a href="<?php echo e(route('dashboard')); ?>" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-violet-500 hover:bg-violet-50" title="Dashboard">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 1-1.06 1.06l-.66-.66V20a1.5 1.5 0 0 1-1.5 1.5h-4.25a.75.75 0 0 1-.75-.75V16a1 1 0 0 0-2 0v4.75a.75.75 0 0 1-.75.75H6a1.5 1.5 0 0 1-1.5-1.5v-7.07l-.66.66a.75.75 0 0 1-1.06-1.06l8.69-8.69Z"/></svg>
         </a>
         <span class="text-slate-300">/</span>
@@ -57,51 +57,51 @@
       </button>
     </section>
 
-    @if(session('success'))
-      <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm" role="status">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm" role="alert">{{ session('error') }}</div>
-    @endif
-    @if($errors->any())
-      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm" role="alert">{{ $errors->first() }}</div>
-    @endif
+    <?php if(session('success')): ?>
+      <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm" role="status"><?php echo e(session('success')); ?></div>
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm" role="alert"><?php echo e(session('error')); ?></div>
+    <?php endif; ?>
+    <?php if($errors->any()): ?>
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm" role="alert"><?php echo e($errors->first()); ?></div>
+    <?php endif; ?>
 
     <section class="flex max-h-[calc(100vh-6.75rem)] min-h-[26rem] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div class="shrink-0 px-4 py-3">
         <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <form id="userFilterForm" method="GET" action="{{ route('it.users.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-[16rem_14rem_16rem_auto] xl:max-w-4xl">
-            <input type="hidden" name="per_page" value="{{ $perPage }}">
+          <form id="userFilterForm" method="GET" action="<?php echo e(route('it.users.index')); ?>" class="grid grid-cols-1 gap-3 md:grid-cols-[16rem_14rem_16rem_auto] xl:max-w-4xl">
+            <input type="hidden" name="per_page" value="<?php echo e($perPage); ?>">
             <div class="relative">
-              <input type="text" name="q" value="{{ $q }}" placeholder="Cari disini..." class="{{ $filterInput }} pr-10">
+              <input type="text" name="q" value="<?php echo e($q); ?>" placeholder="Cari disini..." class="<?php echo e($filterInput); ?> pr-10">
               <button type="submit" class="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-slate-400 hover:text-violet-600" title="Cari">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke-width="2" stroke-linecap="round"/></svg>
               </button>
             </div>
-            <select name="role" class="{{ $filterInput }}" onchange="this.form.submit()">
+            <select name="role" class="<?php echo e($filterInput); ?>" onchange="this.form.submit()">
               <option value="">Filter Role</option>
-              @foreach($roles as $item)
-                <option value="{{ $item }}" @selected($role === $item)>{{ $item }}</option>
-              @endforeach
+              <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($item); ?>" <?php if($role === $item): echo 'selected'; endif; ?>><?php echo e($item); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
-            <select name="kode_kantor" class="{{ $filterInput }}" onchange="this.form.submit()">
+            <select name="kode_kantor" class="<?php echo e($filterInput); ?>" onchange="this.form.submit()">
               <option value="">Filter Cabang</option>
-              @foreach($kodeKantors as $office)
-                <option value="{{ $office->kode }}" @selected(($kodeKantor ?? '') === $office->kode)>{{ $office->kode }} - {{ $office->nama_kantor }}</option>
-              @endforeach
+              <?php $__currentLoopData = $kodeKantors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $office): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($office->kode); ?>" <?php if(($kodeKantor ?? '') === $office->kode): echo 'selected'; endif; ?>><?php echo e($office->kode); ?> - <?php echo e($office->nama_kantor); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
-            <a href="{{ route('it.users.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-violet-500 hover:bg-violet-50" title="Reset filter">
+            <a href="<?php echo e(route('it.users.index')); ?>" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-violet-500 hover:bg-violet-50" title="Reset filter">
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke-width="2" stroke-linecap="round"/><path d="M21 3v6h-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
           </form>
 
           <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-            <a href="{{ route('it.users.export', request()->query()) }}" class="{{ $btnText }}" title="Export Excel">
+            <a href="<?php echo e(route('it.users.export', request()->query())); ?>" class="<?php echo e($btnText); ?>" title="Export Excel">
               Export
             </a>
-            <form method="POST" action="{{ route('it.users.import') }}" enctype="multipart/form-data">
-              @csrf
-              <label class="{{ $btnText }} cursor-pointer" title="Import Excel">
+            <form method="POST" action="<?php echo e(route('it.users.import')); ?>" enctype="multipart/form-data">
+              <?php echo csrf_field(); ?>
+              <label class="<?php echo e($btnText); ?> cursor-pointer" title="Import Excel">
                 Import
                 <input type="file" name="file" accept=".xlsx,.xls" required class="sr-only" onchange="this.form.submit()">
               </label>
@@ -126,88 +126,92 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 bg-white">
-            @forelse($users as $user)
+            <?php $__empty_1 = true; $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
               <tr class="text-slate-700 hover:bg-slate-50">
-                <td class="px-3 py-2.5 font-medium text-slate-800">{{ $user->name }}</td>
-                <td class="px-3 py-2.5">{{ $user->username }}</td>
-                <td class="px-3 py-2.5 break-all">{{ $user->email }}</td>
+                <td class="px-3 py-2.5 font-medium text-slate-800"><?php echo e($user->name); ?></td>
+                <td class="px-3 py-2.5"><?php echo e($user->username); ?></td>
+                <td class="px-3 py-2.5 break-all"><?php echo e($user->email); ?></td>
                 <td class="px-3 py-2.5">
-                  @if($user->kodeKantor)
-                    {{ $user->kodeKantor->nama_kantor }}
-                  @else
+                  <?php if($user->kodeKantor): ?>
+                    <?php echo e($user->kodeKantor->nama_kantor); ?>
+
+                  <?php else: ?>
                     <span class="text-slate-400">-</span>
-                  @endif
+                  <?php endif; ?>
                 </td>
-                <td class="px-3 py-2.5">{{ $user->role }}</td>
+                <td class="px-3 py-2.5"><?php echo e($user->role); ?></td>
                 <td class="px-3 py-2.5">
-                  <form method="POST" action="{{ route('it.users.ai-chat', array_merge(request()->query(), ['user' => $user])) }}">
-                    @csrf
-                    @method('PATCH')
+                  <form method="POST" action="<?php echo e(route('it.users.ai-chat', array_merge(request()->query(), ['user' => $user]))); ?>">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PATCH'); ?>
                     <input type="hidden" name="ai_chat_enabled" value="0">
                     <label class="inline-flex cursor-pointer items-center gap-2">
-                      <input type="checkbox" name="ai_chat_enabled" value="1" class="sr-only peer" @checked($user->ai_chat_enabled) onchange="this.form.submit()">
+                      <input type="checkbox" name="ai_chat_enabled" value="1" class="sr-only peer" <?php if($user->ai_chat_enabled): echo 'checked'; endif; ?> onchange="this.form.submit()">
                       <span class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-300 transition peer-checked:bg-violet-500">
-                        <span @class([
+                        <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                           'ml-1 h-4 w-4 rounded-full bg-white shadow transition',
                           'translate-x-5' => $user->ai_chat_enabled,
-                        ])></span>
+                        ]) ?>"></span>
                       </span>
-                      <span class="min-w-[5.5rem] text-sm" @class([
+                      <span class="min-w-[5.5rem] text-sm" class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                         'text-violet-700 font-semibold' => $user->ai_chat_enabled,
                         'text-slate-500' => ! $user->ai_chat_enabled,
-                      ])>
-                        {{ $user->ai_chat_enabled ? 'AI Enable' : 'AI Disable' }}
+                      ]) ?>">
+                        <?php echo e($user->ai_chat_enabled ? 'AI Enable' : 'AI Disable'); ?>
+
                       </span>
                     </label>
                   </form>
                 </td>
                 <td class="px-3 py-2.5">
-                  <form method="POST" action="{{ route('it.users.email-notifications', array_merge(request()->query(), ['user' => $user])) }}">
-                    @csrf
-                    @method('PATCH')
+                  <form method="POST" action="<?php echo e(route('it.users.email-notifications', array_merge(request()->query(), ['user' => $user]))); ?>">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PATCH'); ?>
                     <input type="hidden" name="email_notifications_enabled" value="0">
                     <label class="inline-flex cursor-pointer items-center gap-2">
-                      <input type="checkbox" name="email_notifications_enabled" value="1" class="sr-only peer" @checked($user->email_notifications_enabled) onchange="this.form.submit()">
+                      <input type="checkbox" name="email_notifications_enabled" value="1" class="sr-only peer" <?php if($user->email_notifications_enabled): echo 'checked'; endif; ?> onchange="this.form.submit()">
                       <span class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
-                        <span @class([
+                        <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                           'ml-1 h-4 w-4 rounded-full bg-white shadow transition',
                           'translate-x-5' => $user->email_notifications_enabled,
-                        ])></span>
+                        ]) ?>"></span>
                       </span>
-                      <span class="min-w-[5.5rem] text-sm" @class([
+                      <span class="min-w-[5.5rem] text-sm" class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                         'text-emerald-700 font-semibold' => $user->email_notifications_enabled,
                         'text-slate-500' => ! $user->email_notifications_enabled,
-                      ])>
-                        {{ $user->email_notifications_enabled ? 'Email On' : 'Email Off' }}
+                      ]) ?>">
+                        <?php echo e($user->email_notifications_enabled ? 'Email On' : 'Email Off'); ?>
+
                       </span>
                     </label>
                   </form>
                 </td>
                 <td class="px-3 py-2.5">
-                  <form method="POST" action="{{ route('it.users.android-notifications', array_merge(request()->query(), ['user' => $user])) }}">
-                    @csrf
-                    @method('PATCH')
+                  <form method="POST" action="<?php echo e(route('it.users.android-notifications', array_merge(request()->query(), ['user' => $user]))); ?>">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PATCH'); ?>
                     <input type="hidden" name="android_notifications_enabled" value="0">
                     <label class="inline-flex cursor-pointer items-center gap-2">
-                      <input type="checkbox" name="android_notifications_enabled" value="1" class="sr-only peer" @checked($user->android_notifications_enabled) onchange="this.form.submit()">
+                      <input type="checkbox" name="android_notifications_enabled" value="1" class="sr-only peer" <?php if($user->android_notifications_enabled): echo 'checked'; endif; ?> onchange="this.form.submit()">
                       <span class="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-300 transition peer-checked:bg-sky-500">
-                        <span @class([
+                        <span class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                           'ml-1 h-4 w-4 rounded-full bg-white shadow transition',
                           'translate-x-5' => $user->android_notifications_enabled,
-                        ])></span>
+                        ]) ?>"></span>
                       </span>
-                      <span class="min-w-[5.5rem] text-sm" @class([
+                      <span class="min-w-[5.5rem] text-sm" class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                         'text-sky-700 font-semibold' => $user->android_notifications_enabled,
                         'text-slate-500' => ! $user->android_notifications_enabled,
-                      ])>
-                        {{ $user->android_notifications_enabled ? 'Android On' : 'Android Off' }}
+                      ]) ?>">
+                        <?php echo e($user->android_notifications_enabled ? 'Android On' : 'Android Off'); ?>
+
                       </span>
                     </label>
                   </form>
                 </td>
                 <td class="px-3 py-2.5">
                   <div class="flex items-center gap-2">
-                    @php
+                    <?php
                       $editUserPayload = base64_encode(json_encode([
                         'id' => $user->id,
                         'update_url' => route('it.users.update', $user),
@@ -219,75 +223,75 @@
                         'email_notifications_enabled' => (bool) $user->email_notifications_enabled,
                         'android_notifications_enabled' => (bool) $user->android_notifications_enabled,
                       ]));
-                    @endphp
+                    ?>
                     <button
                       type="button"
                       class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 text-white hover:bg-sky-600"
                       title="Edit"
-                      data-edit-user="{{ $editUserPayload }}"
+                      data-edit-user="<?php echo e($editUserPayload); ?>"
                       @click="openEdit(JSON.parse(atob($el.dataset.editUser)))"
                     >
                       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.12 2.12 0 0 0-3-3L5 17v3Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    @if(auth()->id() === $user->id)
+                    <?php if(auth()->id() === $user->id): ?>
                       <button type="button" disabled class="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg bg-slate-200 text-white" title="Tidak dapat menghapus akun sendiri">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 16h10l1-16M9 7V4h6v3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
-                    @else
-                      <form method="POST" action="{{ route('it.users.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')">
-                        @csrf
-                        @method('DELETE')
+                    <?php else: ?>
+                      <form method="POST" action="<?php echo e(route('it.users.destroy', $user)); ?>" onsubmit="return confirm('Hapus user ini?')">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
                         <button type="submit" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white hover:bg-red-600" title="Delete">
                           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 16h10l1-16M9 7V4h6v3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                       </form>
-                    @endif
+                    <?php endif; ?>
                   </div>
                 </td>
               </tr>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
               <tr>
                 <td colspan="9" class="px-3 py-10 text-center text-sm text-slate-500">Belum ada user sesuai filter.</td>
               </tr>
-            @endforelse
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
 
       <div class="shrink-0 border-t border-slate-100 px-4 py-3">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <form method="GET" action="{{ route('it.users.index') }}" class="flex items-center gap-2">
-            <input type="hidden" name="q" value="{{ $q }}">
-            <input type="hidden" name="role" value="{{ $role }}">
-            <input type="hidden" name="kode_kantor" value="{{ $kodeKantor }}">
+          <form method="GET" action="<?php echo e(route('it.users.index')); ?>" class="flex items-center gap-2">
+            <input type="hidden" name="q" value="<?php echo e($q); ?>">
+            <input type="hidden" name="role" value="<?php echo e($role); ?>">
+            <input type="hidden" name="kode_kantor" value="<?php echo e($kodeKantor); ?>">
             <label for="per_page" class="text-sm text-slate-700">Rows per page</label>
             <select id="per_page" name="per_page" class="h-10 rounded-lg border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:ring-violet-500" onchange="this.form.submit()">
-              @foreach($perPageOptions as $option)
-                <option value="{{ $option }}" @selected($perPage === $option)>{{ $option }}</option>
-              @endforeach
+              <?php $__currentLoopData = $perPageOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($option); ?>" <?php if($perPage === $option): echo 'selected'; endif; ?>><?php echo e($option); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </form>
-          <div class="text-sm text-slate-700">{{ $firstItem }}-{{ $lastItem }} of {{ $users->total() }}</div>
+          <div class="text-sm text-slate-700"><?php echo e($firstItem); ?>-<?php echo e($lastItem); ?> of <?php echo e($users->total()); ?></div>
           <div class="flex items-center gap-2">
-            @if($users->previousPageUrl())
-              <a href="{{ $users->previousPageUrl() }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200" title="Previous">
+            <?php if($users->previousPageUrl()): ?>
+              <a href="<?php echo e($users->previousPageUrl()); ?>" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200" title="Previous">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </a>
-            @else
+            <?php else: ?>
               <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-300">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </span>
-            @endif
+            <?php endif; ?>
 
-            @if($users->nextPageUrl())
-              <a href="{{ $users->nextPageUrl() }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200" title="Next">
+            <?php if($users->nextPageUrl()): ?>
+              <a href="<?php echo e($users->nextPageUrl()); ?>" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200" title="Next">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </a>
-            @else
+            <?php else: ?>
               <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-300">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </span>
-            @endif
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -319,40 +323,40 @@
         </button>
       </div>
 
-      <form method="POST" action="{{ route('it.users.store') }}" class="px-5 py-4">
-        @csrf
+      <form method="POST" action="<?php echo e(route('it.users.store')); ?>" class="px-5 py-4">
+        <?php echo csrf_field(); ?>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label for="create_username" class="{{ $modalLabel }}">Username</label>
-            <input id="create_username" type="text" name="username" x-model="createUser.username" class="{{ $modalInput }}" required>
+            <label for="create_username" class="<?php echo e($modalLabel); ?>">Username</label>
+            <input id="create_username" type="text" name="username" x-model="createUser.username" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="create_name" class="{{ $modalLabel }}">Nama</label>
-            <input id="create_name" x-ref="createName" type="text" name="name" x-model="createUser.name" class="{{ $modalInput }}" required>
+            <label for="create_name" class="<?php echo e($modalLabel); ?>">Nama</label>
+            <input id="create_name" x-ref="createName" type="text" name="name" x-model="createUser.name" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="create_email" class="{{ $modalLabel }}">Email</label>
-            <input id="create_email" type="email" name="email" x-model="createUser.email" class="{{ $modalInput }}" required>
+            <label for="create_email" class="<?php echo e($modalLabel); ?>">Email</label>
+            <input id="create_email" type="email" name="email" x-model="createUser.email" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="create_password" class="{{ $modalLabel }}">Password</label>
-            <input id="create_password" type="password" name="password" x-model="createUser.password" class="{{ $modalInput }}" required>
+            <label for="create_password" class="<?php echo e($modalLabel); ?>">Password</label>
+            <input id="create_password" type="password" name="password" x-model="createUser.password" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="create_role" class="{{ $modalLabel }}">Role</label>
-            <select id="create_role" name="role" x-model="createUser.role" class="{{ $modalInput }}" required>
-              @foreach($roles as $item)
-                <option value="{{ $item }}">{{ $item }}</option>
-              @endforeach
+            <label for="create_role" class="<?php echo e($modalLabel); ?>">Role</label>
+            <select id="create_role" name="role" x-model="createUser.role" class="<?php echo e($modalInput); ?>" required>
+              <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($item); ?>"><?php echo e($item); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </div>
           <div>
-            <label for="create_kode_kantor" class="{{ $modalLabel }}">Kode kantor</label>
-            <select id="create_kode_kantor" name="kode_kantor" x-model="createUser.kode_kantor" class="{{ $modalInput }}">
+            <label for="create_kode_kantor" class="<?php echo e($modalLabel); ?>">Kode kantor</label>
+            <select id="create_kode_kantor" name="kode_kantor" x-model="createUser.kode_kantor" class="<?php echo e($modalInput); ?>">
               <option value="">Tidak dipilih</option>
-              @foreach($kodeKantors as $office)
-                <option value="{{ $office->kode }}">{{ $office->kode }} - {{ $office->nama_kantor }}</option>
-              @endforeach
+              <?php $__currentLoopData = $kodeKantors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $office): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($office->kode); ?>"><?php echo e($office->kode); ?> - <?php echo e($office->nama_kantor); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </div>
           <div class="md:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -409,42 +413,42 @@
       </div>
 
       <form method="POST" :action="editUser.update_url" class="px-5 py-4">
-        @csrf
-        @method('PUT')
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
         <input type="hidden" name="edit_user_id" :value="editUser.id">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label for="edit_username" class="{{ $modalLabel }}">Username</label>
-            <input id="edit_username" type="text" name="username" x-model="editUser.username" class="{{ $modalInput }}" required>
+            <label for="edit_username" class="<?php echo e($modalLabel); ?>">Username</label>
+            <input id="edit_username" type="text" name="username" x-model="editUser.username" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="edit_name" class="{{ $modalLabel }}">Nama</label>
-            <input id="edit_name" x-ref="editName" type="text" name="name" x-model="editUser.name" class="{{ $modalInput }}" required>
+            <label for="edit_name" class="<?php echo e($modalLabel); ?>">Nama</label>
+            <input id="edit_name" x-ref="editName" type="text" name="name" x-model="editUser.name" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="edit_email" class="{{ $modalLabel }}">Email</label>
-            <input id="edit_email" type="email" name="email" x-model="editUser.email" class="{{ $modalInput }}" required>
+            <label for="edit_email" class="<?php echo e($modalLabel); ?>">Email</label>
+            <input id="edit_email" type="email" name="email" x-model="editUser.email" class="<?php echo e($modalInput); ?>" required>
           </div>
           <div>
-            <label for="edit_role" class="{{ $modalLabel }}">Role</label>
-            <select id="edit_role" name="role" x-model="editUser.role" class="{{ $modalInput }}" required>
-              @foreach($roles as $item)
-                <option value="{{ $item }}">{{ $item }}</option>
-              @endforeach
+            <label for="edit_role" class="<?php echo e($modalLabel); ?>">Role</label>
+            <select id="edit_role" name="role" x-model="editUser.role" class="<?php echo e($modalInput); ?>" required>
+              <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($item); ?>"><?php echo e($item); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </div>
           <div>
-            <label for="edit_kode_kantor" class="{{ $modalLabel }}">Kode kantor</label>
-            <select id="edit_kode_kantor" name="kode_kantor" x-model="editUser.kode_kantor" class="{{ $modalInput }}">
+            <label for="edit_kode_kantor" class="<?php echo e($modalLabel); ?>">Kode kantor</label>
+            <select id="edit_kode_kantor" name="kode_kantor" x-model="editUser.kode_kantor" class="<?php echo e($modalInput); ?>">
               <option value="">Tidak dipilih</option>
-              @foreach($kodeKantors as $office)
-                <option value="{{ $office->kode }}">{{ $office->kode }} - {{ $office->nama_kantor }}</option>
-              @endforeach
+              <?php $__currentLoopData = $kodeKantors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $office): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($office->kode); ?>"><?php echo e($office->kode); ?> - <?php echo e($office->nama_kantor); ?></option>
+              <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
           </div>
           <div>
-            <label for="edit_password" class="{{ $modalLabel }}">Password baru</label>
-            <input id="edit_password" type="password" name="password" x-model="editUser.password" class="{{ $modalInput }}" placeholder="Kosongkan jika tidak diganti">
+            <label for="edit_password" class="<?php echo e($modalLabel); ?>">Password baru</label>
+            <input id="edit_password" type="password" name="password" x-model="editUser.password" class="<?php echo e($modalInput); ?>" placeholder="Kosongkan jika tidak diganti">
           </div>
           <div class="md:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
@@ -474,4 +478,6 @@
     </section>
   </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/it/users/index.blade.php ENDPATH**/ ?>
