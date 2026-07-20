@@ -11,6 +11,6 @@ class TicketActivityNotifier
     public static function notify(User $user, array $payload): void
     {
         $user->notify(new TicketActivity($payload));
-        DeliverTicketActivitySideEffects::dispatch($user->id, $payload);
+        DeliverTicketActivitySideEffects::dispatch($user->id, $payload)->afterResponse();
     }
 }
