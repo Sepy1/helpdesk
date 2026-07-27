@@ -3,11 +3,11 @@
 <?php $__env->startSection('content'); ?>
 <?php
   $columns = [
-    ['key' => 'open', 'label' => 'Backlog'],
-    ['key' => 'vendor_development', 'label' => 'On Progress'],
-    ['key' => 'uat', 'label' => 'Testing UAT'],
-    ['key' => 'go_live', 'label' => 'Go Live'],
-    ['key' => 'closed', 'label' => 'Done'],
+    ['key' => 'open', 'label' => 'Backlog', 'tone' => 'red'],
+    ['key' => 'vendor_development', 'label' => 'On Progress', 'tone' => 'yellow'],
+    ['key' => 'uat', 'label' => 'Testing UAT', 'tone' => 'navy'],
+    ['key' => 'go_live', 'label' => 'Go Live', 'tone' => 'green'],
+    ['key' => 'closed', 'label' => 'Done', 'tone' => 'gray'],
   ];
 ?>
 
@@ -16,35 +16,40 @@
     <div>
       <p class="text-xs font-semibold uppercase tracking-[0.35em] text-blue-500">IT Workspace</p>
       <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Dashboard CR (Board)</h1>
-      <p class="mt-2 max-w-3xl text-sm text-slate-600">
-        Board ini mengambil data CR eksternal dari endpoint manpro dan mendukung drag-drop untuk update status.
-      </p>
-      <p class="mt-2 text-xs text-slate-500">
-        Endpoint: <span class="font-mono text-blue-700"><?php echo e(config('services.extern_cr.base_url')); ?><?php echo e(config('services.extern_cr.dashboard_path')); ?></span>
-      </p>
     </div>
 
     <div class="flex gap-2">
       <button type="button" id="reloadBoard" class="rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
         Muat Ulang
       </button>
-      <a href="<?php echo e(route('it.dashboard')); ?>" class="rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-sky-400">
-        Kembali ke Tiket
-      </a>
     </div>
   </div>
 
   <div id="boardNotice" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
-  <div id="boardMeta" class="mt-4 text-xs text-slate-500"></div>
 
   <div class="mt-5 grid flex-1 min-h-0 gap-4 xl:grid-cols-5">
     <?php $__currentLoopData = $columns; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $column): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-      <section class="board-column flex min-h-0 flex-col rounded-[1.5rem] border border-blue-100 bg-white/90 p-3 shadow-sm backdrop-blur" data-status="<?php echo e($column['key']); ?>">
+      <section class="board-column flex min-h-0 flex-col rounded-[1.5rem] border p-3 shadow-sm backdrop-blur
+        <?php if($column['tone'] === 'red'): ?> border-red-100 bg-red-50/80
+        <?php elseif($column['tone'] === 'yellow'): ?> border-amber-100 bg-amber-50/80
+        <?php elseif($column['tone'] === 'navy'): ?> border-slate-200 bg-slate-50/90
+        <?php elseif($column['tone'] === 'green'): ?> border-emerald-100 bg-emerald-50/80
+        <?php else: ?> border-slate-200 bg-slate-50/80 <?php endif; ?>" data-status="<?php echo e($column['key']); ?>" data-tone="<?php echo e($column['tone']); ?>">
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700"><?php echo e($column['label']); ?></h2>
-          <span class="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100" data-count-for="<?php echo e($column['key']); ?>">0</span>
+          <span class="rounded-full px-2 py-1 text-xs font-semibold ring-1
+            <?php if($column['tone'] === 'red'): ?> bg-red-50 text-red-700 ring-red-100
+            <?php elseif($column['tone'] === 'yellow'): ?> bg-amber-50 text-amber-700 ring-amber-100
+            <?php elseif($column['tone'] === 'navy'): ?> bg-slate-100 text-slate-700 ring-slate-200
+            <?php elseif($column['tone'] === 'green'): ?> bg-emerald-50 text-emerald-700 ring-emerald-100
+            <?php else: ?> bg-slate-100 text-slate-700 ring-slate-200 <?php endif; ?>" data-count-for="<?php echo e($column['key']); ?>">0</span>
         </div>
-        <div class="board-dropzone min-h-0 flex-1 space-y-3 overflow-y-auto rounded-[1.25rem] border border-dashed border-blue-100 bg-gradient-to-b from-blue-50/70 to-white p-2 transition-colors" data-dropzone="<?php echo e($column['key']); ?>">
+        <div class="board-dropzone min-h-0 flex-1 space-y-3 overflow-y-auto rounded-[1.25rem] border border-dashed p-2 transition-colors
+          <?php if($column['tone'] === 'red'): ?> border-red-100 bg-gradient-to-b from-red-50/70 to-white
+          <?php elseif($column['tone'] === 'yellow'): ?> border-amber-100 bg-gradient-to-b from-amber-50/70 to-white
+          <?php elseif($column['tone'] === 'navy'): ?> border-slate-200 bg-gradient-to-b from-slate-50/70 to-white
+          <?php elseif($column['tone'] === 'green'): ?> border-emerald-100 bg-gradient-to-b from-emerald-50/70 to-white
+          <?php else: ?> border-slate-200 bg-gradient-to-b from-slate-50/70 to-white <?php endif; ?>" data-dropzone="<?php echo e($column['key']); ?>">
           <div class="board-empty rounded-xl border border-dashed border-blue-100 bg-white px-3 py-4 text-center text-sm text-slate-500">
             Belum ada CR.
           </div>
@@ -64,18 +69,7 @@
       </div>
       <button type="button" id="modalClose" class="rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-50">Tutup</button>
     </div>
-    <div class="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Divisi:</span> <span id="modalDivision" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Sistem:</span> <span id="modalSystem" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Vendor PIC:</span> <span id="modalVendor" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Tanggal:</span> <span id="modalDate" class="font-medium text-slate-800"></span></div>
-    </div>
-    <p id="modalReason" class="mt-4 hidden text-sm leading-6 text-slate-600"></p>
     <div id="modalBody" class="mt-4 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1"></div>
-    <div class="mt-5 flex flex-wrap gap-2">
-      <a id="modalLink" href="#" class="rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-sky-400">Buka Detail</a>
-      <button type="button" id="modalCopy" class="rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm text-blue-700 hover:bg-blue-50">Salin Nomor</button>
-    </div>
   </div>
 </div>
 
@@ -92,15 +86,41 @@
 (() => {
   const columns = ['open', 'vendor_development', 'uat', 'go_live', 'closed'];
   const state = new Map();
-  const boardMeta = document.getElementById('boardMeta');
   const boardNotice = document.getElementById('boardNotice');
   const reloadButton = document.getElementById('reloadBoard');
   const modal = document.getElementById('crModal');
   const modalClose = document.getElementById('modalClose');
-  const modalCopy = document.getElementById('modalCopy');
-  const modalLink = document.getElementById('modalLink');
   const modalBody = document.getElementById('modalBody');
   let activeItem = null;
+  const toneByStatus = {
+    open: 'red',
+    vendor_development: 'yellow',
+    uat: 'navy',
+    go_live: 'green',
+    closed: 'gray',
+  };
+  const toneClasses = {
+    red: {
+      chip: 'border-red-200 bg-red-50 text-red-700',
+      card: 'border-red-100 hover:border-red-300',
+    },
+    yellow: {
+      chip: 'border-amber-200 bg-amber-50 text-amber-700',
+      card: 'border-amber-100 hover:border-amber-300',
+    },
+    navy: {
+      chip: 'border-slate-300 bg-slate-100 text-slate-700',
+      card: 'border-slate-200 hover:border-slate-400',
+    },
+    green: {
+      chip: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      card: 'border-emerald-100 hover:border-emerald-300',
+    },
+    gray: {
+      chip: 'border-slate-300 bg-slate-100 text-slate-700',
+      card: 'border-slate-200 hover:border-slate-300',
+    },
+  };
 
   function showNotice(message) {
     boardNotice.textContent = message;
@@ -166,6 +186,7 @@
     columns.forEach((status) => {
       const dropzone = document.querySelector(`[data-dropzone="${status}"]`);
       if (!dropzone) return;
+      const tone = dropzone.closest('[data-tone]')?.dataset.tone || 'gray';
       const cards = dropzone.querySelectorAll('[draggable="true"]');
       let empty = dropzone.querySelector('.board-empty');
       if (cards.length === 0) {
@@ -179,6 +200,9 @@
         empty.remove();
       }
       const counter = document.querySelector(`[data-count-for="${status}"]`);
+      if (counter && toneClasses[tone]) {
+        counter.className = `rounded-full px-2 py-1 text-xs font-semibold ring-1 ${toneClasses[tone].chip}`;
+      }
       if (counter) counter.textContent = String(cards.length);
     });
   }
@@ -192,9 +216,10 @@
     const date = pick(item, ['tanggal', 'created_at', 'date']);
     const status = String(pick(item, ['status.value', 'status', 'state'], 'open')).toLowerCase();
     const url = `${window.itBoardCrConfig.updateUrlBase}/${encodeURIComponent(id)}`;
+    const tone = toneClasses[toneByStatus[status] || 'gray'];
 
     const el = document.createElement('article');
-    el.className = 'cr-card cursor-grab rounded-2xl border border-blue-100 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md';
+    el.className = `cr-card cursor-grab rounded-2xl border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${tone.card}`;
     el.draggable = true;
     el.dataset.id = id;
     el.dataset.status = status;
@@ -205,7 +230,7 @@
           <h3 class="truncate text-sm font-semibold text-slate-900">${escapeHtml(title)}</h3>
           <p class="mt-1 font-mono text-[11px] text-slate-500">${escapeHtml(nomor)}</p>
         </div>
-        <span class="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700">
+        <span class="shrink-0 rounded-full border px-2 py-1 text-[11px] font-semibold ${tone.chip}">
           ${escapeHtml(getStatusLabel(status))}
         </span>
       </div>
@@ -240,7 +265,6 @@
     document.getElementById('modalStatus').textContent = 'Memuat detail...';
     document.getElementById('modalTitle').textContent = 'Memuat data CR';
     document.getElementById('modalNumber').textContent = '';
-    modalLink.href = url;
 
     fetch(`${window.itBoardCrConfig.detailUrlBase}/${encodeURIComponent(item.id)}`, {
       headers: { 'Accept': 'application/json' }
@@ -259,8 +283,6 @@
         document.getElementById('modalStatus').textContent = getStatusLabel(status);
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('modalNumber').textContent = nomor;
-        document.getElementById('modalReason').textContent = '';
-        modalLink.href = `${window.itBoardCrConfig.detailUrlBase}/${encodeURIComponent(detail.id ?? item.id)}`;
 
         modalBody.innerHTML = `
           <div class="grid gap-3 sm:grid-cols-2">
@@ -298,7 +320,6 @@
 
   async function loadBoard() {
     hideNotice();
-    boardMeta.textContent = 'Memuat data board CR...';
 
     try {
       const response = await fetch(window.itBoardCrConfig.dashboardUrl, {
@@ -331,11 +352,9 @@
       });
 
       renderEmptyStates();
-      boardMeta.textContent = `Total CR: ${meta.total_items ?? 0} | Generated: ${meta.generated_at ?? '-'}`;
     } catch (error) {
       console.error(error);
       showNotice(error.message || 'Gagal memuat board CR.');
-      boardMeta.textContent = 'Board gagal dimuat.';
     }
   }
 
@@ -402,14 +421,6 @@
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
-  });
-  modalCopy?.addEventListener('click', async () => {
-    if (!activeItem) return;
-    try {
-      await navigator.clipboard.writeText(String(pick(activeItem, ['nomor', 'nomor_tiket', 'number'])));
-      modalCopy.textContent = 'Tersalin';
-      setTimeout(() => { modalCopy.textContent = 'Salin Nomor'; }, 1200);
-    } catch (_) {}
   });
 
   loadBoard();
