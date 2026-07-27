@@ -123,6 +123,7 @@
     'it.ticket.create',
     'cabang.dashboard',
     'it.dashboard',
+    'it.board_cr',
     'it.my',
     'cabang.tickets',
     'vendor.tickets',
@@ -869,6 +870,7 @@ function logoutMobile() {
         links: {
           create: '<?php echo e(route(auth()->user()->role === 'IT' ? 'it.ticket.create' : 'cabang.dashboard')); ?>',
           allTickets: '<?php echo e(auth()->user()->role === 'IT' ? route('it.dashboard') : (auth()->user()->role === 'VENDOR' ? route('vendor.tickets') : route('cabang.tickets'))); ?>',
+          boardCr: '<?php echo e(auth()->user()->role === 'IT' ? route('it.board_cr') : route('dashboard')); ?>',
           myTickets: '<?php echo e(auth()->user()->role === 'IT' ? route('it.my') : (auth()->user()->role === 'VENDOR' ? route('vendor.tickets') : route('cabang.tickets'))); ?>',
           stats: '<?php echo e(auth()->user()->role === 'IT' ? route('it.stats') : route('dashboard')); ?>',
           params: '<?php echo e(auth()->user()->role === 'IT' ? route('it.parameters') : route('dashboard')); ?>',

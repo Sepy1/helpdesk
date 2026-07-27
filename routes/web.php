@@ -137,6 +137,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
     Route::middleware(['role:IT'])->group(function () {
         // Form create ticket untuk user IT (Input Tiket)
         Route::get('/it/create', [TicketController::class, 'create'])->name('it.ticket.create');
+        Route::get('/it/board-cr', [\App\Http\Controllers\ItBoardCrController::class, 'index'])->name('it.board_cr');
         Route::post('/it/ticket', [TicketController::class, 'store'])->name('it.ticket.store');
         Route::get('/it/dashboard', [TicketController::class, 'index'])->name('it.dashboard');           // semua tiket + filter
         Route::get('/it/tickets/fragment', [TicketController::class, 'fragment'])->name('it.tickets.fragment'); // fragment HTML untuk polling
@@ -170,6 +171,12 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/ticket/{ticket}/progress', [TicketController::class, 'saveProgress'])
      ->name('it.ticket.progress');
   
+    });
+
+    Route::middleware(['role:IT'])->prefix('it/board-cr')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\ItBoardCrController::class, 'dashboard'])->name('it.board_cr.dashboard');
+        Route::get('/{externCr}', [\App\Http\Controllers\ItBoardCrController::class, 'show'])->name('it.board_cr.show');
+        Route::patch('/{externCr}/status', [\App\Http\Controllers\ItBoardCrController::class, 'updateStatus'])->name('it.board_cr.status.update');
     });
 
     // ===== VENDOR =====

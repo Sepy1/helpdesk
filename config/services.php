@@ -39,4 +39,14 @@ return [
         'branch_query_ticket_limit' => (int) env('OPENAI_BRANCH_QUERY_TICKET_LIMIT', 1000),
     ],
 
+    'extern_cr' => [
+        'base_url' => rtrim(env('EXTERN_CR_API_BASE_URL', env('EXTERN_CR_ENDPOINT', 'https://manpro.bkkjateng.co.id')), '/'),
+        'api_key' => env('X_EXTERN_CR_API_KEY', env('EXTERN_CR_API_KEY')),
+        'dashboard_path' => env('EXTERN_CR_DASHBOARD_PATH', '/api/cr-eksternal/dashboard'),
+        'detail_path' => env('EXTERN_CR_DETAIL_PATH', '/api/cr-eksternal'),
+        'status_path' => env('EXTERN_CR_STATUS_PATH', '/api/cr-eksternal'),
+        'timeout' => (int) env('EXTERN_CR_TIMEOUT', 20),
+        'verify_ssl' => filter_var(env('EXTERN_CR_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
+    ],
+
 ];

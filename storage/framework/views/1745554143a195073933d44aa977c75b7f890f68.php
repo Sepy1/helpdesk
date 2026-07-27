@@ -9,8 +9,8 @@
   $on   = 'text-tulisan-100';
   $off  = 'text-tulisan-500';
 
-  // jumlah kolom: IT = 4 (Dashboard, Tiket, User, Profil), CABANG = 3 (Buat, Tiket, Profil), VENDOR = 2 (Tiket, Profil)
-  $cols = $isIT ? 'grid-cols-4' : ($isVendor ? 'grid-cols-2' : 'grid-cols-3');
+  // jumlah kolom: IT = 6 (Dashboard, Board CR, Tiket, Profil, User, Statistik), CABANG = 3 (Buat, Tiket, Profil), VENDOR = 2 (Tiket, Profil)
+  $cols = $isIT ? 'grid-cols-6' : ($isVendor ? 'grid-cols-2' : 'grid-cols-3');
 ?>
 
 
@@ -43,6 +43,18 @@
           <span>Buat</span>
         </a>
       <?php endif; ?>
+    </li>
+    <?php endif; ?>
+
+    <?php if($isIT): ?>
+    <li class="h-full">
+      <a href="<?php echo e(route('it.board_cr')); ?>"
+         class="<?php echo e(request()->routeIs('it.board_cr*') ? "$base text-white" : "$base text-white/80 hover:bg-white/10"); ?> h-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M4 5h5v14H4V5Zm6 0h5v8h-5V5Zm6 0h5v14h-5V5Z"/>
+        </svg>
+        <span>Board</span>
+      </a>
     </li>
     <?php endif; ?>
 

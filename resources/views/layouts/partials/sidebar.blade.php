@@ -11,6 +11,7 @@
     'list'     => '<path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />',
     'user'     => '<path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z" fill="currentColor" />',
     'chart'    => '<path d="M4 20h16M7 17V9m5 8V4m5 13v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />',
+    'board'    => '<path d="M4 5h6v14H4V5Zm10 0h6v8h-6V5Zm0 10h6v4h-6v-4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />',
     'settings' => '<path d="M12 15a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm7.8-3a7.7 7.7 0 0 0-.1-1.4l2-1.6a.8.8 0 0 0 .2-.9l-2-3.4a.8.8 0 0 0-.9-.3l-2.3 1a8.2 8.2 0 0 0-1.4-.8l-.4-2.5a.8.8 0 0 0-.8-.7h-4a.8.8 0 0 0-.8.7l-.4 2.5a8.2 8.2 0 0 0-1.4.8l-2.3-1a.8.8 0 0 0-.9.3l-2 3.4a.8.8 0 0 0 .2.9l2 1.6a7.7 7.7 0 0 0-.1 1.4l-2 1.6a.8.8 0 0 0-.2.9l2 3.4a.8.8 0 0 0 .9.3l2.3-1a8.2 8.2 0 0 0 1.4.8l.4 2.5a.8.8 0 0 0 .8.7h4a.8.8 0 0 0 .8-.7l.4-2.5a8.2 8.2 0 0 0 1.4-.8l2.3 1a.8.8 0 0 0 .9-.3l2-3.4a.8.8 0 0 0-.2-.9Z" fill="none" stroke="currentColor" stroke-width="1.5" />',
     'filter'   => '<path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />',
     'download' => '<path d="M12 3v10m0 0 4-4m-4 4-4-4M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -22,6 +23,7 @@
     $menu = [
       ['label'=>'Input Tiket', 'route'=>'it.ticket.create', 'icon'=>'plus', 'active'=>$is('it.ticket.create')],
       ['label'=>'All Tiket',   'route'=>'it.dashboard',   'icon'=>'list',   'active'=>$is('it.dashboard')],
+      ['label'=>'Board CR',    'route'=>'it.board_cr',    'icon'=>'board',  'active'=>$is('it.board_cr*')],
       ['label'=>'Tiket Saya',  'route'=>'it.my',          'icon'=>'user',   'active'=>$is('it.my')],
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
       ['label'=>'Parameter',   'route'=>'it.parameters',  'icon'=>'settings','active'=>$is('it.parameters*')],
