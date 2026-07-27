@@ -17,26 +17,16 @@
     <div>
       <p class="text-xs font-semibold uppercase tracking-[0.35em] text-blue-500">IT Workspace</p>
       <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Dashboard CR (Board)</h1>
-      <p class="mt-2 max-w-3xl text-sm text-slate-600">
-        Board ini mengambil data CR eksternal dari endpoint manpro dan mendukung drag-drop untuk update status.
-      </p>
-      <p class="mt-2 text-xs text-slate-500">
-        Endpoint: <span class="font-mono text-blue-700">{{ config('services.extern_cr.base_url') }}{{ config('services.extern_cr.dashboard_path') }}</span>
-      </p>
     </div>
 
     <div class="flex gap-2">
       <button type="button" id="reloadBoard" class="rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
         Muat Ulang
       </button>
-      <a href="{{ route('it.dashboard') }}" class="rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-sky-400">
-        Kembali ke Tiket
-      </a>
     </div>
   </div>
 
   <div id="boardNotice" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
-  <div id="boardMeta" class="mt-4 text-xs text-slate-500"></div>
 
   <div class="mt-5 grid flex-1 min-h-0 gap-4 xl:grid-cols-5">
     @foreach($columns as $column)
@@ -65,13 +55,6 @@
       </div>
       <button type="button" id="modalClose" class="rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-blue-700 hover:bg-blue-50">Tutup</button>
     </div>
-    <div class="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Divisi:</span> <span id="modalDivision" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Sistem:</span> <span id="modalSystem" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Vendor PIC:</span> <span id="modalVendor" class="font-medium text-slate-800"></span></div>
-      <div class="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-blue-100"><span class="text-slate-500">Tanggal:</span> <span id="modalDate" class="font-medium text-slate-800"></span></div>
-    </div>
-    <p id="modalReason" class="mt-4 hidden text-sm leading-6 text-slate-600"></p>
     <div id="modalBody" class="mt-4 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1"></div>
     <div class="mt-5 flex flex-wrap gap-2">
       <a id="modalLink" href="#" class="rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-500 hover:to-sky-400">Buka Detail</a>
@@ -93,7 +76,6 @@
 (() => {
   const columns = ['open', 'vendor_development', 'uat', 'go_live', 'closed'];
   const state = new Map();
-  const boardMeta = document.getElementById('boardMeta');
   const boardNotice = document.getElementById('boardNotice');
   const reloadButton = document.getElementById('reloadBoard');
   const modal = document.getElementById('crModal');
@@ -260,7 +242,6 @@
         document.getElementById('modalStatus').textContent = getStatusLabel(status);
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('modalNumber').textContent = nomor;
-        document.getElementById('modalReason').textContent = '';
         modalLink.href = `${window.itBoardCrConfig.detailUrlBase}/${encodeURIComponent(detail.id ?? item.id)}`;
 
         modalBody.innerHTML = `
@@ -299,7 +280,6 @@
 
   async function loadBoard() {
     hideNotice();
-    boardMeta.textContent = 'Memuat data board CR...';
 
     try {
       const response = await fetch(window.itBoardCrConfig.dashboardUrl, {
@@ -332,11 +312,9 @@
       });
 
       renderEmptyStates();
-      boardMeta.textContent = `Total CR: ${meta.total_items ?? 0} | Generated: ${meta.generated_at ?? '-'}`;
     } catch (error) {
       console.error(error);
       showNotice(error.message || 'Gagal memuat board CR.');
-      boardMeta.textContent = 'Board gagal dimuat.';
     }
   }
 
