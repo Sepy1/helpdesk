@@ -1,7 +1,7 @@
-@extends('layouts.app')
-@section('title', 'Detail Tiket')
 
-@push('styles')
+<?php $__env->startSection('title', 'Detail Tiket'); ?>
+
+<?php $__env->startPush('styles'); ?>
 <style>
   /* History modal — timeline modern */
   .history-modal-panel{
@@ -145,45 +145,45 @@
   }
 
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
-{{-- Mobile: biarkan halaman mengalir normal; Desktop: split layout + tinggi viewport --}}
+<?php $__env->startSection('content'); ?>
+
 <div class="flex flex-col lg:min-h-[calc(100dvh-6.25rem)] lg:max-h-[calc(100dvh-6.25rem)]">
 <div class="grid flex-1 grid-cols-1 gap-6 lg:min-h-0 lg:overflow-hidden lg:grid-cols-3 lg:items-stretch">
-  {{-- Kolom kiri (konten utama) --}}
+  
   <div class="flex flex-col gap-6 overflow-visible lg:col-span-2 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden">
-    {{-- Form tindak lanjut dipindahkan ke modal Update untuk tampilan lebih rapi --}}
+    
 
-    {{-- =========================
-         CARD UTAMA: Nomor + Kategori + Handler + Deskripsi + Lampiran + Aksi
-         ========================= --}}
+    
     <div class="show-card mt-0 shrink-0 bg-white rounded-2xl p-3 text-xs sm:p-5 sm:text-sm">
-      {{-- Header: nomor tiket + created info --}}
+      
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div class="min-w-0">
             <h2 class="text-lg font-semibold text-gray-800 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span>#{{ $ticket->nomor_tiket }}</span>
-              @php
+              <span>#<?php echo e($ticket->nomor_tiket); ?></span>
+              <?php
                 $namaCabangPembuat = $ticket->user?->kodeKantor?->nama_kantor;
                 $kodeCabangPembuat = $ticket->user?->kode_kantor;
-              @endphp
-              @if($namaCabangPembuat || $kodeCabangPembuat)
-                <span class="text-sm font-normal text-gray-500">· {{ $namaCabangPembuat ?? $kodeCabangPembuat }}</span>
-              @endif
+              ?>
+              <?php if($namaCabangPembuat || $kodeCabangPembuat): ?>
+                <span class="text-sm font-normal text-gray-500">· <?php echo e($namaCabangPembuat ?? $kodeCabangPembuat); ?></span>
+              <?php endif; ?>
             </h2>
             <div class="text-xs text-gray-500 mt-1">
-            Dibuat oleh: <span class="font-medium text-gray-700">{{ $ticket->user->name ?? '—' }}</span>
-            @if(isset($ticket->cabang))
-              · {{ $ticket->cabang }}
-            @endif
-            · {{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}
+            Dibuat oleh: <span class="font-medium text-gray-700"><?php echo e($ticket->user->name ?? '—'); ?></span>
+            <?php if(isset($ticket->cabang)): ?>
+              · <?php echo e($ticket->cabang); ?>
+
+            <?php endif; ?>
+            · <?php echo e(optional($ticket->created_at)->format('d M Y H:i') ?? '-'); ?>
+
           </div>
         </div>
 
-        {{-- Status badge kanan atas --}}
+        
         <div class="shrink-0">
-          @php
+          <?php
             $statusColor = match($ticket->status) {
               'OPEN' => 'bg-green-50 text-green-700 ring-green-100',
               'TAKEN', 'ON_PROGRESS' => 'bg-amber-50 text-amber-700 ring-amber-100',
@@ -192,99 +192,100 @@
               'CLOSED' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
               default => 'bg-gray-50 text-gray-700 ring-gray-100',
             };
-          @endphp
-          <span class="status-badge {{ $statusColor }}">{{ $ticket->status }}</span>
+          ?>
+          <span class="status-badge <?php echo e($statusColor); ?>"><?php echo e($ticket->status); ?></span>
         </div>
       </div>
 
-      {{-- Dua kolom: Kategori | IT Handler --}}
+      
       <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div class="text-xs text-gray-500 mb-1">Kategori</div>
-          <div class="text-sm font-medium text-gray-800">{{ $ticket->kategori }}</div>
+          <div class="text-sm font-medium text-gray-800"><?php echo e($ticket->kategori); ?></div>
         </div>
         <div>
           <div class="text-xs text-gray-500 mb-1">IT Handler</div>
-          <div class="text-sm font-medium text-gray-800">{{ $ticket->it->name ?? '-' }}</div>
+          <div class="text-sm font-medium text-gray-800"><?php echo e($ticket->it->name ?? '-'); ?></div>
         </div>
       </div>
 
-      {{-- Deskripsi --}}
+      
       <div class="mt-6">
         <div class="text-xs text-gray-500 mb-1">Deskripsi</div>
-        <div class="text-sm text-gray-800 whitespace-pre-line">{{ $ticket->deskripsi }}</div>
+        <div class="text-sm text-gray-800 whitespace-pre-line"><?php echo e($ticket->deskripsi); ?></div>
       </div>
 
-      {{-- Lampiran + Aksi di bawah --}}
+      
       <div class="mt-4 flex items-center justify-between">
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
-          {{-- Hanya lampiran saat pembuatan/ubah tiket; lampiran komentar hanya di card komentar --}}
-          @if($ticket->lampiran)
+          
+          <?php if($ticket->lampiran): ?>
             <div>
-              <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: {{ basename($ticket->lampiran) }}</a>
-              <a href="{{ route('ticket.download',$ticket->id) }}" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: <?php echo e(basename($ticket->lampiran)); ?></a>
+              <a href="<?php echo e(route('ticket.download',$ticket->id)); ?>" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
             </div>
-          @else
+          <?php else: ?>
             <div class="text-xs text-gray-400">-</div>
-          @endif
+          <?php endif; ?>
         </div>
 
-        {{-- area kanan untuk Eskalasi / Re-open / History --}}
+        
         <div class="flex flex-wrap items-center gap-2 sm:gap-3 justify-end">
-          @auth
-            @if(auth()->user()->role === 'IT')
+          <?php if(auth()->guard()->check()): ?>
+            <?php if(auth()->user()->role === 'IT'): ?>
              
-            @endif
-          @endauth
+            <?php endif; ?>
+          <?php endif; ?>
 
-          {{-- Re-open jika CLOSED --}}
-          @auth
-            @if(auth()->user()->role === 'IT' && $ticket->status === 'CLOSED')
-              <form method="POST" action="{{ route('it.ticket.reopen', $ticket->id) }}">
-                @csrf
+          
+          <?php if(auth()->guard()->check()): ?>
+            <?php if(auth()->user()->role === 'IT' && $ticket->status === 'CLOSED'): ?>
+              <form method="POST" action="<?php echo e(route('it.ticket.reopen', $ticket->id)); ?>">
+                <?php echo csrf_field(); ?>
                 <button class="rounded-lg bg-amber-600 px-3 py-2 text-white text-sm hover:bg-amber-700">Re-open Tiket</button>
               </form>
-            @endif
-          @endauth
+            <?php endif; ?>
+          <?php endif; ?>
 
           <button type="button" x-data @click="$dispatch('open-history')" class="relative rounded-md bg-blue-500 px-2 py-1 text-white text-xs hover:bg-blue-600">
             History
             <span id="history-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold hidden"></span>
           </button>
-          @auth
-            @if(auth()->user()->role === 'IT' || (auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id()))
+          <?php if(auth()->guard()->check()): ?>
+            <?php if(auth()->user()->role === 'IT' || (auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id())): ?>
               <button type="button" x-data @click="$dispatch('open-update')" class="rounded-md bg-emerald-600 px-2 py-1 text-white text-xs hover:bg-emerald-700">
                 Update
               </button>
-            @endif
-          @endauth
+            <?php endif; ?>
+          <?php endif; ?>
         </div>
       </div>
     </div>
-    {{-- ========================= END CARD UTAMA ========================= --}}
+    
 
-    {{-- Ringkasan (dipindah ke kiri agar komentar bisa lebih leluasa di kanan) --}}
+    
     <div class="show-card min-h-0 flex-1 rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:overflow-y-auto">
       <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
       <dl class="text-[13px] text-gray-700 space-y-1">
         <div class="flex justify-between gap-2"><dt class="shrink-0">Nomor</dt><dd class="font-medium text-right">
-          {{ $ticket->nomor_tiket }}
-          @if($ticket->user?->kodeKantor?->nama_kantor || $ticket->user?->kode_kantor)
-            <span class="block text-xs font-normal text-gray-500">{{ $ticket->user?->kodeKantor?->nama_kantor ?? $ticket->user?->kode_kantor }}</span>
-          @endif
+          <?php echo e($ticket->nomor_tiket); ?>
+
+          <?php if($ticket->user?->kodeKantor?->nama_kantor || $ticket->user?->kode_kantor): ?>
+            <span class="block text-xs font-normal text-gray-500"><?php echo e($ticket->user?->kodeKantor?->nama_kantor ?? $ticket->user?->kode_kantor); ?></span>
+          <?php endif; ?>
         </dd></div>
-        <div class="flex justify-between"><dt>Status</dt><dd class="font-medium">{{ $ticket->status }}</dd></div>
-        <div class="flex justify-between"><dt>Kategori</dt><dd>{{ $ticket->kategori }}</dd></div>
-        <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Handler</dt><dd>{{ $ticket->it->name ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Vendor</dt><dd>{{ $ticket->vendor->name ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Eskalasi</dt><dd>{{ $ticket->escalated ?? 'TIDAK' }}</dd></div>
-        <div class="flex justify-between"><dt>Taken At</dt><dd>{{ optional($ticket->taken_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Closed At</dt><dd>{{ optional($ticket->closed_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        @if($ticket->status === 'CLOSED' && $ticket->rootCauseDetail)
-          <div class="flex justify-between gap-2"><dt class="shrink-0">Detail root cause</dt><dd class="text-right font-medium text-gray-800">{{ $ticket->rootCauseDetail->label }}</dd></div>
-        @endif
+        <div class="flex justify-between"><dt>Status</dt><dd class="font-medium"><?php echo e($ticket->status); ?></dd></div>
+        <div class="flex justify-between"><dt>Kategori</dt><dd><?php echo e($ticket->kategori); ?></dd></div>
+        <div class="flex justify-between"><dt>Dibuat</dt><dd><?php echo e(optional($ticket->created_at)->format('d M Y H:i') ?? '-'); ?></dd></div>
+        <div class="flex justify-between"><dt>Handler</dt><dd><?php echo e($ticket->it->name ?? '-'); ?></dd></div>
+        <div class="flex justify-between"><dt>Vendor</dt><dd><?php echo e($ticket->vendor->name ?? '-'); ?></dd></div>
+        <div class="flex justify-between"><dt>Eskalasi</dt><dd><?php echo e($ticket->escalated ?? 'TIDAK'); ?></dd></div>
+        <div class="flex justify-between"><dt>Taken At</dt><dd><?php echo e(optional($ticket->taken_at)->format('d M Y H:i') ?? '-'); ?></dd></div>
+        <div class="flex justify-between"><dt>Closed At</dt><dd><?php echo e(optional($ticket->closed_at)->format('d M Y H:i') ?? '-'); ?></dd></div>
+        <?php if($ticket->status === 'CLOSED' && $ticket->rootCauseDetail): ?>
+          <div class="flex justify-between gap-2"><dt class="shrink-0">Detail root cause</dt><dd class="text-right font-medium text-gray-800"><?php echo e($ticket->rootCauseDetail->label); ?></dd></div>
+        <?php endif; ?>
       </dl>
 
       
@@ -292,7 +293,7 @@
 
   </div>
 
-  {{-- Komentar kanan: tinggi dibatasi viewport; daftar di #chat-list yang menggulir --}}
+  
   <aside class="flex min-h-[14rem] flex-col lg:min-h-0 lg:h-full">
     <div class="show-card flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:h-full lg:max-h-full">
       <div class="shrink-0 flex items-center justify-between">
@@ -304,73 +305,74 @@
       </div>  
 
       <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-visible pr-1 min-h-[10rem] lg:min-h-[12rem] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
-        @forelse($ticket->comments->sortBy('created_at') as $c)
-          @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
-          <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">
+        <?php $__empty_1 = true; $__currentLoopData = $ticket->comments->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+          <?php $mine = auth()->check() && auth()->id() === $c->user_id; ?>
+          <div id="c-<?php echo e($c->id); ?>" class="flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>" data-comment-ts="<?php echo e(optional($c->created_at)->format('c')); ?>">
             <div class="max-w-[85%] sm:max-w-[78%]">
-              @php
+              <?php
                 $seenByReporter = isset($ticket->seen_by_reporter_at) && $ticket->seen_by_reporter_at && $c->created_at && $ticket->seen_by_reporter_at->gte($c->created_at);
                 $seenByIt = isset($ticket->seen_by_it_at) && $ticket->seen_by_it_at && $c->created_at && $ticket->seen_by_it_at->gte($c->created_at);
-              @endphp
-              <div class="text-[10px] text-gray-500 leading-4 {{ $mine ? 'text-right' : '' }}">
-                {{ $c->user->name ?? 'User' }} · {{ optional($c->created_at)->format('d M Y H:i') ?? '-' }}
-                @if($seenByReporter)
+              ?>
+              <div class="text-[10px] text-gray-500 leading-4 <?php echo e($mine ? 'text-right' : ''); ?>">
+                <?php echo e($c->user->name ?? 'User'); ?> · <?php echo e(optional($c->created_at)->format('d M Y H:i') ?? '-'); ?>
+
+                <?php if($seenByReporter): ?>
                   <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 text-emerald-600 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" title="Dibaca oleh pelapor">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
-                @endif
-                @if($seenByIt)
+                <?php endif; ?>
+                <?php if($seenByIt): ?>
                   <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 text-sky-600 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" title="Dibaca oleh IT">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
-                @endif
+                <?php endif; ?>
               </div>
-              <div class="mt-1 inline-block max-w-full rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm {{ $mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }}">
-                @if(trim((string) $c->body) !== '')
-                  <div class="whitespace-pre-wrap break-words">{{ $c->body }}</div>
-                @endif
-                @if($c->attachment)
-                  @php
+              <div class="mt-1 inline-block max-w-full rounded-2xl px-2 py-1.5 text-xs leading-snug break-words shadow-sm <?php echo e($mine ? 'bg-emerald-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'); ?>">
+                <?php if(trim((string) $c->body) !== ''): ?>
+                  <div class="whitespace-pre-wrap break-words"><?php echo e($c->body); ?></div>
+                <?php endif; ?>
+                <?php if($c->attachment): ?>
+                  <?php
                     $isCommentImage = (bool) preg_match('/\.(jpe?g|png|gif|webp)$/i', $c->attachment);
-                  @endphp
-                  @if($isCommentImage)
-                    @php $commentImgUrl = route('comment.download', $c->id) . '?inline=1'; @endphp
+                  ?>
+                  <?php if($isCommentImage): ?>
+                    <?php $commentImgUrl = route('comment.download', $c->id) . '?inline=1'; ?>
                     <div class="mt-2 overflow-hidden rounded-lg">
-                      <img src="{{ $commentImgUrl }}" alt="Gambar — klik untuk memperbesar" title="Klik untuk pratinjau" data-full-src="{{ $commentImgUrl }}" role="button" tabindex="0" class="js-comment-image-preview max-h-72 w-full max-w-full cursor-zoom-in object-contain transition-opacity hover:opacity-95 {{ $mine ? 'ring-1 ring-white/30' : 'ring-1 ring-gray-200/80' }}" loading="lazy" decoding="async" />
+                      <img src="<?php echo e($commentImgUrl); ?>" alt="Gambar — klik untuk memperbesar" title="Klik untuk pratinjau" data-full-src="<?php echo e($commentImgUrl); ?>" role="button" tabindex="0" class="js-comment-image-preview max-h-72 w-full max-w-full cursor-zoom-in object-contain transition-opacity hover:opacity-95 <?php echo e($mine ? 'ring-1 ring-white/30' : 'ring-1 ring-gray-200/80'); ?>" loading="lazy" decoding="async" />
                     </div>
                     <div class="mt-1.5">
-                      <a href="{{ route('comment.download', $c->id) }}" class="inline-flex items-center text-[10px] font-medium underline {{ $mine ? 'text-white/90 hover:text-white' : 'text-indigo-600 hover:text-indigo-800' }}">Unduh gambar</a>
+                      <a href="<?php echo e(route('comment.download', $c->id)); ?>" class="inline-flex items-center text-[10px] font-medium underline <?php echo e($mine ? 'text-white/90 hover:text-white' : 'text-indigo-600 hover:text-indigo-800'); ?>">Unduh gambar</a>
                     </div>
-                  @else
+                  <?php else: ?>
                     <div class="mt-2">
-                      <a href="{{ route('comment.download', $c->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs {{ $mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200' }}">Lampiran</a>
+                      <a href="<?php echo e(route('comment.download', $c->id)); ?>?inline=1" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded-md ring-1 ring-white/40 text-xs <?php echo e($mine ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-white text-indigo-600 hover:bg-indigo-50 ring-indigo-200'); ?>">Lampiran</a>
                     </div>
-                  @endif
-                @endif
+                  <?php endif; ?>
+                <?php endif; ?>
               </div>
-              <div class="mt-1 flex {{ $mine ? 'justify-end' : 'justify-start' }}">
-                @auth
-                  @if($ticket->status !== 'CLOSED' && auth()->id() === $c->user_id)
-                    <form method="POST" action="{{ route('comment.delete', $c->id) }}" onsubmit="return confirm('Hapus komentar ini?')">
-                      @csrf @method('DELETE')
+              <div class="mt-1 flex <?php echo e($mine ? 'justify-end' : 'justify-start'); ?>">
+                <?php if(auth()->guard()->check()): ?>
+                  <?php if($ticket->status !== 'CLOSED' && auth()->id() === $c->user_id): ?>
+                    <form method="POST" action="<?php echo e(route('comment.delete', $c->id)); ?>" onsubmit="return confirm('Hapus komentar ini?')">
+                      <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                       <button class="text-[10px] text-red-500/80 hover:text-red-600 hover:underline">Hapus</button>
                     </form>
-                  @endif
-                @endauth
+                  <?php endif; ?>
+                <?php endif; ?>
               </div>
             </div>
           </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
           <div class="text-gray-500 text-sm">Belum ada komentar.</div>
-        @endforelse
+        <?php endif; ?>
       </div>
 
       <div class="shrink-0 mt-3 border-t pt-3">
-        @if($ticket->status !== 'CLOSED')
-          <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" id="ticket-comment-form" class="flex flex-col gap-2">
-            @csrf
+        <?php if($ticket->status !== 'CLOSED'): ?>
+          <form action="<?php echo e(route('ticket.comment', $ticket->id)); ?>" method="POST" enctype="multipart/form-data" id="ticket-comment-form" class="flex flex-col gap-2">
+            <?php echo csrf_field(); ?>
             <div id="comment-attachment-preview" class="hidden flex flex-wrap items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 p-2">
               <img id="comment-attachment-preview-img" alt="Pratinjau lampiran — klik untuk memperbesar" title="Klik untuk pratinjau" class="hidden max-h-40 w-auto max-w-full cursor-zoom-in rounded-md object-contain ring-1 ring-gray-200/80 transition-opacity hover:opacity-90" />
               <span id="comment-attachment-preview-file" class="hidden max-w-full break-all text-xs text-gray-700"></span>
@@ -389,16 +391,16 @@
               </div>
             </div>
           </form>
-        @else
+        <?php else: ?>
           <div class="rounded-lg bg-gray-50 text-gray-600 ring-1 ring-gray-200 px-4 py-3 text-sm">Tiket telah ditutup. Komentar dan lampiran dinonaktifkan.</div>
-        @endif
+        <?php endif; ?>
       </div>
     </div>
   </aside>
 </div>
 </div>
 
-{{-- Modal pratinjau gambar komentar (klik gambar di chat / pratinjau tempel) --}}
+
 <div id="comment-image-lightbox" class="fixed inset-0 z-[130] hidden bg-black/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="comment-image-lightbox-title" aria-hidden="true">
   <p id="comment-image-lightbox-title" class="sr-only">Pratinjau gambar</p>
   <button type="button" id="comment-image-lightbox-backdrop" class="absolute inset-0 cursor-default" aria-label="Tutup pratinjau"></button>
@@ -408,7 +410,7 @@
   </div>
 </div>
 
-{{-- ===================== MODAL HISTORY (Alpine) ===================== --}}
+
 <div x-data="{ open:false }"
   x-on:open-history.window="open=true"
   x-show="open" x-cloak
@@ -437,8 +439,8 @@
             </span>
             Riwayat Tiket
           </div>
-          <h3 class="mt-1 text-lg font-semibold text-slate-900 truncate">#{{ $ticket->nomor_tiket }}</h3>
-          <p class="mt-0.5 text-xs text-slate-500">{{ $ticket->histories->count() }} aktivitas tercatat</p>
+          <h3 class="mt-1 text-lg font-semibold text-slate-900 truncate">#<?php echo e($ticket->nomor_tiket); ?></h3>
+          <p class="mt-0.5 text-xs text-slate-500"><?php echo e($ticket->histories->count()); ?> aktivitas tercatat</p>
         </div>
         <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700" @click="open=false" aria-label="Tutup">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -447,7 +449,7 @@
     </div>
 
     <div id="history-list" class="history-modal-body history-timeline">
-      @php
+      <?php
         $labels = [
           'created' => 'Tiket dibuat',
           'taken' => 'Diambil IT',
@@ -493,43 +495,46 @@
           'status_changed' => '<path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
           'category_override' => '<path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
         ];
-      @endphp
+      ?>
 
-      @forelse($ticket->histories->sortBy('created_at') as $h)
-        @php
+      <?php $__empty_1 = true; $__currentLoopData = $ticket->histories->sortBy('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $h): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <?php
           $palette = $colors[$h->action] ?? ['dot' => '#64748b', 'bg' => '#f1f5f9', 'text' => '#475569'];
           $label = $labels[$h->action] ?? ucfirst(str_replace('_', ' ', $h->action));
           $meta = $h->meta ?? [];
           $icon = $icons[$h->action] ?? '<circle cx="12" cy="12" r="3" fill="currentColor"/>';
-        @endphp
-        <article id="h-{{ $h->id }}" class="history-entry" data-history-ts="{{ optional($h->created_at)->format('c') }}">
-          <div class="history-entry-icon" style="background-color: {{ $palette['dot'] }}">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">{!! $icon !!}</svg>
+        ?>
+        <article id="h-<?php echo e($h->id); ?>" class="history-entry" data-history-ts="<?php echo e(optional($h->created_at)->format('c')); ?>">
+          <div class="history-entry-icon" style="background-color: <?php echo e($palette['dot']); ?>">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><?php echo $icon; ?></svg>
           </div>
           <div class="history-entry-card">
             <div class="history-entry-head">
-              <span class="history-badge" style="background: {{ $palette['bg'] }}; color: {{ $palette['text'] }}">{{ $label }}</span>
-              <time class="history-meta shrink-0" datetime="{{ optional($h->created_at)->format('c') }}">
-                {{ optional($h->created_at)->format('d M Y · H:i') ?? '-' }}
+              <span class="history-badge" style="background: <?php echo e($palette['bg']); ?>; color: <?php echo e($palette['text']); ?>"><?php echo e($label); ?></span>
+              <time class="history-meta shrink-0" datetime="<?php echo e(optional($h->created_at)->format('c')); ?>">
+                <?php echo e(optional($h->created_at)->format('d M Y · H:i') ?? '-'); ?>
+
               </time>
             </div>
-            <div class="history-meta mt-1.5">Oleh <span class="font-medium text-slate-700">{{ optional($h->user)->name ?? '—' }}</span></div>
-            @if($h->action === 'assigned_vendor' && (!empty($meta['vendor_name']) || !empty($meta['vendor_id'])))
+            <div class="history-meta mt-1.5">Oleh <span class="font-medium text-slate-700"><?php echo e(optional($h->user)->name ?? '—'); ?></span></div>
+            <?php if($h->action === 'assigned_vendor' && (!empty($meta['vendor_name']) || !empty($meta['vendor_id']))): ?>
               <div class="mt-2 inline-flex items-center rounded-full bg-fuchsia-50 px-2.5 py-0.5 text-[11px] font-medium text-fuchsia-700 ring-1 ring-fuchsia-100">
-                {{ $meta['vendor_name'] ?? ('Vendor ID '.$meta['vendor_id']) }}
+                <?php echo e($meta['vendor_name'] ?? ('Vendor ID '.$meta['vendor_id'])); ?>
+
               </div>
-            @endif
-            @if($h->action === 'assigned_it' && (!empty($meta['it_name']) || !empty($meta['it_id'])))
+            <?php endif; ?>
+            <?php if($h->action === 'assigned_it' && (!empty($meta['it_name']) || !empty($meta['it_id']))): ?>
               <div class="mt-2 inline-flex items-center rounded-full bg-teal-50 px-2.5 py-0.5 text-[11px] font-medium text-teal-700 ring-1 ring-teal-100">
-                {{ $meta['it_name'] ?? ('IT ID '.$meta['it_id']) }}
+                <?php echo e($meta['it_name'] ?? ('IT ID '.$meta['it_id'])); ?>
+
               </div>
-            @endif
-            @if($h->note)
-              <div class="history-note">{{ $h->note }}</div>
-            @endif
+            <?php endif; ?>
+            <?php if($h->note): ?>
+              <div class="history-note"><?php echo e($h->note); ?></div>
+            <?php endif; ?>
           </div>
         </article>
-      @empty
+      <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
         <div class="history-empty">
           <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
@@ -539,7 +544,7 @@
             <p class="mt-1 text-xs text-slate-500">Aktivitas tiket akan muncul di sini.</p>
           </div>
         </div>
-      @endforelse
+      <?php endif; ?>
     </div>
 
     <div id="history-export-footer" class="shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5 rounded-b-2xl">
@@ -552,9 +557,9 @@
     </div>
   </div>
 </div>
-{{-- =================== /MODAL HISTORY ====================== --}}
 
-{{-- ===================== MODAL UPDATE (Alpine) ===================== --}}
+
+
 <div x-data="{ open:false }"
   x-on:open-update.window="open=true"
   x-show="open" x-cloak
@@ -576,7 +581,7 @@
     <div class="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 bg-gray-50/80 px-3 py-2 sm:px-4">
       <div class="min-w-0">
         <h3 id="modal-update-title" class="truncate text-sm font-semibold text-gray-900 sm:text-base">Update tiket</h3>
-        <p class="truncate text-[11px] text-gray-500 sm:text-xs">{{ $ticket->nomor_tiket ?? 'Tiket' }}</p>
+        <p class="truncate text-[11px] text-gray-500 sm:text-xs"><?php echo e($ticket->nomor_tiket ?? 'Tiket'); ?></p>
       </div>
       <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200/80 hover:text-gray-800 sm:h-9 sm:w-9" @click="open=false" aria-label="Tutup">
         <span class="text-lg leading-none" aria-hidden="true">×</span>
@@ -584,20 +589,20 @@
     </div>
 
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-3">
-    @auth
-      @if(auth()->user()->role === 'IT')
+    <?php if(auth()->guard()->check()): ?>
+      <?php if(auth()->user()->role === 'IT'): ?>
         <div class="flex flex-col gap-3 md:flex-row md:items-stretch md:gap-4">
           <div class="flex min-w-0 flex-col gap-3 md:basis-0 md:min-w-0 md:flex-1">
           <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
             <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Status tiket</h4>
-            <form method="POST" action="{{ route('it.ticket.status', $ticket->id) }}" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-              @csrf
+            <form method="POST" action="<?php echo e(route('it.ticket.status', $ticket->id)); ?>" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <?php echo csrf_field(); ?>
               <div class="min-w-0 flex-1">
                 <label for="modal-status-select" class="sr-only">Status</label>
                 <select id="modal-status-select" name="status" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                  @foreach(($statuses ?? []) as $s)
-                    <option value="{{ $s }}" @selected($ticket->status === $s)>{{ $s }}</option>
-                  @endforeach
+                  <?php $__currentLoopData = ($statuses ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($s); ?>" <?php if($ticket->status === $s): echo 'selected'; endif; ?>><?php echo e($s); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
               <button type="submit" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 sm:min-w-[7.5rem]">Ubah status</button>
@@ -606,15 +611,15 @@
 
           <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
             <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Ganti IT handler</h4>
-            <form method="POST" action="{{ route('it.ticket.assign_it', $ticket->id) }}" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-              @csrf
+            <form method="POST" action="<?php echo e(route('it.ticket.assign_it', $ticket->id)); ?>" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <?php echo csrf_field(); ?>
               <div class="min-w-0 flex-1">
                 <label for="modal-it-select" class="sr-only">IT handler</label>
                 <select id="modal-it-select" name="it_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                   <option value="">Tidak assign IT handler</option>
-                  @foreach(($its ?? collect()) as $it)
-                    <option value="{{ $it->id }}" @selected($ticket->it_id === $it->id)>{{ $it->name }}</option>
-                  @endforeach
+                  <?php $__currentLoopData = ($its ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($it->id); ?>" <?php if($ticket->it_id === $it->id): echo 'selected'; endif; ?>><?php echo e($it->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
               <button type="submit" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-teal-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-teal-700 sm:min-w-[7.5rem]">Simpan handler</button>
@@ -623,15 +628,15 @@
 
           <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
             <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Assign ke vendor</h4>
-            <form method="POST" action="{{ route('it.ticket.assign_vendor', $ticket->id) }}" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-              @csrf
+            <form method="POST" action="<?php echo e(route('it.ticket.assign_vendor', $ticket->id)); ?>" class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <?php echo csrf_field(); ?>
               <div class="min-w-0 flex-1">
                 <label for="modal-vendor-select" class="sr-only">Vendor</label>
                 <select id="modal-vendor-select" name="vendor_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                  <option value="" {{ empty($ticket->vendor_id) ? 'selected' : '' }}>Tidak assign vendor</option>
-                  @foreach(($vendors ?? collect()) as $v)
-                    <option value="{{ $v->id }}" @selected($ticket->vendor_id === $v->id)>{{ $v->name }}</option>
-                  @endforeach
+                  <option value="" <?php echo e(empty($ticket->vendor_id) ? 'selected' : ''); ?>>Tidak assign vendor</option>
+                  <?php $__currentLoopData = ($vendors ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($v->id); ?>" <?php if($ticket->vendor_id === $v->id): echo 'selected'; endif; ?>><?php echo e($v->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
               <button type="submit" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 sm:min-w-[7.5rem]">Simpan assign</button>
@@ -640,15 +645,15 @@
 
           <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
             <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Override kategori</h4>
-            <form method="POST" action="{{ route('it.ticket.override_category', $ticket->id) }}" class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              @csrf
+            <form method="POST" action="<?php echo e(route('it.ticket.override_category', $ticket->id)); ?>" class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <?php echo csrf_field(); ?>
               <div class="min-w-0 sm:col-span-1">
                 <label for="override-category-select" class="mb-0.5 block text-[11px] font-medium text-gray-600">Kategori</label>
                 <select id="override-category-select" name="category_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                   <option value="">— Tidak diubah —</option>
-                  @foreach(($categories ?? collect()) as $c)
-                    <option value="{{ $c->id }}" @selected($ticket->category_id == $c->id)>{{ $c->name }}</option>
-                  @endforeach
+                  <?php $__currentLoopData = ($categories ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($c->id); ?>" <?php if($ticket->category_id == $c->id): echo 'selected'; endif; ?>><?php echo e($c->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
               <div class="min-w-0 sm:col-span-1">
@@ -666,35 +671,35 @@
           </div>
 
           <div class="flex min-w-0 flex-col gap-3 md:basis-0 md:min-w-0 md:flex-1">
-          @if(!empty($ticket->vendor_followup))
+          <?php if(!empty($ticket->vendor_followup)): ?>
             <section class="max-h-32 overflow-y-auto rounded-lg border border-fuchsia-100 bg-fuchsia-50/40 p-3">
               <h4 class="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-800">Tindak lanjut vendor</h4>
-              <div class="mt-1 text-xs text-gray-800 whitespace-pre-line">{{ $ticket->vendor_followup }}</div>
-              @if($ticket->vendor_followup_at)
-                <div class="mt-1 text-[10px] text-fuchsia-900/70">Diperbarui: {{ optional($ticket->vendor_followup_at)->format('d M Y H:i') ?? '-' }}</div>
-              @endif
+              <div class="mt-1 text-xs text-gray-800 whitespace-pre-line"><?php echo e($ticket->vendor_followup); ?></div>
+              <?php if($ticket->vendor_followup_at): ?>
+                <div class="mt-1 text-[10px] text-fuchsia-900/70">Diperbarui: <?php echo e(optional($ticket->vendor_followup_at)->format('d M Y H:i') ?? '-'); ?></div>
+              <?php endif; ?>
             </section>
-          @endif
+          <?php endif; ?>
 
           <section class="rounded-lg border border-red-100 bg-red-50/30 p-3 ring-1 ring-red-100/80">
             <h4 class="text-[11px] font-semibold uppercase tracking-wide text-red-800">Tutup tiket</h4>
             <p class="mt-0.5 text-[11px] text-red-900/70">Pilih <strong>root cause</strong>, lalu <strong>detail root cause</strong> (radio dari Parameter). <strong>Closed note</strong> = catatan penutupan / isian untuk opsi Lainnya.</p>
-            <form method="POST" action="{{ route('it.ticket.close', $ticket->id) }}" id="form-close-ticket" class="mt-2 space-y-2">
-              @csrf
+            <form method="POST" action="<?php echo e(route('it.ticket.close', $ticket->id)); ?>" id="form-close-ticket" class="mt-2 space-y-2">
+              <?php echo csrf_field(); ?>
               <div>
                 <label for="modal-close-root-cause" class="mb-0.5 block text-[11px] font-medium text-gray-700">Root cause</label>
                 <select id="modal-close-root-cause" name="root_cause" required class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                  @php $rcOld = old('root_cause', $ticket->root_cause); @endphp
-                  <option value="" disabled {{ empty($rcOld) ? 'selected' : '' }}>Pilih root cause</option>
-                  @foreach(($rootCauses ?? collect()) as $rc)
-                    <option value="{{ $rc->name }}" @selected($rcOld === $rc->name)>{{ $rc->name }}</option>
-                  @endforeach
+                  <?php $rcOld = old('root_cause', $ticket->root_cause); ?>
+                  <option value="" disabled <?php echo e(empty($rcOld) ? 'selected' : ''); ?>>Pilih root cause</option>
+                  <?php $__currentLoopData = ($rootCauses ?? collect()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($rc->name); ?>" <?php if($rcOld === $rc->name): echo 'selected'; endif; ?>><?php echo e($rc->name); ?></option>
+                  <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
               </div>
               <div id="root-cause-detail-radios-wrap" class="min-h-[2.5rem]"></div>
               <div id="modal-close-note-wrap">
                 <label id="modal-close-note-label" for="modal-close-note" class="mb-0.5 block text-[11px] font-medium text-gray-700">Closed note</label>
-                <textarea id="modal-close-note" name="closed_note" rows="2" class="max-h-28 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="…">{{ old('closed_note') }}</textarea>
+                <textarea id="modal-close-note" name="closed_note" rows="2" class="max-h-28 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="…"><?php echo e(old('closed_note')); ?></textarea>
               </div>
               <div class="flex flex-col-reverse gap-2 border-t border-red-100/80 pt-2 sm:flex-row sm:justify-end">
                 <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
@@ -704,32 +709,32 @@
           </section>
           </div>
         </div>
-      @elseif(auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id())
-        <form method="POST" action="{{ route('vendor.ticket.followup', $ticket->id) }}" class="space-y-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
-          @csrf
+      <?php elseif(auth()->user()->role === 'VENDOR' && $ticket->vendor_id === auth()->id()): ?>
+        <form method="POST" action="<?php echo e(route('vendor.ticket.followup', $ticket->id)); ?>" class="space-y-3 rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
+          <?php echo csrf_field(); ?>
           <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Tindak lanjut vendor</h4>
           <div>
             <label for="modal-vendor-followup" class="mb-0.5 block text-[11px] font-medium text-gray-700">Catatan</label>
-            <textarea id="modal-vendor-followup" name="vendor_followup" rows="3" required class="max-h-40 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Catat tindak lanjut…">{{ old('vendor_followup', $ticket->vendor_followup) }}</textarea>
+            <textarea id="modal-vendor-followup" name="vendor_followup" rows="3" required class="max-h-40 w-full resize-y rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Catat tindak lanjut…"><?php echo e(old('vendor_followup', $ticket->vendor_followup)); ?></textarea>
           </div>
           <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-2 sm:flex-row sm:justify-end">
             <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
             <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-emerald-700">Simpan</button>
           </div>
         </form>
-      @endif
-    @endauth
+      <?php endif; ?>
+    <?php endif; ?>
     </div>
 
   </div>
   </div>
 </div>
-{{-- =================== /MODAL UPDATE ====================== --}}
+
   
-  @push('scripts')
+  <?php $__env->startPush('scripts'); ?>
   <script>
-    window.rootCauseDetailsByRoot = @json($rootCauseDetailsByRootName ?? []);
-    window.selectedRootCauseDetailId = @json(old('root_cause_detail_id', $ticket->root_cause_detail_id));
+    window.rootCauseDetailsByRoot = <?php echo json_encode($rootCauseDetailsByRootName ?? [], 15, 512) ?>;
+    window.selectedRootCauseDetailId = <?php echo json_encode(old('root_cause_detail_id', $ticket->root_cause_detail_id), 512) ?>;
     window.downloadHistoryPanel = async function(){
       const panel = document.getElementById('history-panel');
       const list = document.getElementById('history-list');
@@ -772,7 +777,7 @@
         });
 
         const link = document.createElement('a');
-        link.download = 'history_{{ Str::slug($ticket->nomor_tiket ?? "tiket") }}.png';
+        link.download = 'history_<?php echo e(Str::slug($ticket->nomor_tiket ?? "tiket")); ?>.png';
         link.href = canvas.toDataURL('image/png');
         document.body.appendChild(link);
         link.click();
@@ -961,7 +966,7 @@
       }catch(_){ }
 
       // ===== Notifications (badges) for History and Comments =====
-      const ticketId = {{ (int) $ticket->id }};
+      const ticketId = <?php echo e((int) $ticket->id); ?>;
       const cmKey = `ticket:${ticketId}:seen:comments`;
       const hsKey = `ticket:${ticketId}:seen:history`;
       const commentBadge = document.getElementById('comment-badge');
@@ -1065,9 +1070,9 @@
       try{
         const overrideCategorySelect = document.getElementById('override-category-select');
         const overrideSubcategorySelect = document.getElementById('override-subcategory-select');
-        const categoryBaseUrl = '{{ url('/categories') }}';
-        const initCat = '{{ $ticket->category_id ?? '' }}';
-        const initSub = '{{ $ticket->subcategory_id ?? '' }}';
+        const categoryBaseUrl = '<?php echo e(url('/categories')); ?>';
+        const initCat = '<?php echo e($ticket->category_id ?? ''); ?>';
+        const initSub = '<?php echo e($ticket->subcategory_id ?? ''); ?>';
 
         async function loadOverrideSubcategories(categoryId, toSelect = null){
           if(!overrideSubcategorySelect) return;
@@ -1183,5 +1188,7 @@
       } catch (_) {}
     });
   </script>
-  @endpush
-@endsection
+  <?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\helpdesk-app\resources\views/tickets/show.blade.php ENDPATH**/ ?>

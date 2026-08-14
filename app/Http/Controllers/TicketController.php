@@ -717,6 +717,82 @@ public function store(Request $request)
         return back()->with('success', 'Tiket dilepas kembali ke antrian.');
     }
 
+    /** IT mengganti handler IT tiket */
+    public function assignItHandler(Request $request, Ticket $ticket)
+    {
+        if (Auth::user()->role !== 'IT') abort(403);
+        if ($ticket->status === 'CLOSED') {
+            return back()->with('error', 'Tiket sudah ditutup.');
+        }
+
+        $data = $request->validate([
+            'it_id' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        if (empty($data['it_id'])) {
+            $ticket->update(['it_id' => null]);
+
+            $h = \App\Models\TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => Auth::id(),
+                'action'    => 'assigned_it_cleared',
+                'note'      => 'IT handler dihapus',
+            ]);
+            $this->notifyHistory($ticket, $h, 'IT handler dihapus', 'Penugasan IT dihapus dari tiket.');
+
+            return back()->with('success', 'IT handler dihapus.');
+        }
+
+        $itUser = User::where('id', $data['it_id'])->where('role', 'IT')->first();
+        if (! $itUser) {
+            return back()->withErrors(['it_id' => 'Pilih IT handler yang valid.'])->withInput();
+        }
+
+        $oldItId = $ticket->it_id;
+        $ticket->update([
+            'it_id' => $itUser->id,
+            'status' => $ticket->status === 'OPEN' ? 'ON_PROGRESS' : $ticket->status,
+            'taken_at' => $ticket->taken_at ?: now(),
+        ]);
+
+        $h = \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => Auth::id(),
+            'action'    => 'assigned_it',
+            'note'      => 'Assign IT handler: ' . ($itUser->name ?? ('ID '.$itUser->id)),
+            'meta'      => [
+                'old_it_id' => $oldItId,
+                'it_id' => $itUser->id,
+                'it_name' => $itUser->name,
+            ],
+        ]);
+        $this->notifyHistory($ticket, $h, 'IT handler diganti', 'Tiket ditugaskan ke '.$itUser->name);
+
+        try {
+            $actor = auth()->user();
+            $ticket->loadMissing(['user', 'it']);
+            $payload = [
+                'ticket_id'  => $ticket->id,
+                'ticket_no'  => $ticket->nomor_tiket ?? ('#'.$ticket->id),
+                'kind'       => 'assigned',
+                'title'      => 'Anda menerima tugas tiket',
+                'body'       => ($actor?->name ? $actor->name . ' ' : '') . 'menugaskan tiket ini kepada Anda.',
+                'url'        => route('ticket.show', $ticket->id),
+                'actor_id'   => $actor?->id,
+                'actor_name' => $actor?->name,
+                'created_at' => now()->toIso8601String(),
+            ];
+            TicketActivityNotifier::notify($itUser, $payload);
+        } catch (\Throwable $e) {
+            Log::error('TicketAssignIt: gagal mengirim notifikasi ke IT handler baru: ' . $e->getMessage(), [
+                'ticket_id' => $ticket->id,
+                'it_id' => $itUser->id,
+            ]);
+        }
+
+        return back()->with('success', 'IT handler berhasil diganti.');
+    }
+
     /** IT menutup tiket (wajib root cause + catatan penyelesaian) */
   public function close(Request $request, Ticket $ticket)
 {
@@ -1070,6 +1146,7 @@ public function store(Request $request)
         }
 
         $vendors = User::where('role','VENDOR')->orderBy('name')->get(['id','name']);
+        $its = User::where('role', 'IT')->where('visible_on_assign', true)->orderBy('name')->get(['id', 'name']);
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $statuses = self::STATUS;
         $categories = \App\Models\Category::orderBy('name')->get(['id','name']);
@@ -1090,7 +1167,7 @@ public function store(Request $request)
             })
             ->all();
 
-        return view('tickets.show', compact('ticket', 'vendors', 'rootCauses', 'statuses', 'categories', 'rootCauseDetailsByRootName'));
+        return view('tickets.show', compact('ticket', 'vendors', 'its', 'rootCauses', 'statuses', 'categories', 'rootCauseDetailsByRootName'));
     }
 
     /** Override kategori / subkategori oleh IT */
