@@ -12,6 +12,9 @@ return new class extends Migration
             $table->boolean('desktop_active')->default(true)->after('is_active');
             $table->boolean('mobile_active')->default(true)->after('desktop_active');
         });
+
+        \DB::table('popup_announcements')->whereNull('desktop_active')->update(['desktop_active' => true]);
+        \DB::table('popup_announcements')->whereNull('mobile_active')->update(['mobile_active' => true]);
     }
 
     public function down(): void

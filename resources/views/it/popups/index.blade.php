@@ -100,7 +100,7 @@
           <div class="rounded-2xl border border-slate-200 p-4">
             <div class="flex flex-col gap-4 md:flex-row">
               @if($popup->image_path)
-                <img src="{{ asset('storage/' . $popup->image_path) }}" class="h-36 w-full rounded-xl object-cover md:w-48" alt="{{ $popup->title }}">
+                <img src="{{ \Illuminate\Support\Facades\Storage::url($popup->image_path) }}" class="h-36 w-full rounded-xl object-cover md:w-48" alt="{{ $popup->title }}">
               @endif
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -128,7 +128,7 @@
                   <button
                     type="button"
                     class="rounded-lg border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
-                    @click="preview = { title: @js($popup->title), image: @js($popup->image_path ? asset('storage/' . $popup->image_path) : ''), description: @js($popup->description ?? '') }; previewOpen = true"
+                    @click="preview = { title: @js($popup->title), image: @js($popup->image_path ? \Illuminate\Support\Facades\Storage::url($popup->image_path) : ''), description: @js($popup->description ?? '') }; previewOpen = true"
                   >
                     Preview
                   </button>
