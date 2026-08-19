@@ -129,6 +129,7 @@
     'vendor.tickets',
     'it.stats',
     'it.parameters',
+    'it.popups.*',
     'it.users.*',
     'profile.edit',
     'vendor.profile.edit'
@@ -149,12 +150,57 @@
   }
 @endphp
 
+@php
+  $activePopup = null;
+  $showActivePopup = false;
+  $isMobileDevice = false;
+  if (auth()->check()) {
+    try {
+      $userAgent = strtolower((string) request()->userAgent());
+      $isMobileDevice = (bool) preg_match('/android|iphone|ipod|ipad|mobile|tablet|webos|blackberry|iemobile|opera mini/i', $userAgent);
+      $now = now();
+      $activePopup = \App\Models\PopupAnnouncement::query()
+        ->where('is_active', true)
+        ->where($isMobileDevice ? 'mobile_active' : 'desktop_active', true)
+        ->where(function ($q) use ($now) {
+          $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+        })
+        ->where(function ($q) use ($now) {
+          $q->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
+        })
+        ->orderBy('sort_order')
+        ->orderByDesc('id')
+        ->first();
+      if ($activePopup) {
+        $seenKey = 'popup_seen_' . $activePopup->id;
+        $showActivePopup = ! session()->has($seenKey);
+        if ($showActivePopup) {
+          session()->put($seenKey, true);
+        }
+      }
+    } catch (\Throwable $e) {
+      $activePopup = null;
+      $showActivePopup = false;
+    }
+  }
+@endphp
+
 <body
   class="h-full font-sans antialiased bg-gray-100 {{ $isDesktopScaledRoute ? 'ui-compact-80' : '' }}"
   x-data="layoutState()"
   x-init="init()"
   :class="{ 'overflow-hidden': mobileOpen }"
 >
+  @if($activePopup && $showActivePopup)
+    <div x-data="{ open: true }" x-cloak x-show="open" class="fixed inset-0 z-[120] flex items-center justify-center p-0 sm:p-4">
+      <div class="absolute inset-0 bg-slate-900/75 backdrop-blur-sm" @click="open=false"></div>
+      <div class="relative w-full max-w-none overflow-hidden bg-transparent shadow-none ring-0 sm:max-w-5xl lg:max-w-6xl">
+        @if($activePopup->image_path)
+          <img src="{{ asset('storage/' . $activePopup->image_path) }}" alt="{{ $activePopup->title }}" class="block h-auto max-h-[92vh] w-full object-contain">
+        @endif
+      </div>
+    </div>
+  @endif
 
   {{-- TOPBAR (gradient) --}}
 <header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 sticky top-0 z-40 h-[var(--topbar-h)]">
@@ -983,3 +1029,4 @@ function logoutMobile() {
   @stack('scripts')
 </body>
 </html>
+

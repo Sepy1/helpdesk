@@ -158,6 +158,10 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/rootcause/detail/{detail}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCauseDetail'])->name('it.parameters.rootcause.detail.delete');
         Route::post('/it/parameters/it-visibility', [\App\Http\Controllers\ParameterController::class, 'saveItVisibility'])->name('it.parameters.it.visibility');
         Route::post('/it/parameters/ai-chat', [\App\Http\Controllers\ParameterController::class, 'saveAiChatSetting'])->name('it.parameters.ai_chat');
+        Route::get('/it/popups', [\App\Http\Controllers\PopupAnnouncementController::class, 'index'])->name('it.popups.index');
+        Route::post('/it/popups', [\App\Http\Controllers\PopupAnnouncementController::class, 'store'])->name('it.popups.store');
+        Route::put('/it/popups/{popup}', [\App\Http\Controllers\PopupAnnouncementController::class, 'update'])->name('it.popups.update');
+        Route::delete('/it/popups/{popup}', [\App\Http\Controllers\PopupAnnouncementController::class, 'destroy'])->name('it.popups.destroy');
 
         Route::post('/it/ticket/{ticket}/take',            [TicketController::class, 'take'])->name('it.ticket.take');
         Route::post('/it/ticket/{ticket}/release',         [TicketController::class, 'release'])->name('it.ticket.release');
