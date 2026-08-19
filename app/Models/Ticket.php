@@ -14,6 +14,7 @@ class Ticket extends Model
         'vendor_followup','vendor_followup_at','closed_note','closed_at', 'root_cause',
         'root_cause_detail_id',
         'category_id','subcategory_id',
+        'user_lama_id','user_pengganti_id',
     ];
 
     protected $casts = [
@@ -59,6 +60,16 @@ public function subcategory()
     public function rootCauseDetail()
     {
         return $this->belongsTo(RootCauseDetail::class, 'root_cause_detail_id');
+    }
+
+    public function userLama()
+    {
+        return $this->belongsTo(PergantianUser::class, 'user_lama_id');
+    }
+
+    public function userPengganti()
+    {
+        return $this->belongsTo(PergantianUser::class, 'user_pengganti_id');
     }
 
 }

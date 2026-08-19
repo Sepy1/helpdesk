@@ -197,6 +197,8 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])
     ->name('categories.subcategories');
+Route::get('/pergantian-users', [\App\Http\Controllers\TicketController::class, 'pergantianUsers'])
+    ->name('pergantian-users.index');
 
 
     

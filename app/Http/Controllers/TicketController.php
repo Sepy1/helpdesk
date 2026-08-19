@@ -14,6 +14,7 @@ use App\Models\Subcategory;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
 use App\Models\KodeKantor;
+use App\Models\PergantianUser;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use App\Mail\TicketSubmitted;
@@ -123,13 +124,39 @@ public function create()
             ->toArray();
     }
 
-    return view('cabang.create_ticket', compact('categories', 'its', 'itCounts'));
+    $pergantianUsersByUnit = collect();
+    $reporterUnit = auth()->user()?->kode_kantor;
+    if ($reporterUnit) {
+        $pergantianUsersByUnit = PergantianUser::query()
+            ->where('unit_kerja', $reporterUnit)
+            ->orderBy('nama_lengkap')
+            ->get(['id', 'user_name', 'nama_lengkap', 'unit_kerja']);
+    }
+
+    return view('cabang.create_ticket', compact('categories', 'its', 'itCounts', 'pergantianUsersByUnit', 'reporterUnit'));
+}
+
+public function pergantianUsers(Request $request)
+{
+    $unitKerja = trim((string) $request->query('unit_kerja', ''));
+
+    if ($unitKerja === '') {
+        return response()->json([]);
+    }
+
+    $users = PergantianUser::query()
+        ->where('unit_kerja', $unitKerja)
+        ->orderBy('nama_lengkap')
+        ->get(['id', 'user_name', 'nama_lengkap', 'unit_kerja']);
+
+    return response()->json($users);
 }
 
 /** Simpan tiket baru */
 public function store(Request $request)
 {
     Log::info('TicketStore: masuk ke store() oleh user_id=' . optional(Auth::user())->id);
+    $reporterUnit = auth()->user()?->kode_kantor;
 
     // validasi (dukungan hingga 3 lampiran)
     $data = $request->validate([
@@ -165,6 +192,13 @@ public function store(Request $request)
             return back()
                 ->withErrors(['subcategory_id' => 'Subkategori tidak valid untuk kategori yang dipilih.'])
                 ->withInput();
+        }
+
+        $subcategory = Subcategory::find($data['subcategory_id']);
+        $isPergantianUser = $subcategory && strcasecmp(trim((string) $subcategory->name), 'Pergantian User') === 0;
+        if ($isPergantianUser) {
+            // Data pergantian user divalidasi di modal frontend.
+            // Saat submit tiket, field ini hanya dibaca jika memang sudah diisi.
         }
 
         Log::info('TicketStore: subkategori valid', [
@@ -207,19 +241,34 @@ public function store(Request $request)
                 'nomor_tiket'    => $this->generateTicketNumber(),
                 'user_id'        => auth()->id(),
                 'category_id'    => $data['category_id'],
-                'subcategory_id' => $data['subcategory_id'] ?? null,
-                'it_id'          => $data['it_id'] ?? null,
-                'deskripsi'      => $data['deskripsi'],
-                // simpan lampiran pertama (jika ada) ke kolom tiket untuk kompatibilitas
-                'lampiran'       => $lampiranPaths[0] ?? null,
-                'status'         => 'OPEN',
-                'eskalasi'       => 'TIDAK',
+        'subcategory_id' => $data['subcategory_id'] ?? null,
+        'it_id'          => $data['it_id'] ?? null,
+        'deskripsi'      => $data['deskripsi'],
+        'user_lama_id'   => $data['user_lama_id'] ?? null,
+        'user_pengganti_id' => $data['user_pengganti_id'] ?? null,
+        // simpan lampiran pertama (jika ada) ke kolom tiket untuk kompatibilitas
+        'lampiran'       => $lampiranPaths[0] ?? null,
+        'status'         => 'OPEN',
+        'eskalasi'       => 'TIDAK',
             ];
 
             // backward-compat: jika masih ada kolom 'kategori', isi dengan nama kategori
             if (Schema::hasColumn('tickets', 'kategori')) {
                 $cat = Category::find($data['category_id']);
                 $payload['kategori'] = $cat ? $cat->name : null;
+            }
+
+            if (!empty($data['subcategory_id']) && isset($isPergantianUser) && $isPergantianUser) {
+                $userLama = $data['user_lama_id'] ? PergantianUser::find($data['user_lama_id']) : null;
+                $userPengganti = $data['user_pengganti_id'] ? PergantianUser::find($data['user_pengganti_id']) : null;
+                $tanggalAwal = $request->input('tanggal_awal', '-');
+                $tanggalSelesai = $request->input('tanggal_selesai', '-');
+                $alasan = trim((string) $request->input('alasan_pergantian', ''));
+                $payload['deskripsi'] = "Permohonan pergantian user dengan detail sebagai berikut :\n"
+                    . "user lama : " . ($userLama->user_name ?? '-') . "\n"
+                    . "user pengganti : " . ($userPengganti->user_name ?? '-') . "\n"
+                    . "Periode : " . $tanggalAwal . " - " . $tanggalSelesai . "\n"
+                    . "Alasan : " . ($alasan !== '' ? $alasan : '-');
             }
 
             $created = Ticket::create($payload);
