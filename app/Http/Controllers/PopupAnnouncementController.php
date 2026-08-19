@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PopupAnnouncement;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 
 class PopupAnnouncementController extends Controller
@@ -108,5 +109,22 @@ class PopupAnnouncementController extends Controller
         $popup->delete();
 
         return back()->with('success', 'Popup dihapus.');
+    }
+
+    public function image(PopupAnnouncement $popup)
+    {
+        $this->ensureIT();
+
+        if (! $popup->image_path || ! Storage::disk('public')->exists($popup->image_path)) {
+            abort(404);
+        }
+
+        $fullPath = Storage::disk('public')->path($popup->image_path);
+        $mime = Storage::disk('public')->mimeType($popup->image_path) ?: 'application/octet-stream';
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 }
