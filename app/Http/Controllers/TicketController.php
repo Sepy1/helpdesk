@@ -161,7 +161,7 @@ public function store(Request $request)
     // validasi (dukungan hingga 3 lampiran)
     $data = $request->validate([
         'category_id'   => 'required|exists:categories,id',
-        'subcategory_id'=> 'nullable|exists:subcategories,id',
+        'subcategory_id'=> 'required|exists:subcategories,id',
         'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
         'lampiran'      => 'nullable|array|max:3',

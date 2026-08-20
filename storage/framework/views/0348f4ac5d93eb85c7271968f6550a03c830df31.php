@@ -161,7 +161,10 @@
       $now = now();
       $activePopup = \App\Models\PopupAnnouncement::query()
         ->where('is_active', true)
-        ->where($isMobileDevice ? 'mobile_active' : 'desktop_active', true)
+        ->where(function ($q) use ($isMobileDevice) {
+          $column = $isMobileDevice ? 'mobile_active' : 'desktop_active';
+          $q->where($column, true)->orWhereNull($column);
+        })
         ->where(function ($q) use ($now) {
           $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
         })
@@ -196,7 +199,7 @@
       <div class="absolute inset-0 bg-slate-900/75 backdrop-blur-sm" @click="open=false"></div>
       <div class="relative w-full max-w-none overflow-hidden bg-transparent shadow-none ring-0 sm:max-w-5xl lg:max-w-6xl">
         <?php if($activePopup->image_path): ?>
-          <img src="<?php echo e(asset('storage/' . $activePopup->image_path)); ?>" alt="<?php echo e($activePopup->title); ?>" class="block h-auto max-h-[92vh] w-full object-contain">
+          <img src="<?php echo e(route('it.popups.image', $activePopup)); ?>" alt="<?php echo e($activePopup->title); ?>" class="block h-auto max-h-[92vh] w-full object-contain">
         <?php endif; ?>
       </div>
     </div>

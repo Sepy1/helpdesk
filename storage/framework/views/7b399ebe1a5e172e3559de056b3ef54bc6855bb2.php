@@ -45,6 +45,7 @@ unset($__errorArgs, $__bag); ?>
     <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">Subkategori</label>
             <select name="subcategory_id" id="subcategory-select"
+              required
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1">
         <option value="">-</option>
         
