@@ -429,7 +429,6 @@ document.addEventListener('DOMContentLoaded', function () {
     pergantianModal.classList.remove('flex');
     if (reset) {
       resetPergantianUserState();
-      subcategorySelect.value = '';
     }
   }
 
@@ -527,7 +526,7 @@ Alasan : ${alasan}`;
         openPergantianModal();
       });
     } else {
-      closePergantianModal();
+      closePergantianModal({ reset: false });
     }
   }
 
