@@ -83,6 +83,24 @@ class ParameterController extends Controller
         return back()->with('success','Subkategori ditambahkan.');
     }
 
+    public function updateCategoryStatus(Request $request, Category $category)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $category->update(['is_enabled' => $request->boolean('is_enabled')]);
+
+        return back()->with('success', 'Status kategori berhasil diperbarui.');
+    }
+
+    public function updateSubcategoryStatus(Request $request, Subcategory $subcategory)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $subcategory->update(['is_enabled' => $request->boolean('is_enabled')]);
+
+        return back()->with('success', 'Status subkategori berhasil diperbarui.');
+    }
+
     public function storeRootCause(Request $request)
     {
         if (auth()->user()->role !== 'IT') abort(403);

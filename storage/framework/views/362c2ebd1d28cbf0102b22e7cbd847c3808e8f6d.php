@@ -99,7 +99,7 @@
           <div class="rounded-2xl border border-slate-200 p-4">
             <div class="flex flex-col gap-4 md:flex-row">
               <?php if($popup->image_path): ?>
-                <img src="<?php echo e(asset('storage/' . $popup->image_path)); ?>" class="h-36 w-full rounded-xl object-cover md:w-48" alt="<?php echo e($popup->title); ?>">
+                <img src="<?php echo e(route('it.popups.image', $popup)); ?>" class="h-36 w-full rounded-xl object-cover md:w-48" alt="<?php echo e($popup->title); ?>">
               <?php endif; ?>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -131,7 +131,7 @@
                   <button
                     type="button"
                     class="rounded-lg border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
-                    @click="preview = { title: <?php echo \Illuminate\Support\Js::from($popup->title)->toHtml() ?>, image: <?php echo \Illuminate\Support\Js::from($popup->image_path ? asset('storage/' . $popup->image_path) : '')->toHtml() ?>, description: <?php echo \Illuminate\Support\Js::from($popup->description ?? '')->toHtml() ?> }; previewOpen = true"
+                    @click="preview = { title: <?php echo \Illuminate\Support\Js::from($popup->title)->toHtml() ?>, image: <?php echo \Illuminate\Support\Js::from($popup->image_path ? route('it.popups.image', $popup) : '')->toHtml() ?>, description: <?php echo \Illuminate\Support\Js::from($popup->description ?? '')->toHtml() ?> }; previewOpen = true"
                   >
                     Preview
                   </button>

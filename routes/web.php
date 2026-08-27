@@ -149,8 +149,10 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         // Parameter management (kategori, subkategori, root cause)
         Route::get('/it/parameters', [\App\Http\Controllers\ParameterController::class, 'index'])->name('it.parameters');
         Route::post('/it/parameters/category', [\App\Http\Controllers\ParameterController::class, 'storeCategory'])->name('it.parameters.category.store');
+        Route::post('/it/parameters/category/{category}/status', [\App\Http\Controllers\ParameterController::class, 'updateCategoryStatus'])->name('it.parameters.category.status');
         Route::post('/it/parameters/category/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteCategory'])->name('it.parameters.category.delete');
         Route::post('/it/parameters/subcategory', [\App\Http\Controllers\ParameterController::class, 'storeSubcategory'])->name('it.parameters.subcategory.store');
+        Route::post('/it/parameters/subcategory/{subcategory}/status', [\App\Http\Controllers\ParameterController::class, 'updateSubcategoryStatus'])->name('it.parameters.subcategory.status');
         Route::post('/it/parameters/subcategory/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteSubcategory'])->name('it.parameters.subcategory.delete');
         Route::post('/it/parameters/rootcause', [\App\Http\Controllers\ParameterController::class, 'storeRootCause'])->name('it.parameters.rootcause.store');
         Route::post('/it/parameters/rootcause/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCause'])->name('it.parameters.rootcause.delete');

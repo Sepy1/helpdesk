@@ -104,9 +104,10 @@ public function create()
 {
     // Ambil kategori beserta subkategori (eager load).
     // Pastikan subcategory memuat category_id agar relasi terhubung saat eager load.
-    $categories = Category::with(['subcategories' => function ($q) {
-        $q->select('id', 'category_id', 'name')->orderBy('name');
-    }])->orderBy('name')->get(['id', 'name']);
+    $categories = Category::where('is_enabled', true)
+        ->with(['subcategories' => function ($q) {
+            $q->where('is_enabled', true)->select('id', 'category_id', 'name')->orderBy('name');
+        }])->orderBy('name')->get(['id', 'name']);
 
     // Ambil daftar user TI untuk opsi assign (opsional)
     // only show IT users that are configured to appear on the create-ticket assign dropdown
@@ -160,8 +161,8 @@ public function store(Request $request)
 
     // validasi (dukungan hingga 3 lampiran)
     $data = $request->validate([
-        'category_id'   => 'required|exists:categories,id',
-        'subcategory_id'=> 'required|exists:subcategories,id',
+        'category_id'   => ['required', Rule::exists('categories', 'id')->where('is_enabled', true)],
+        'subcategory_id'=> ['required', Rule::exists('subcategories', 'id')->where('is_enabled', true)],
         'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
         'lampiran'      => 'nullable|array|max:3',
@@ -181,6 +182,7 @@ public function store(Request $request)
     if (!empty($data['subcategory_id'])) {
         $ok = Subcategory::where('id', $data['subcategory_id'])
             ->where('category_id', $data['category_id'])
+            ->where('is_enabled', true)
             ->exists();
 
         if (!$ok) {
@@ -1545,12 +1547,13 @@ public function downloadCommentAttachment(TicketComment $comment)
 public function subcategories($id)
 {
     // pastikan kategori ada
-    $category = Category::find($id);
+    $category = Category::where('is_enabled', true)->find($id);
     if (!$category) {
         return response()->json([], 404);
     }
 
     $subs = Subcategory::where('category_id', $id)
+            ->where('is_enabled', true)
             ->select('id','name')
             ->orderBy('name')
             ->get();

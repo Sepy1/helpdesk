@@ -107,6 +107,7 @@
                 <th class="{{ $th }} w-12">#</th>
                 <th class="{{ $th }}">Nama</th>
                 <th class="{{ $th }} w-20 text-right">Sub</th>
+                <th class="{{ $th }} w-24 text-center">Enable</th>
                 <th class="{{ $th }} w-24 text-right">Aksi</th>
               </tr>
             </thead>
@@ -116,6 +117,13 @@
                   <td class="{{ $td }} text-slate-500">{{ $i + 1 }}</td>
                   <td class="{{ $td }} font-medium text-slate-900">{{ $category->name }}</td>
                   <td class="{{ $td }} text-right tabular-nums">{{ $category->subcategories->count() }}</td>
+                  <td class="{{ $td }} text-center">
+                    <form method="POST" action="{{ route('it.parameters.category.status', $category) }}" class="inline">
+                      @csrf
+                      <input type="hidden" name="is_enabled" value="0">
+                      <input type="checkbox" name="is_enabled" value="1" @checked($category->is_enabled) onchange="this.form.submit()" aria-label="Enable kategori {{ $category->name }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    </form>
+                  </td>
                   <td class="{{ $td }} text-right">
                     <form method="POST" action="{{ route('it.parameters.category.delete', $category->id) }}" onsubmit="return confirm('Hapus kategori?');" class="inline">
                       @csrf
@@ -125,7 +133,7 @@
                 </tr>
               @empty
                 <tr>
-                  <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada kategori.</td>
+                  <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada kategori.</td>
                 </tr>
               @endforelse
             </tbody>
@@ -156,6 +164,7 @@
                 <th class="{{ $th }} w-12">#</th>
                 <th class="{{ $th }}">Subkategori</th>
                 <th class="{{ $th }}">Kategori</th>
+                <th class="{{ $th }} w-24 text-center">Enable</th>
                 <th class="{{ $th }} w-24 text-right">Aksi</th>
               </tr>
             </thead>
@@ -168,6 +177,13 @@
                     <td class="{{ $td }} text-slate-500">{{ $subcategoryIndex }}</td>
                     <td class="{{ $td }} font-medium text-slate-900">{{ $subcategory->name }}</td>
                     <td class="{{ $td }}">{{ $category->name }}</td>
+                    <td class="{{ $td }} text-center">
+                      <form method="POST" action="{{ route('it.parameters.subcategory.status', $subcategory) }}" class="inline">
+                        @csrf
+                        <input type="hidden" name="is_enabled" value="0">
+                        <input type="checkbox" name="is_enabled" value="1" @checked($subcategory->is_enabled) onchange="this.form.submit()" aria-label="Enable subkategori {{ $subcategory->name }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                      </form>
+                    </td>
                     <td class="{{ $td }} text-right">
                       <form method="POST" action="{{ route('it.parameters.subcategory.delete', $subcategory->id) }}" onsubmit="return confirm('Hapus subkategori?');" class="inline">
                         @csrf
@@ -179,7 +195,7 @@
               @endforeach
               @if($subcategoryIndex === 0)
                 <tr>
-                  <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada subkategori.</td>
+                  <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada subkategori.</td>
                 </tr>
               @endif
             </tbody>
