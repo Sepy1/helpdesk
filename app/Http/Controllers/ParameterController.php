@@ -24,8 +24,12 @@ class ParameterController extends Controller
         $its = User::where('role', 'IT')->orderBy('name')->get();
         $usersForAiChat = User::query()->orderBy('role')->orderBy('name')->get(['id', 'name', 'email', 'role', 'ai_chat_enabled']);
         $aiChatEnabled = AppSetting::getBool('ai_chat_enabled', true);
+        $appTheme = AppSetting::getValue(
+            'default_app_theme',
+            AppSetting::getValue('app_theme', 'blue')
+        );
 
-        return view('it.parameters', compact('categories','rootCauses','its','usersForAiChat','aiChatEnabled'));
+        return view('it.parameters', compact('categories','rootCauses','its','usersForAiChat','aiChatEnabled','appTheme'));
     }
 
     public function saveItVisibility(Request $request)
@@ -66,6 +70,19 @@ class ParameterController extends Controller
         }
 
         return back()->with('success', 'Pengaturan AI chat dan daftar user berhasil disimpan.');
+    }
+
+    public function saveTheme(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $data = $request->validate([
+            'theme' => ['required', Rule::in(['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy'])],
+        ]);
+
+        AppSetting::setValue('default_app_theme', $data['theme']);
+
+        return back()->with('success', 'Tema default aplikasi berhasil diperbarui untuk seluruh user.');
     }
 
     public function storeCategory(Request $request)

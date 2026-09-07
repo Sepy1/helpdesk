@@ -16,7 +16,7 @@
 
 <nav class="fixed inset-x-0 bottom-0 z-50 md:hidden
             h-14 sm:h-16
-            bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600
+            hd-topbar
             border-t border-white/10 shadow-lg"
      style="padding-bottom: env(safe-area-inset-bottom)">
   <ul class="grid <?php echo e($cols); ?> text-center h-full">

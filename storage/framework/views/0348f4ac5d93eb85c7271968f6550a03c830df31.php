@@ -139,8 +139,16 @@
 <?php
   $aiChatEnabled = true;
   $aiChatEnabledForUser = true;
+  $appTheme = 'blue';
   try {
     $aiChatEnabled = \App\Models\AppSetting::getBool('ai_chat_enabled', true);
+    $appTheme = \App\Models\AppSetting::getValue(
+      'default_app_theme',
+      \App\Models\AppSetting::getValue('app_theme', 'blue')
+    );
+    if (!in_array($appTheme, ['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy'], true)) {
+      $appTheme = 'blue';
+    }
     if (auth()->check() && auth()->user()->ai_chat_enabled === false) {
       $aiChatEnabledForUser = false;
     }
@@ -190,6 +198,7 @@
 
 <body
   class="h-full font-sans antialiased bg-gray-100 <?php echo e($isDesktopScaledRoute ? 'ui-compact-80' : ''); ?>"
+  data-theme="<?php echo e($appTheme); ?>"
   x-data="layoutState()"
   x-init="init()"
   :class="{ 'overflow-hidden': mobileOpen }"
@@ -206,7 +215,7 @@
   <?php endif; ?>
 
   
-<header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600 sticky top-0 z-40 h-[var(--topbar-h)]">
+<header class="hd-topbar sticky top-0 z-40 h-[var(--topbar-h)]">
   <div class="topbar-inner relative z-[1] w-full h-full flex items-center justify-between">
     <div class="topbar-brand flex items-center gap-2 min-w-0 h-full pl-4 pr-2 md:w-[var(--sidebar-w)] md:shrink-0 md:pr-3">
       <img src="<?php echo e($logoPath); ?>" alt="Logo Helpdesk" class="topbar-logo h-9 w-9 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]" onerror="this.style.display='none'">

@@ -85,6 +85,50 @@
       </div>
     </section>
 
+    @php
+      $themeOptions = [
+        'blue' => ['label' => 'Blue', 'swatch' => 'bg-blue-600', 'ring' => 'peer-checked:ring-blue-500'],
+        'emerald' => ['label' => 'Emerald', 'swatch' => 'bg-emerald-600', 'ring' => 'peer-checked:ring-emerald-500'],
+        'rose' => ['label' => 'Rose', 'swatch' => 'bg-rose-600', 'ring' => 'peer-checked:ring-rose-500'],
+        'violet' => ['label' => 'Violet', 'swatch' => 'bg-violet-600', 'ring' => 'peer-checked:ring-violet-500'],
+        'amber' => ['label' => 'Amber', 'swatch' => 'bg-amber-500', 'ring' => 'peer-checked:ring-amber-500'],
+        'midnight' => ['label' => 'Midnight', 'swatch' => 'bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950', 'ring' => 'peer-checked:ring-indigo-700'],
+        'obsidian' => ['label' => 'Obsidian', 'swatch' => 'bg-gradient-to-br from-zinc-700 via-zinc-950 to-black', 'ring' => 'peer-checked:ring-zinc-600'],
+        'deep_navy' => ['label' => 'Deep Navy', 'swatch' => 'bg-gradient-to-br from-blue-800 via-slate-900 to-cyan-950', 'ring' => 'peer-checked:ring-blue-700'],
+        'dark_forest' => ['label' => 'Dark Forest', 'swatch' => 'bg-gradient-to-br from-emerald-800 via-green-950 to-slate-950', 'ring' => 'peer-checked:ring-emerald-700'],
+        'burgundy' => ['label' => 'Burgundy', 'swatch' => 'bg-gradient-to-br from-rose-800 via-red-950 to-slate-950', 'ring' => 'peer-checked:ring-rose-700'],
+      ];
+    @endphp
+    <section class="{{ $card }}">
+      <form method="POST" action="{{ route('it.parameters.theme') }}">
+        @csrf
+        <div class="{{ $cardHead }} flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="{{ $cardTitle }}">Tema Default Aplikasi</h2>
+              <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">Global</span>
+            </div>
+            <p class="{{ $cardHint }}">Tema default akan digunakan setiap kali seluruh user mengakses aplikasi.</p>
+          </div>
+          <button type="submit" class="{{ $btnPrimary }}">Jadikan Tema Default</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-5 sm:p-5">
+          @foreach($themeOptions as $value => $theme)
+            <label class="cursor-pointer">
+              <input type="radio" name="theme" value="{{ $value }}" class="peer sr-only" @checked(($appTheme ?? 'blue') === $value)>
+              <span class="relative flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:bg-slate-50 peer-checked:border-transparent peer-checked:ring-2 {{ $theme['ring'] }}">
+                <span class="h-7 w-7 shrink-0 rounded-full {{ $theme['swatch'] }} shadow-sm"></span>
+                <span class="text-sm font-medium text-slate-700">{{ $theme['label'] }}</span>
+                @if(($appTheme ?? 'blue') === $value)
+                  <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide text-blue-600">Default</span>
+                @endif
+              </span>
+            </label>
+          @endforeach
+        </div>
+      </form>
+    </section>
+
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
       @include('it.partials.ticket-classification-settings')
 
