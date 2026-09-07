@@ -49,8 +49,8 @@
 
     {{-- Jenis permintaan (bergantung pada subkategori) --}}
     <div>
-      <label class="block text-xs font-medium text-gray-700 mb-1">Jenis Permintaan</label>
-      <select name="request_type_id" id="request-type-select" required disabled
+      <label class="block text-xs font-medium text-gray-700 mb-1">Jenis Permintaan <span class="font-normal text-gray-400">(opsional)</span></label>
+      <select name="request_type_id" id="request-type-select" disabled
               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 disabled:bg-gray-100">
         <option value="">-- Pilih subkategori dahulu --</option>
       </select>
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      requestTypeSelect.innerHTML = '<option value="">-- Pilih Jenis Permintaan --</option>';
+      requestTypeSelect.innerHTML = '<option value="">-- Tidak memilih jenis permintaan --</option>';
       requestTypeSelect.disabled = false;
       if (!Array.isArray(data) || data.length === 0) {
         resetRequestTypes('-- Belum ada jenis permintaan --');

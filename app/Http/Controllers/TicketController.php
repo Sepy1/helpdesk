@@ -164,7 +164,7 @@ public function store(Request $request)
     $data = $request->validate([
         'category_id'   => ['required', Rule::exists('categories', 'id')->where('is_enabled', true)],
         'subcategory_id'=> ['required', Rule::exists('subcategories', 'id')->where('is_enabled', true)],
-        'request_type_id'=> ['required', Rule::exists('request_types', 'id')->where('is_enabled', true)],
+        'request_type_id'=> ['nullable', Rule::exists('request_types', 'id')->where('is_enabled', true)],
         'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
         'management_type' => 'nullable|in:user,menu',
@@ -180,16 +180,20 @@ public function store(Request $request)
         'deskripsi' => 'deskripsi',
     ]);
 
-    $requestTypeIsValid = RequestType::whereKey($data['request_type_id'])
-        ->where('subcategory_id', $data['subcategory_id'])
-        ->where('is_enabled', true)
-        ->exists();
-    if (!$requestTypeIsValid) {
-        return back()
-            ->withErrors(['request_type_id' => 'Jenis permintaan tidak valid untuk subkategori yang dipilih.'])
-            ->withInput();
+    if (! empty($data['request_type_id'])) {
+        $requestTypeIsValid = RequestType::whereKey($data['request_type_id'])
+            ->where('subcategory_id', $data['subcategory_id'])
+            ->where('is_enabled', true)
+            ->exists();
+        if (! $requestTypeIsValid) {
+            return back()
+                ->withErrors(['request_type_id' => 'Jenis permintaan tidak valid untuk subkategori yang dipilih.'])
+                ->withInput();
+        }
     }
-    $requestType = RequestType::find($data['request_type_id']);
+    $requestType = ! empty($data['request_type_id'])
+        ? RequestType::find($data['request_type_id'])
+        : null;
     $isPergantianUser = $requestType
         && strcasecmp(trim((string) $requestType->name), 'Pergantian User') === 0;
     $isManajemenUserMenu = $requestType
@@ -305,7 +309,7 @@ public function store(Request $request)
                 'user_id'        => auth()->id(),
                 'category_id'    => $data['category_id'],
         'subcategory_id' => $data['subcategory_id'] ?? null,
-        'request_type_id' => $data['request_type_id'],
+        'request_type_id' => $data['request_type_id'] ?? null,
         'it_id'          => $data['it_id'] ?? null,
         'deskripsi'      => $data['deskripsi'],
         'user_lama_id'   => $data['user_lama_id'] ?? null,
