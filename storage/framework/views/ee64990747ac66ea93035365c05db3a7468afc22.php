@@ -50,6 +50,11 @@
 ?>
 
 <div class="hd-sidebar-body">
+<div class="hd-shooting-stars" aria-hidden="true">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
 
 <nav class="space-y-1 shrink-0">
   <?php $__currentLoopData = $menu; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>

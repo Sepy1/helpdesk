@@ -50,6 +50,11 @@
 @endphp
 
 <div class="hd-sidebar-body">
+<div class="hd-shooting-stars" aria-hidden="true">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
 {{-- List menu --}}
 <nav class="space-y-1 shrink-0">
   @foreach ($menu as $item)

@@ -70,12 +70,19 @@
         position: relative;
         overflow: hidden;
         isolation: isolate;
-        background: linear-gradient(
-            155deg,
-            var(--hd-sidebar-from) 0%,
-            var(--hd-sidebar-via) 52%,
-            var(--hd-sidebar-to) 100%
-        );
+        background:
+            radial-gradient(
+                ellipse 115% 42% at 50% 108%,
+                color-mix(in srgb, var(--theme-500) 72%, white 8%) 0%,
+                color-mix(in srgb, var(--theme-600) 38%, transparent) 38%,
+                transparent 72%
+            ),
+            linear-gradient(
+                155deg,
+                var(--hd-sidebar-from) 0%,
+                var(--hd-sidebar-via) 52%,
+                var(--hd-sidebar-to) 100%
+            );
         border-color: rgba(255, 255, 255, 0.14);
         box-shadow:
             inset -1px 0 0 rgba(255, 255, 255, 0.1),
@@ -122,10 +129,71 @@
     }
 
     .hd-sidebar-body {
+        position: relative;
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
         min-height: 0;
+    }
+
+    .hd-shooting-stars {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .hd-shooting-stars span {
+        position: absolute;
+        top: -2rem;
+        left: 78%;
+        width: 4.5rem;
+        height: 1px;
+        border-radius: 999px;
+        opacity: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .88));
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, .7));
+        transform: rotate(-42deg) translate3d(0, 0, 0);
+        animation: hd-shooting-star 8s ease-in infinite;
+    }
+
+    .hd-shooting-stars span::after {
+        content: '';
+        position: absolute;
+        right: -1px;
+        top: 50%;
+        width: 3px;
+        height: 3px;
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: 0 0 7px 2px rgba(255, 255, 255, .72);
+        transform: translateY(-50%);
+    }
+
+    .hd-shooting-stars span:nth-child(2) {
+        left: 48%;
+        width: 3.5rem;
+        animation-delay: 2.7s;
+        animation-duration: 9.5s;
+    }
+
+    .hd-shooting-stars span:nth-child(3) {
+        left: 94%;
+        width: 5rem;
+        animation-delay: 5.2s;
+        animation-duration: 11s;
+    }
+
+    @keyframes hd-shooting-star {
+        0%, 68% { opacity: 0; transform: rotate(-42deg) translate3d(0, 0, 0); }
+        71% { opacity: .9; }
+        82% { opacity: 0; transform: rotate(-42deg) translate3d(-15rem, 18rem, 0); }
+        100% { opacity: 0; transform: rotate(-42deg) translate3d(-15rem, 18rem, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .hd-shooting-stars span { animation: none; }
     }
 
     .hd-sidebar-art-wrap {
@@ -149,23 +217,25 @@
         bottom: 0;
         left: 0;
         height: 14rem;
-        z-index: 1;
+        z-index: 0;
         background: radial-gradient(ellipse 78% 65% at 50% 72%, rgba(255, 255, 255, .12), transparent 72%);
         opacity: .45;
         pointer-events: none;
     }
 
     .hd-sidebar-art {
+        position: relative;
+        z-index: 1;
         width: 100%;
         max-width: 13.5rem;
         max-height: 13.5rem;
         object-fit: contain;
         object-position: bottom center;
-        opacity: .68;
-        mix-blend-mode: screen;
-        filter: var(--sidebar-art-filter) drop-shadow(0 10px 24px rgba(15, 23, 42, 0.16));
-        -webkit-mask-image: radial-gradient(ellipse 78% 76% at 50% 56%, #000 38%, rgba(0, 0, 0, .82) 58%, transparent 92%);
-        mask-image: radial-gradient(ellipse 78% 76% at 50% 56%, #000 38%, rgba(0, 0, 0, .82) 58%, transparent 92%);
+        opacity: .94;
+        mix-blend-mode: normal;
+        filter: var(--sidebar-art-filter) drop-shadow(0 10px 24px rgba(15, 23, 42, 0.22));
+        -webkit-mask-image: radial-gradient(ellipse 82% 80% at 50% 54%, #000 50%, rgba(0, 0, 0, .9) 65%, transparent 94%);
+        mask-image: radial-gradient(ellipse 82% 80% at 50% 54%, #000 50%, rgba(0, 0, 0, .9) 65%, transparent 94%);
     }
 
     .hd-sidebar-active {
