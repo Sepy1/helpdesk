@@ -16,7 +16,7 @@
     </div>
   <?php endif; ?>
 
-  <form method="POST" action="<?php echo e(auth()->user()->role === 'IT' ? route('cabang.ticket.store.it') : route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-3">
+  <form id="ticket-create-form" method="POST" action="<?php echo e(auth()->user()->role === 'IT' ? route('cabang.ticket.store.it') : route('cabang.ticket.store')); ?>" enctype="multipart/form-data" class="space-y-3">
     <?php echo csrf_field(); ?>
 
     
@@ -51,6 +51,23 @@ unset($__errorArgs, $__bag); ?>
         
       </select>
       <?php $__errorArgs = ['subcategory_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="text-sm text-red-600 mt-1"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+    </div>
+
+    
+    <div>
+      <label class="block text-xs font-medium text-gray-700 mb-1">Jenis Permintaan <span class="font-normal text-gray-400">(opsional)</span></label>
+      <select name="request_type_id" id="request-type-select" disabled
+              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 disabled:bg-gray-100">
+        <option value="">-- Pilih subkategori dahulu --</option>
+      </select>
+      <?php $__errorArgs = ['request_type_id'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -187,7 +204,7 @@ unset($__errorArgs, $__bag); ?>
     <div class="space-y-3">
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">User Lama</label>
-        <input type="hidden" name="user_lama_id" id="user-lama-id" value="<?php echo e(old('user_lama_id')); ?>">
+        <input form="ticket-create-form" type="hidden" name="user_lama_id" id="user-lama-id" value="<?php echo e(old('user_lama_id')); ?>">
         <input type="text" id="user-lama-search" list="user-lama-list" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm" placeholder="Ketik nama user lama..." value="<?php echo e(old('user_lama_name')); ?>">
         <datalist id="user-lama-list"></datalist>
         <?php $__errorArgs = ['user_lama_id'];
@@ -201,7 +218,7 @@ unset($__errorArgs, $__bag); ?>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">User Pengganti</label>
-        <input type="hidden" name="user_pengganti_id" id="user-pengganti-id" value="<?php echo e(old('user_pengganti_id')); ?>">
+        <input form="ticket-create-form" type="hidden" name="user_pengganti_id" id="user-pengganti-id" value="<?php echo e(old('user_pengganti_id')); ?>">
         <input type="text" id="user-pengganti-search" list="user-pengganti-list" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm" placeholder="Ketik nama user pengganti..." value="<?php echo e(old('user_pengganti_name')); ?>">
         <datalist id="user-pengganti-list"></datalist>
         <?php $__errorArgs = ['user_pengganti_id'];
@@ -216,7 +233,7 @@ unset($__errorArgs, $__bag); ?>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Tanggal Awal</label>
-          <input type="date" name="tanggal_awal" id="tanggal-awal" value="<?php echo e(old('tanggal_awal')); ?>" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
+          <input form="ticket-create-form" type="date" name="tanggal_awal" id="tanggal-awal" value="<?php echo e(old('tanggal_awal')); ?>" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
           <?php $__errorArgs = ['tanggal_awal'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -228,7 +245,7 @@ unset($__errorArgs, $__bag); ?>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Tanggal Selesai</label>
-          <input type="date" name="tanggal_selesai" id="tanggal-selesai" value="<?php echo e(old('tanggal_selesai')); ?>" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
+          <input form="ticket-create-form" type="date" name="tanggal_selesai" id="tanggal-selesai" value="<?php echo e(old('tanggal_selesai')); ?>" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm">
           <?php $__errorArgs = ['tanggal_selesai'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -241,7 +258,7 @@ unset($__errorArgs, $__bag); ?>
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">Alasan</label>
-        <textarea name="alasan_pergantian" id="alasan-pergantian" rows="3" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm" placeholder="Jelaskan alasan pergantian user..."><?php echo e(old('alasan_pergantian')); ?></textarea>
+        <textarea form="ticket-create-form" name="alasan_pergantian" id="alasan-pergantian" rows="3" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1 text-sm" placeholder="Jelaskan alasan pergantian user..."><?php echo e(old('alasan_pergantian')); ?></textarea>
         <?php $__errorArgs = ['alasan_pergantian'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -256,6 +273,55 @@ unset($__errorArgs, $__bag); ?>
     <div class="mt-5 flex items-center justify-end gap-2">
       <button type="button" class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200" data-close-pergantian-modal>Batal</button>
       <button type="button" id="pergantian-user-done" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div id="manajemen-user-menu-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-3">
+  <div class="absolute inset-0 bg-black/50" data-close-manajemen-modal></div>
+  <div class="relative z-10 w-full max-w-xl rounded-2xl bg-white p-4 shadow-2xl ring-1 ring-black/5 sm:p-5">
+    <div class="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-base font-semibold text-gray-900 sm:text-lg">Manajemen User dan Menu</h3>
+        <p class="text-xs text-gray-500 sm:text-sm">Lengkapi jenis dan detail permintaan.</p>
+      </div>
+      <button type="button" class="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100" data-close-manajemen-modal>&times;</button>
+    </div>
+    <div class="space-y-4">
+      <fieldset>
+        <legend class="mb-2 text-xs font-medium text-gray-700">Pilihan</legend>
+        <div class="flex gap-5">
+          <?php $__currentLoopData = ['user' => 'User', 'menu' => 'Menu']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input form="ticket-create-form" type="radio" name="management_type" value="<?php echo e($value); ?>" <?php if(old('management_type') === $value): echo 'checked'; endif; ?> class="border-gray-300 text-indigo-600 focus:ring-indigo-500"> <?php echo e($label); ?>
+
+            </label>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </div>
+      </fieldset>
+      <fieldset id="management-action-fieldset" class="hidden">
+        <legend class="mb-2 text-xs font-medium text-gray-700">Aksi</legend>
+        <div class="flex flex-wrap gap-5">
+          <?php $__currentLoopData = ['tambah' => 'Tambah', 'hapus' => 'Hapus', 'koreksi' => 'Koreksi', 'unblokir' => 'Unblokir', 'reset_password' => 'Reset Password']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700" data-management-action="<?php echo e($value); ?>">
+              <input form="ticket-create-form" type="radio" name="management_action" value="<?php echo e($value); ?>" <?php if(old('management_action') === $value): echo 'checked'; endif; ?> class="border-gray-300 text-indigo-600 focus:ring-indigo-500"> <?php echo e($label); ?>
+
+            </label>
+          <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </div>
+      </fieldset>
+      <div>
+        <label for="management-username" class="mb-1 block text-xs font-medium text-gray-700">Username</label>
+        <input form="ticket-create-form" id="management-username" name="management_username" value="<?php echo e(old('management_username')); ?>" maxlength="191" class="w-full rounded-lg border-gray-300 py-1 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label for="management-detail" class="mb-1 block text-xs font-medium text-gray-700">Detail</label>
+        <textarea form="ticket-create-form" id="management-detail" name="management_detail" rows="4" maxlength="2000" class="w-full rounded-lg border-gray-300 py-1 text-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Jelaskan detail permintaan..."><?php echo e(old('management_detail')); ?></textarea>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200" data-close-manajemen-modal>Batal</button>
+      <button type="button" id="manajemen-user-menu-done" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Simpan</button>
     </div>
   </div>
 </div>
@@ -309,6 +375,7 @@ unset($__errorArgs, $__bag); ?>
 document.addEventListener('DOMContentLoaded', function () {
   const categorySelect = document.getElementById('category-select');
   const subcategorySelect = document.getElementById('subcategory-select');
+  const requestTypeSelect = document.getElementById('request-type-select');
   const pergantianFields = document.getElementById('pergantian-user-fields');
   const pergantianModal = document.getElementById('pergantian-user-modal');
   const pergantianDoneBtn = document.getElementById('pergantian-user-done');
@@ -323,12 +390,20 @@ document.addEventListener('DOMContentLoaded', function () {
   const tanggalSelesai = document.getElementById('tanggal-selesai');
   const alasanPergantian = document.getElementById('alasan-pergantian');
   const deskripsi = document.getElementById('deskripsi');
+  const managementModal = document.getElementById('manajemen-user-menu-modal');
+  const managementDoneBtn = document.getElementById('manajemen-user-menu-done');
+  const managementActionFieldset = document.getElementById('management-action-fieldset');
+  const managementUsername = document.getElementById('management-username');
+  const managementDetail = document.getElementById('management-detail');
+  const managementTypeInputs = document.querySelectorAll('input[name="management_type"]');
+  const managementActionInputs = document.querySelectorAll('input[name="management_action"]');
 
   const baseUrl = '<?php echo e(url('/categories')); ?>'; // -> /categories
   const pergantianUrl = '<?php echo e(route('pergantian-users.index')); ?>';
   const csrfToken = '<?php echo e(csrf_token()); ?>';
   const oldCategory = '<?php echo e(old("category_id")); ?>';
   const oldSub = '<?php echo e(old("subcategory_id")); ?>';
+  const oldRequestType = '<?php echo e(old("request_type_id")); ?>';
   const oldUserLama = '<?php echo e(old("user_lama_id")); ?>';
   const oldUserPengganti = '<?php echo e(old("user_pengganti_id")); ?>';
   const oldDeskripsi = <?php echo json_encode(old('deskripsi'), 15, 512) ?>;
@@ -435,6 +510,7 @@ document.addEventListener('DOMContentLoaded', function () {
   async function loadSubcategories(categoryId, setSelected = null) {
     // reset first
     subcategorySelect.innerHTML = '<option value="">-- Pilih Subkategori --</option>';
+    resetRequestTypes();
 
     if (!categoryId) {
       // nothing to load
@@ -477,7 +553,9 @@ document.addEventListener('DOMContentLoaded', function () {
       // set selected jika ada
       const toSelect = setSelected ?? oldSub;
       if (toSelect) subcategorySelect.value = toSelect;
+      await loadRequestTypes(subcategorySelect.value, oldRequestType);
       updatePergantianUserFields();
+      updateManagementFields();
     } catch (err) {
       console.error('Error saat memuat subkategori', err);
     }
@@ -497,8 +575,133 @@ document.addEventListener('DOMContentLoaded', function () {
     return (subcategorySelect.selectedOptions[0]?.textContent || '').trim().toLowerCase();
   }
 
+  function getSelectedRequestTypeText() {
+    return (requestTypeSelect.selectedOptions[0]?.textContent || '').trim().toLowerCase();
+  }
+
   function isPergantianUserSelected() {
-    return getSelectedSubcategoryText() === 'pergantian user';
+    return getSelectedRequestTypeText() === 'pergantian user';
+  }
+
+  function resetRequestTypes(message = '-- Pilih subkategori dahulu --') {
+    requestTypeSelect.innerHTML = '';
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = message;
+    requestTypeSelect.appendChild(option);
+    requestTypeSelect.disabled = true;
+  }
+
+  async function loadRequestTypes(subcategoryId, setSelected = null) {
+    resetRequestTypes();
+    if (!subcategoryId) return;
+
+    try {
+      const res = await fetch(`<?php echo e(url('/subcategories')); ?>/${subcategoryId}/request-types`, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      requestTypeSelect.innerHTML = '<option value="">-- Tidak memilih jenis permintaan --</option>';
+      requestTypeSelect.disabled = false;
+      if (!Array.isArray(data) || data.length === 0) {
+        resetRequestTypes('-- Belum ada jenis permintaan --');
+        return;
+      }
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name;
+        requestTypeSelect.appendChild(option);
+      });
+      if (setSelected) requestTypeSelect.value = setSelected;
+      updatePergantianUserFields();
+      updateManagementFields();
+    } catch (err) {
+      console.error('Error saat memuat jenis permintaan', err);
+      resetRequestTypes('-- Gagal memuat jenis permintaan --');
+    }
+  }
+
+  function isManajemenUserMenuSelected() {
+    return getSelectedRequestTypeText() === 'manajemen menu';
+  }
+
+  function selectedManagementType() {
+    return document.querySelector('input[name="management_type"]:checked')?.value || '';
+  }
+
+  function selectedManagementAction() {
+    return document.querySelector('input[name="management_action"]:checked')?.value || '';
+  }
+
+  function updateManagementActions() {
+    const type = selectedManagementType();
+    managementActionFieldset.classList.toggle('hidden', !type);
+    const userOnlyActions = document.querySelectorAll('[data-management-action="koreksi"], [data-management-action="unblokir"], [data-management-action="reset_password"]');
+    userOnlyActions.forEach(label => label.classList.toggle('hidden', type === 'menu'));
+    if (type === 'menu') {
+      userOnlyActions.forEach(label => {
+        const input = label.querySelector('input');
+        if (input.checked) input.checked = false;
+      });
+    }
+  }
+
+  function syncManagementDescription() {
+    if (!isManajemenUserMenuSelected()) return;
+    const type = selectedManagementType();
+    const action = selectedManagementAction();
+    if (!type || !action) return;
+    const actionLabels = {
+      tambah: 'Tambah',
+      hapus: 'Hapus',
+      koreksi: 'Koreksi',
+      unblokir: 'Unblokir',
+      reset_password: 'Reset Password',
+    };
+    deskripsi.value = `Permohonan manajemen user dan menu dengan detail sebagai berikut :\nPilihan : ${type === 'user' ? 'User' : 'Menu'}\nAksi : ${actionLabels[action] || action}\nUsername : ${(managementUsername.value || '').trim() || '-'}\nDetail : ${(managementDetail.value || '').trim() || '-'}`;
+  }
+
+  function openManagementModal() {
+    updateManagementActions();
+    managementModal.classList.remove('hidden');
+    managementModal.classList.add('flex');
+  }
+
+  function closeManagementModal() {
+    managementModal.classList.add('hidden');
+    managementModal.classList.remove('flex');
+  }
+
+  function updateManagementFields() {
+    if (isManajemenUserMenuSelected()) openManagementModal();
+    else closeManagementModal();
+  }
+
+  function validateManagementModal() {
+    if (!selectedManagementType()) {
+      managementTypeInputs[0].setCustomValidity('Pilih User atau Menu.');
+      managementTypeInputs[0].reportValidity();
+      managementTypeInputs[0].setCustomValidity('');
+      return false;
+    }
+    if (!selectedManagementAction()) {
+      managementActionInputs[0].setCustomValidity('Pilih aksi permintaan.');
+      managementActionInputs[0].reportValidity();
+      managementActionInputs[0].setCustomValidity('');
+      return false;
+    }
+    for (const field of [managementUsername, managementDetail]) {
+      if (!field.value.trim()) {
+        field.setCustomValidity('Field ini wajib diisi.');
+        field.reportValidity();
+        field.setCustomValidity('');
+        field.focus();
+        return false;
+      }
+    }
+    return true;
   }
 
   function syncDeskripsi() {
@@ -537,7 +740,30 @@ Alasan : ${alasan}`;
   });
 
   subcategorySelect.addEventListener('change', function () {
+    loadRequestTypes(this.value);
     updatePergantianUserFields();
+    updateManagementFields();
+  });
+
+  requestTypeSelect.addEventListener('change', function () {
+    updatePergantianUserFields();
+    updateManagementFields();
+  });
+
+  managementTypeInputs.forEach(input => input.addEventListener('change', function () {
+    updateManagementActions();
+    syncManagementDescription();
+  }));
+  managementActionInputs.forEach(input => input.addEventListener('change', syncManagementDescription));
+  managementUsername.addEventListener('input', syncManagementDescription);
+  managementDetail.addEventListener('input', syncManagementDescription);
+  managementDoneBtn.addEventListener('click', function () {
+    if (!validateManagementModal()) return;
+    syncManagementDescription();
+    closeManagementModal();
+  });
+  document.querySelectorAll('[data-close-manajemen-modal]').forEach(button => {
+    button.addEventListener('click', closeManagementModal);
   });
 
   userLamaSearch.addEventListener('input', function () {
@@ -583,6 +809,7 @@ Alasan : ${alasan}`;
   }
 
   updatePergantianUserFields();
+  updateManagementFields();
 
   if (oldUserLama) {
     const selected = pergantianUsers.find((item) => String(item.id) === String(oldUserLama));
@@ -607,6 +834,9 @@ Alasan : ${alasan}`;
 
   if (isPergantianUserSelected()) {
     openPergantianModal();
+  }
+  if (isManajemenUserMenuSelected()) {
+    openManagementModal();
   }
 });
 </script>

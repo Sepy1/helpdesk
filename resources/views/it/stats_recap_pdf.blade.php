@@ -22,6 +22,12 @@
     .office-table { table-layout: fixed; }
     .office-table th, .office-table td { padding: 6px; font-size: 8px; line-height: 1.35; vertical-align: top; overflow-wrap: anywhere; }
     .office-table tr { page-break-inside: avoid; }
+    .summary-grid { margin-bottom: 18px; table-layout: fixed; }
+    .summary-grid > tbody > tr > td { width: 33.33%; padding: 0 5px; border: 0; vertical-align: top; }
+    .summary-grid > tbody > tr > td:first-child { padding-left: 0; }
+    .summary-grid > tbody > tr > td:last-child { padding-right: 0; }
+    .summary-title { margin-bottom: 6px; font-size: 12px; font-weight: bold; }
+    .summary-table th, .summary-table td { padding: 6px; font-size: 9px; }
   </style>
 </head>
 <body>
@@ -38,6 +44,52 @@
     <div class="total-label">Total tiket sesuai filter</div>
     <div class="total-value">{{ number_format($total, 0, ',', '.') }}</div>
   </div>
+
+  <table class="summary-grid">
+    <tbody>
+      <tr>
+        <td>
+          <div class="summary-title">Rekap Kategori</div>
+          <table class="summary-table">
+            <thead><tr><th>Kategori</th><th class="number">Jumlah</th></tr></thead>
+            <tbody>
+              @forelse($categoryRows as $row)
+                <tr><td>{{ $row->label }}</td><td class="number">{{ number_format($row->total, 0, ',', '.') }}</td></tr>
+              @empty
+                <tr><td colspan="2">Tidak ada data</td></tr>
+              @endforelse
+            </tbody>
+          </table>
+        </td>
+        <td>
+          <div class="summary-title">Rekap Subkategori</div>
+          <table class="summary-table">
+            <thead><tr><th>Subkategori</th><th class="number">Jumlah</th></tr></thead>
+            <tbody>
+              @forelse($subcategoryRows as $row)
+                <tr><td>{{ $row->label }}</td><td class="number">{{ number_format($row->total, 0, ',', '.') }}</td></tr>
+              @empty
+                <tr><td colspan="2">Tidak ada data</td></tr>
+              @endforelse
+            </tbody>
+          </table>
+        </td>
+        <td>
+          <div class="summary-title">Rekap Root Cause</div>
+          <table class="summary-table">
+            <thead><tr><th>Root Cause</th><th class="number">Jumlah</th></tr></thead>
+            <tbody>
+              @forelse($rootCauseRows as $row)
+                <tr><td>{{ $row->label }}</td><td class="number">{{ number_format($row->total, 0, ',', '.') }}</td></tr>
+              @empty
+                <tr><td colspan="2">Tidak ada data</td></tr>
+              @endforelse
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
   <table>
     <thead>

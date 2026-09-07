@@ -5,7 +5,6 @@
 @php
   $categories = $categories ?? collect();
   $rootCauses = $rootCauses ?? collect();
-  $vendors = $vendors ?? collect();
   $its = $its ?? collect();
   $usersForAiChat = $usersForAiChat ?? collect();
 
@@ -59,7 +58,7 @@
       </div>
     @endif
 
-    <section class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+    <section class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Kategori</p>
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $categoryCount }}</p>
@@ -81,17 +80,16 @@
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $rootCauseDetailCount }}</p>
       </div>
       <div class="{{ $card }} p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vendor</p>
-        <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $vendors->count() }}</p>
-      </div>
-      <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">IT tampil</p>
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $visibleItCount }}</p>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-      <article class="{{ $card }}">
+    <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      @include('it.partials.ticket-classification-settings')
+
+      {{-- Tampilan tabel lama dipertahankan sementara sebagai referensi migrasi UI.
+      <article class="hidden">
         <div class="{{ $cardHead }}">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -146,7 +144,7 @@
         </div>
       </article>
 
-      <article class="{{ $card }}">
+      <article class="hidden">
         <div class="{{ $cardHead }}">
           <h2 class="{{ $cardTitle }}">Jenis Permintaan</h2>
           <p class="{{ $cardHint }}">Tautkan jenis permintaan ke subkategori induk.</p>
@@ -191,7 +189,7 @@
         </div>
       </article>
 
-      <article class="{{ $card }}">
+      <article class="hidden">
         <div class="{{ $cardHead }}">
           <h2 class="{{ $cardTitle }}">Subkategori</h2>
           <p class="{{ $cardHint }}">Tautkan subkategori ke kategori induk.</p>
@@ -252,7 +250,11 @@
           </table>
         </div>
       </article>
+      --}}
 
+      @include('it.partials.root-cause-tree-settings')
+
+      {{-- Tampilan tabel root cause lama.
       <article class="{{ $card }}">
         <div class="{{ $cardHead }}">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -299,9 +301,11 @@
           </table>
         </div>
       </article>
+      --}}
     </section>
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      {{-- Tampilan tabel detail root cause lama.
       <article class="{{ $card }} xl:col-span-2">
         <div class="{{ $cardHead }}">
           <h2 class="{{ $cardTitle }}">Detail root cause</h2>
@@ -369,7 +373,9 @@
           </table>
         </div>
       </article>
+      --}}
 
+      {{-- Pengelolaan vendor dipusatkan di halaman Manajemen User.
       <article class="{{ $card }}">
         <div class="{{ $cardHead }}">
           <div class="flex items-start justify-between gap-3">
@@ -409,6 +415,7 @@
           </table>
         </div>
       </article>
+      --}}
     </section>
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">

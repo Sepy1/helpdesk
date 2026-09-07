@@ -21,12 +21,11 @@ class ParameterController extends Controller
 
         $categories = Category::with(['subcategories.requestTypes'])->orderBy('name')->get();
         $rootCauses = RootCause::with('details')->orderBy('sort')->orderBy('name')->get();
-        $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
         $its = User::where('role', 'IT')->orderBy('name')->get();
         $usersForAiChat = User::query()->orderBy('role')->orderBy('name')->get(['id', 'name', 'email', 'role', 'ai_chat_enabled']);
         $aiChatEnabled = AppSetting::getBool('ai_chat_enabled', true);
 
-        return view('it.parameters', compact('categories','rootCauses','vendors','its','usersForAiChat','aiChatEnabled'));
+        return view('it.parameters', compact('categories','rootCauses','its','usersForAiChat','aiChatEnabled'));
     }
 
     public function saveItVisibility(Request $request)

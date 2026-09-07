@@ -839,6 +839,34 @@ class StatsController extends Controller
             ];
         });
 
+        $categoryRows = (clone $tickets)
+            ->select(
+                DB::raw('COALESCE(tickets.kategori, "Tidak Ditentukan") as label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->get();
+
+        $subcategoryRows = (clone $tickets)
+            ->leftJoin('subcategories', 'tickets.subcategory_id', '=', 'subcategories.id')
+            ->select(
+                DB::raw('COALESCE(subcategories.name, "Tidak Ditentukan") as label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->get();
+
+        $rootCauseRows = (clone $tickets)
+            ->select(
+                DB::raw('COALESCE(tickets.root_cause, "Tidak Ditentukan") as label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->get();
+
         $officeLabel = 'Semua Kantor';
         if ($kodeKantor !== '') {
             $office = KodeKantor::query()->where('kode', $kodeKantor)->first();
@@ -918,6 +946,9 @@ class StatsController extends Controller
             'officeLabel' => $officeLabel,
             'total' => $total,
             'statusRows' => $statusRows,
+            'categoryRows' => $categoryRows,
+            'subcategoryRows' => $subcategoryRows,
+            'rootCauseRows' => $rootCauseRows,
             'officeRows' => $officeRows,
         ])->render();
 
