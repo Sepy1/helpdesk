@@ -77,7 +77,7 @@ class ParameterController extends Controller
         if (auth()->user()->role !== 'IT') abort(403);
 
         $data = $request->validate([
-            'theme' => ['required', Rule::in(['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy'])],
+            'theme' => ['required', Rule::in(['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy', 'coral_pop', 'tangerine', 'electric_cyan', 'lime_energy', 'magenta_rush'])],
         ]);
 
         AppSetting::setValue('default_app_theme', $data['theme']);

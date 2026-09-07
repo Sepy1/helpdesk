@@ -146,7 +146,7 @@
       'default_app_theme',
       \App\Models\AppSetting::getValue('app_theme', 'blue')
     );
-    if (!in_array($appTheme, ['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy'], true)) {
+    if (!in_array($appTheme, ['blue', 'emerald', 'rose', 'violet', 'amber', 'midnight', 'obsidian', 'deep_navy', 'dark_forest', 'burgundy', 'coral_pop', 'tangerine', 'electric_cyan', 'lime_energy', 'magenta_rush'], true)) {
       $appTheme = 'blue';
     }
     if (auth()->check() && auth()->user()->ai_chat_enabled === false) {

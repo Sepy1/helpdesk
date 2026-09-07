@@ -97,6 +97,11 @@
         'deep_navy' => ['label' => 'Deep Navy', 'swatch' => 'bg-gradient-to-br from-blue-800 via-slate-900 to-cyan-950', 'ring' => 'peer-checked:ring-blue-700'],
         'dark_forest' => ['label' => 'Dark Forest', 'swatch' => 'bg-gradient-to-br from-emerald-800 via-green-950 to-slate-950', 'ring' => 'peer-checked:ring-emerald-700'],
         'burgundy' => ['label' => 'Burgundy', 'swatch' => 'bg-gradient-to-br from-rose-800 via-red-950 to-slate-950', 'ring' => 'peer-checked:ring-rose-700'],
+        'coral_pop' => ['label' => 'Coral Pop', 'swatch' => 'bg-gradient-to-br from-rose-400 via-orange-500 to-red-600', 'ring' => 'peer-checked:ring-orange-500'],
+        'tangerine' => ['label' => 'Tangerine', 'swatch' => 'bg-gradient-to-br from-yellow-300 via-orange-500 to-orange-700', 'ring' => 'peer-checked:ring-orange-500'],
+        'electric_cyan' => ['label' => 'Electric Cyan', 'swatch' => 'bg-gradient-to-br from-cyan-300 via-cyan-500 to-blue-600', 'ring' => 'peer-checked:ring-cyan-500'],
+        'lime_energy' => ['label' => 'Lime Energy', 'swatch' => 'bg-gradient-to-br from-yellow-300 via-lime-500 to-green-600', 'ring' => 'peer-checked:ring-lime-500'],
+        'magenta_rush' => ['label' => 'Magenta Rush', 'swatch' => 'bg-gradient-to-br from-pink-400 via-fuchsia-600 to-purple-700', 'ring' => 'peer-checked:ring-fuchsia-500'],
       ];
     @endphp
     <section class="{{ $card }}">
