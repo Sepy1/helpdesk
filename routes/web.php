@@ -145,6 +145,7 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::get('/it/my-tickets', [TicketController::class, 'myAssigned'])->name('it.my');            // tiket saya (IT)
         Route::get('/it/stats', [TicketController::class, 'stats'])->name('it.stats');                   // statistik
         Route::post('/it/stats/report/summary-preview', [\App\Http\Controllers\StatsController::class, 'reportSummaryPreview'])->name('it.stats.report.summary_preview');
+        Route::get('/it/stats/report/recap', [\App\Http\Controllers\StatsController::class, 'reportRecap'])->name('it.stats.report.recap');
         Route::match(['get', 'post'], '/it/stats/report', [\App\Http\Controllers\StatsController::class, 'report'])->name('it.stats.report');
         // Parameter management (kategori, subkategori, root cause)
         Route::get('/it/parameters', [\App\Http\Controllers\ParameterController::class, 'index'])->name('it.parameters');
@@ -154,6 +155,9 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/subcategory', [\App\Http\Controllers\ParameterController::class, 'storeSubcategory'])->name('it.parameters.subcategory.store');
         Route::post('/it/parameters/subcategory/{subcategory}/status', [\App\Http\Controllers\ParameterController::class, 'updateSubcategoryStatus'])->name('it.parameters.subcategory.status');
         Route::post('/it/parameters/subcategory/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteSubcategory'])->name('it.parameters.subcategory.delete');
+        Route::post('/it/parameters/request-type', [\App\Http\Controllers\ParameterController::class, 'storeRequestType'])->name('it.parameters.request_type.store');
+        Route::post('/it/parameters/request-type/{requestType}/status', [\App\Http\Controllers\ParameterController::class, 'updateRequestTypeStatus'])->name('it.parameters.request_type.status');
+        Route::post('/it/parameters/request-type/{requestType}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRequestType'])->name('it.parameters.request_type.delete');
         Route::post('/it/parameters/rootcause', [\App\Http\Controllers\ParameterController::class, 'storeRootCause'])->name('it.parameters.rootcause.store');
         Route::post('/it/parameters/rootcause/{id}/delete', [\App\Http\Controllers\ParameterController::class, 'deleteRootCause'])->name('it.parameters.rootcause.delete');
         Route::post('/it/parameters/rootcause/detail', [\App\Http\Controllers\ParameterController::class, 'storeRootCauseDetail'])->name('it.parameters.rootcause.detail.store');
@@ -204,6 +208,9 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 });
 Route::get('/categories/{id}/subcategories', [\App\Http\Controllers\TicketController::class, 'subcategories'])
     ->name('categories.subcategories');
+Route::get('/subcategories/{id}/request-types', [\App\Http\Controllers\TicketController::class, 'requestTypes'])
+    ->middleware('auth')
+    ->name('subcategories.request-types');
 Route::get('/pergantian-users', [\App\Http\Controllers\TicketController::class, 'pergantianUsers'])
     ->name('pergantian-users.index');
 

@@ -11,6 +11,7 @@
 
   $categoryCount = $categories->count();
   $subcategoryCount = $categories->sum(fn ($category) => $category->subcategories->count());
+  $requestTypeCount = $categories->sum(fn ($category) => $category->subcategories->sum(fn ($subcategory) => $subcategory->requestTypes->count()));
   $rootCauseCount = $rootCauses->count();
   $rootCauseDetailCount = $rootCauses->sum(fn ($rootCause) => $rootCause->details->count());
   $visibleItCount = $its->where('visible_on_assign', true)->count();
@@ -58,7 +59,7 @@
       </div>
     @endif
 
-    <section class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+    <section class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
       <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Kategori</p>
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $categoryCount }}</p>
@@ -66,6 +67,10 @@
       <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Subkategori</p>
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $subcategoryCount }}</p>
+      </div>
+      <div class="{{ $card }} p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Jenis permintaan</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $requestTypeCount }}</p>
       </div>
       <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Root cause</p>
@@ -136,6 +141,51 @@
                   <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada kategori.</td>
                 </tr>
               @endforelse
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="{{ $card }}">
+        <div class="{{ $cardHead }}">
+          <h2 class="{{ $cardTitle }}">Jenis Permintaan</h2>
+          <p class="{{ $cardHint }}">Tautkan jenis permintaan ke subkategori induk.</p>
+          <form method="POST" action="{{ route('it.parameters.request_type.store') }}" class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[12rem_minmax(0,1fr)_auto]">
+            @csrf
+            <select name="subcategory_id" required class="{{ $input }}">
+              <option value="">Subkategori</option>
+              @foreach($categories as $category)
+                @foreach($category->subcategories as $subcategory)
+                  <option value="{{ $subcategory->id }}">{{ $category->name }} — {{ $subcategory->name }}</option>
+                @endforeach
+              @endforeach
+            </select>
+            <input name="name" required class="{{ $input }}" placeholder="Nama jenis permintaan">
+            <button type="submit" class="{{ $btnPrimary }}">Tambah</button>
+          </form>
+        </div>
+        <div class="{{ $tableWrap }}">
+          <table class="min-w-full divide-y divide-slate-100">
+            <thead class="sticky top-0 z-10 bg-slate-50"><tr>
+              <th class="{{ $th }} w-12">#</th><th class="{{ $th }}">Jenis Permintaan</th><th class="{{ $th }}">Subkategori</th><th class="{{ $th }} w-24 text-center">Enable</th><th class="{{ $th }} w-24 text-right">Aksi</th>
+            </tr></thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              @php $requestTypeIndex = 0; @endphp
+              @foreach($categories as $category)
+                @foreach($category->subcategories as $subcategory)
+                  @foreach($subcategory->requestTypes as $requestType)
+                    @php $requestTypeIndex++; @endphp
+                    <tr class="hover:bg-slate-50">
+                      <td class="{{ $td }} text-slate-500">{{ $requestTypeIndex }}</td>
+                      <td class="{{ $td }} font-medium text-slate-900">{{ $requestType->name }}</td>
+                      <td class="{{ $td }}">{{ $subcategory->name }}</td>
+                      <td class="{{ $td }} text-center"><form method="POST" action="{{ route('it.parameters.request_type.status', $requestType) }}" class="inline">@csrf<input type="hidden" name="is_enabled" value="0"><input type="checkbox" name="is_enabled" value="1" @checked($requestType->is_enabled) onchange="this.form.submit()" aria-label="Enable jenis permintaan {{ $requestType->name }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"></form></td>
+                      <td class="{{ $td }} text-right"><form method="POST" action="{{ route('it.parameters.request_type.delete', $requestType) }}" onsubmit="return confirm('Hapus jenis permintaan?');" class="inline">@csrf<button type="submit" class="{{ $btnDanger }}">Hapus</button></form></td>
+                    </tr>
+                  @endforeach
+                @endforeach
+              @endforeach
+              @if($requestTypeIndex === 0)<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">Belum ada jenis permintaan.</td></tr>@endif
             </tbody>
           </table>
         </div>

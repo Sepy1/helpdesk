@@ -197,15 +197,23 @@
         </div>
       </div>
 
-      {{-- Dua kolom: Kategori | IT Handler --}}
-      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {{-- Informasi klasifikasi tiket dan handler --}}
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div>
           <div class="text-xs text-gray-500 mb-1">Kategori</div>
-          <div class="text-sm font-medium text-gray-800">{{ $ticket->kategori }}</div>
+          <span class="inline-flex rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700 ring-1 ring-inset ring-blue-200">{{ $ticket->category?->name ?? $ticket->kategori ?? '-' }}</span>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Subkategori</div>
+          <span class="inline-flex rounded-lg bg-violet-50 px-3 py-1.5 text-sm font-semibold text-violet-700 ring-1 ring-inset ring-violet-200">{{ $ticket->subcategory?->name ?? '-' }}</span>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Jenis Permintaan</div>
+          <span class="inline-flex rounded-lg bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">{{ $ticket->requestType?->name ?? '-' }}</span>
         </div>
         <div>
           <div class="text-xs text-gray-500 mb-1">IT Handler</div>
-          <div class="text-sm font-medium text-gray-800">{{ $ticket->it->name ?? '-' }}</div>
+          <span class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">{{ $ticket->it->name ?? '-' }}</span>
         </div>
       </div>
 
@@ -275,7 +283,9 @@
           @endif
         </dd></div>
         <div class="flex justify-between"><dt>Status</dt><dd class="font-medium">{{ $ticket->status }}</dd></div>
-        <div class="flex justify-between"><dt>Kategori</dt><dd>{{ $ticket->kategori }}</dd></div>
+        <div class="flex justify-between gap-2"><dt>Kategori</dt><dd class="text-right">{{ $ticket->category?->name ?? $ticket->kategori ?? '-' }}</dd></div>
+        <div class="flex justify-between gap-2"><dt>Subkategori</dt><dd class="text-right">{{ $ticket->subcategory?->name ?? '-' }}</dd></div>
+        <div class="flex justify-between gap-2"><dt>Jenis Permintaan</dt><dd class="text-right">{{ $ticket->requestType?->name ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Handler</dt><dd>{{ $ticket->it->name ?? '-' }}</dd></div>
         <div class="flex justify-between"><dt>Vendor</dt><dd>{{ $ticket->vendor->name ?? '-' }}</dd></div>
@@ -639,7 +649,7 @@
           </section>
 
           <section class="rounded-lg border border-gray-100 bg-white p-3 shadow-sm ring-1 ring-gray-50">
-            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Override kategori</h4>
+            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Override klasifikasi tiket</h4>
             <form method="POST" action="{{ route('it.ticket.override_category', $ticket->id) }}" class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               @csrf
               <div class="min-w-0 sm:col-span-1">
@@ -657,9 +667,15 @@
                   <option value="">— Pilih subkategori —</option>
                 </select>
               </div>
+              <div class="min-w-0 sm:col-span-2">
+                <label for="override-request-type-select" class="mb-0.5 block text-[11px] font-medium text-gray-600">Jenis Permintaan</label>
+                <select id="override-request-type-select" name="request_type_id" class="h-9 w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                  <option value="">— Pilih jenis permintaan —</option>
+                </select>
+              </div>
               <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-2 sm:col-span-2 sm:flex-row sm:justify-end">
                 <button type="button" class="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="open=false">Batal</button>
-                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">Simpan kategori</button>
+                <button type="submit" class="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">Simpan klasifikasi</button>
               </div>
             </form>
           </section>
@@ -1065,13 +1081,35 @@
       try{
         const overrideCategorySelect = document.getElementById('override-category-select');
         const overrideSubcategorySelect = document.getElementById('override-subcategory-select');
+        const overrideRequestTypeSelect = document.getElementById('override-request-type-select');
         const categoryBaseUrl = '{{ url('/categories') }}';
+        const subcategoryBaseUrl = '{{ url('/subcategories') }}';
         const initCat = '{{ $ticket->category_id ?? '' }}';
         const initSub = '{{ $ticket->subcategory_id ?? '' }}';
+        const initRequestType = '{{ $ticket->request_type_id ?? '' }}';
+
+        async function loadOverrideRequestTypes(subcategoryId, toSelect = null){
+          if(!overrideRequestTypeSelect) return;
+          overrideRequestTypeSelect.innerHTML = '<option value="">-- Pilih Jenis Permintaan --</option>';
+          if(!subcategoryId) return;
+          try{
+            const res = await fetch(`${subcategoryBaseUrl}/${subcategoryId}/request-types`);
+            if(!res.ok){ console.error('Gagal memuat jenis permintaan', res.status); return; }
+            const data = await res.json();
+            if(!Array.isArray(data) || data.length === 0){
+              const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— Tidak ada jenis permintaan —'; overrideRequestTypeSelect.appendChild(opt); return;
+            }
+            data.forEach(item => {
+              const opt = document.createElement('option'); opt.value = item.id; opt.textContent = item.name; overrideRequestTypeSelect.appendChild(opt);
+            });
+            if(toSelect) overrideRequestTypeSelect.value = toSelect;
+          }catch(err){ console.error('Error saat memuat jenis permintaan', err); }
+        }
 
         async function loadOverrideSubcategories(categoryId, toSelect = null){
           if(!overrideSubcategorySelect) return;
           overrideSubcategorySelect.innerHTML = '<option value="">-- Pilih Subkategori --</option>';
+          await loadOverrideRequestTypes(null);
           if(!categoryId) return;
           try{
             const res = await fetch(`${categoryBaseUrl}/${categoryId}/subcategories`);
@@ -1084,11 +1122,15 @@
               const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; overrideSubcategorySelect.appendChild(opt);
             });
             if(toSelect) overrideSubcategorySelect.value = toSelect;
+            await loadOverrideRequestTypes(overrideSubcategorySelect.value, toSelect ? initRequestType : null);
           }catch(err){ console.error('Error saat memuat subkategori', err); }
         }
 
         if(overrideCategorySelect){
           overrideCategorySelect.addEventListener('change', function(){ loadOverrideSubcategories(this.value, null); });
+        }
+        if(overrideSubcategorySelect){
+          overrideSubcategorySelect.addEventListener('change', function(){ loadOverrideRequestTypes(this.value, null); });
         }
         if(initCat){ loadOverrideSubcategories(initCat, initSub); }
         }catch(_){ }

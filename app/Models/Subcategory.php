@@ -19,4 +19,9 @@ class Subcategory extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function requestTypes()
+    {
+        return $this->hasMany(RequestType::class);
+    }
 }

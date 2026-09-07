@@ -14,6 +14,9 @@ use App\Services\ExecutiveSummaryService;
 
 class StatsController extends Controller
 {
+    private const PDF_DETAIL_LIMIT = 500;
+    private const AI_TICKET_DETAIL_LIMIT = 300;
+
     /** Filter tiket berdasarkan kode kantor pembuat (users.kode_kantor). */
     protected function applyKantorFilterToTickets(\Illuminate\Database\Eloquent\Builder $tickets, Request $request): void
     {
@@ -733,20 +736,24 @@ class StatsController extends Controller
         $rootCauseTrendChartUrl = $report['rootCauseTrendChartUrl'];
         $reporterTrendChartUrl = $report['reporterTrendChartUrl'];
 
-        $html = view('it.stats_pdf', [
+        $viewData = [
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'kpi' => ['total' => $total, 'open' => $open, 'closed' => $closed, 'eskalasi' => $eskCount, 'on_progress' => $onProgress],
             'root' => $root,
             'tickets' => $ticketsList,
             'groupedTickets' => $groupedTickets,
+            'ticketDetailTotal' => $report['ticketDetailTotal'],
+            'ticketDetailLimit' => $report['ticketDetailLimit'],
+            'ticketDetailTruncated' => $report['ticketDetailTruncated'],
             'kpiChartUrl' => $kpiChartUrl,
             'categoryChartUrl' => $categoryChartUrl,
             'subcategoryTrendChartUrl' => $subcategoryTrendChartUrl,
             'rootCauseTrendChartUrl' => $rootCauseTrendChartUrl,
             'reporterTrendChartUrl' => $reporterTrendChartUrl,
             'executiveSummary' => $executiveSummary,
-        ])->render();
+        ];
+        $html = view('it.stats_pdf', $viewData)->render();
 
         // If Dompdf not installed, return HTML fallback so user can print to PDF from browser
         if (! class_exists('\Dompdf\\Dompdf')) {
@@ -760,17 +767,182 @@ class StatsController extends Controller
 
         // render PDF with Dompdf
             // render PDF with Dompdf (enable remote images for chart URLs)
-            $options = new \Dompdf\Options();
-            $options->set('isRemoteEnabled', true);
-            $dompdf = new \Dompdf\Dompdf($options);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->loadHtml($html);
-            $dompdf->render();
+            try {
+                $dompdf = $this->renderReportPdf($html, true);
+            } catch (\Throwable $e) {
+                Log::warning('PDF report render with remote charts failed; retrying without charts.', [
+                    'error' => $e->getMessage(),
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                    'ticket_count' => $ticketsList->count(),
+                ]);
+
+                foreach (['kpiChartUrl', 'categoryChartUrl', 'subcategoryTrendChartUrl', 'rootCauseTrendChartUrl', 'reporterTrendChartUrl'] as $chartKey) {
+                    $viewData[$chartKey] = null;
+                }
+                $dompdf = $this->renderReportPdf(view('it.stats_pdf', $viewData)->render(), false);
+            }
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="laporan_tiket_' . now()->format('Ymd_His') . '.pdf"'
         ]);
+    }
+
+    /** Download PDF rekap status sesuai filter, tanpa detail tiket dan tanpa AI. */
+    public function reportRecap(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'kode_kantor' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo = $validated['date_to'] ?? null;
+        $kodeKantor = trim((string) ($validated['kode_kantor'] ?? ''));
+        $tickets = Ticket::query();
+
+        if ($dateFrom) {
+            $tickets->where('tickets.created_at', '>=', Carbon::createFromFormat('Y-m-d', $dateFrom)->startOfDay());
+        }
+        if ($dateTo) {
+            $tickets->where('tickets.created_at', '<=', Carbon::createFromFormat('Y-m-d', $dateTo)->endOfDay());
+        }
+        $this->applyKantorFilterToTickets($tickets, $request);
+
+        $total = (clone $tickets)->count();
+        $counts = (clone $tickets)
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $statusLabels = [
+            'OPEN' => 'Open',
+            'ON_PROGRESS' => 'On Progress',
+            'ESKALASI_VENDOR' => 'Eskalasi Vendor',
+            'VENDOR_RESOLVED' => 'Vendor Resolved',
+            'CLOSED' => 'Closed',
+        ];
+        $statusRows = collect($statusLabels)->map(function ($label, $status) use ($counts, $total) {
+            $count = (int) ($counts[$status] ?? 0);
+
+            return [
+                'status' => $status,
+                'label' => $label,
+                'total' => $count,
+                'percentage' => $total > 0 ? round(($count / $total) * 100, 2) : 0,
+            ];
+        });
+
+        $officeLabel = 'Semua Kantor';
+        if ($kodeKantor !== '') {
+            $office = KodeKantor::query()->where('kode', $kodeKantor)->first();
+            $officeLabel = $kodeKantor.' - '.($office?->nama_kantor ?? $kodeKantor);
+        }
+
+        $officeTotals = (clone $tickets)
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->leftJoin('kode_kantor', 'users.kode_kantor', '=', 'kode_kantor.kode')
+            ->select(
+                DB::raw('IFNULL(users.kode_kantor, "") as office_code'),
+                DB::raw('CASE WHEN IFNULL(MAX(users.kode_kantor), "") = "" THEN "Tanpa kantor" ELSE CONCAT(MAX(users.kode_kantor), " - ", COALESCE(MAX(kode_kantor.nama_kantor), MAX(users.kode_kantor))) END as office_label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'))
+            ->orderByRaw('IFNULL(users.kode_kantor, "") asc')
+            ->get();
+
+        $rootByOffice = (clone $tickets)
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->select(
+                DB::raw('IFNULL(users.kode_kantor, "") as office_code'),
+                DB::raw('COALESCE(tickets.root_cause, "Tidak Ditentukan") as item_label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'), 'item_label')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('office_code');
+
+        $categoryByOffice = (clone $tickets)
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->select(
+                DB::raw('IFNULL(users.kode_kantor, "") as office_code'),
+                DB::raw('COALESCE(tickets.kategori, "Tidak Ditentukan") as item_label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'), 'item_label')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('office_code');
+
+        $subcategoryByOffice = (clone $tickets)
+            ->join('users', 'tickets.user_id', '=', 'users.id')
+            ->leftJoin('subcategories', 'tickets.subcategory_id', '=', 'subcategories.id')
+            ->select(
+                DB::raw('IFNULL(users.kode_kantor, "") as office_code'),
+                DB::raw('COALESCE(subcategories.name, "Tidak Ditentukan") as item_label'),
+                DB::raw('count(tickets.id) as total')
+            )
+            ->groupBy(DB::raw('IFNULL(users.kode_kantor, "")'), 'item_label')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('office_code');
+
+        $formatBreakdown = static function ($rows): string {
+            return collect($rows ?? [])->map(
+                fn ($row) => $row->item_label.' ('.number_format((int) $row->total, 0, ',', '.').')'
+            )->implode('; ');
+        };
+
+        $officeRows = $officeTotals->map(function ($office) use ($rootByOffice, $categoryByOffice, $subcategoryByOffice, $formatBreakdown) {
+            $code = (string) $office->office_code;
+
+            return [
+                'office' => (string) $office->office_label,
+                'total' => (int) $office->total,
+                'roots' => $formatBreakdown($rootByOffice->get($code)),
+                'categories' => $formatBreakdown($categoryByOffice->get($code)),
+                'subcategories' => $formatBreakdown($subcategoryByOffice->get($code)),
+            ];
+        });
+
+        $html = view('it.stats_recap_pdf', [
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'officeLabel' => $officeLabel,
+            'total' => $total,
+            'statusRows' => $statusRows,
+            'officeRows' => $officeRows,
+        ])->render();
+
+        if (! class_exists('\Dompdf\\Dompdf')) {
+            return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        }
+
+        $dompdf = $this->renderReportPdf($html, false);
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="rekap_status_tiket_'.now()->format('Ymd_His').'.pdf"',
+        ]);
+    }
+
+    private function renderReportPdf(string $html, bool $remoteEnabled): \Dompdf\Dompdf
+    {
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', $remoteEnabled);
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+
+        return $dompdf;
     }
 
     /**
@@ -872,7 +1044,13 @@ class StatsController extends Controller
                 'taken_at', 'progress_note', 'vendor_followup',
             ]);
 
+        // Dompdf consumes a large amount of memory for long tables. Keep all rows
+        // for aggregate statistics, but bound the detailed section of the PDF.
+        $ticketDetailTotal = $ticketsList->count();
+        $ticketDetailLimit = self::PDF_DETAIL_LIMIT;
+        $ticketDetailTruncated = $ticketDetailTotal > $ticketDetailLimit;
         $groupedTickets = $ticketsList
+            ->take($ticketDetailLimit)
             ->groupBy(function ($t) {
                 $kode = $t->user?->kode_kantor;
                 if ($kode) {
@@ -889,7 +1067,9 @@ class StatsController extends Controller
             return $v === '' ? 'tidak tersedia' : Str::limit($v, $max, '…');
         };
 
-        $ticketPayload = $ticketsList->map(function ($t) use ($textForAi) {
+        $ticketPayload = $ticketsList
+            ->take(self::AI_TICKET_DETAIL_LIMIT)
+            ->map(function ($t) use ($textForAi) {
             $responseMinutes = null;
             if (! empty($t->taken_at) && ! empty($t->created_at)) {
                 $responseMinutes = $t->created_at->diffInMinutes($t->taken_at);
@@ -947,6 +1127,9 @@ class StatsController extends Controller
             'statistik_detail_root_cause' => $detailRootStats,
             'jumlah_tiket_tutup_tanpa_detail_root_cause' => $closedTanpaDetailRoot,
             'data_tiket' => $ticketPayload,
+            'jumlah_data_tiket_total' => $ticketDetailTotal,
+            'jumlah_data_tiket_dikirim_ke_ai' => count($ticketPayload),
+            'data_tiket_dibatasi' => $ticketDetailTotal > self::AI_TICKET_DETAIL_LIMIT,
         ];
 
         $kpiLabels = ['Open', 'Closed', 'Eskalasi Vendor', 'On Progress'];
@@ -1267,6 +1450,9 @@ class StatsController extends Controller
             'root' => $root,
             'ticketsList' => $ticketsList,
             'groupedTickets' => $groupedTickets,
+            'ticketDetailTotal' => $ticketDetailTotal,
+            'ticketDetailLimit' => $ticketDetailLimit,
+            'ticketDetailTruncated' => $ticketDetailTruncated,
             'summaryPayload' => $summaryPayload,
             'kpiChartUrl' => $kpiChartUrl,
             'categoryChartUrl' => $categoryChartUrl,

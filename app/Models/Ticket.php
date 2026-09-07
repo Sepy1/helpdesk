@@ -13,7 +13,7 @@ class Ticket extends Model
         'it_id','vendor_id','taken_at','progress_note','progress_at','eskalasi',
         'vendor_followup','vendor_followup_at','closed_note','closed_at', 'root_cause',
         'root_cause_detail_id',
-        'category_id','subcategory_id',
+        'category_id','subcategory_id','request_type_id',
         'user_lama_id','user_pengganti_id',
     ];
 
@@ -55,6 +55,11 @@ class Ticket extends Model
 public function subcategory()
 {
     return $this->belongsTo(Subcategory::class);
+}
+
+public function requestType()
+{
+    return $this->belongsTo(RequestType::class);
 }
 
     public function rootCauseDetail()

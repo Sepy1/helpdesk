@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\RequestType;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
 use App\Models\KodeKantor;
@@ -163,15 +164,53 @@ public function store(Request $request)
     $data = $request->validate([
         'category_id'   => ['required', Rule::exists('categories', 'id')->where('is_enabled', true)],
         'subcategory_id'=> ['required', Rule::exists('subcategories', 'id')->where('is_enabled', true)],
+        'request_type_id'=> ['required', Rule::exists('request_types', 'id')->where('is_enabled', true)],
         'it_id'         => 'nullable|exists:users,id',
         'deskripsi'     => 'required|min:5',
+        'management_type' => 'nullable|in:user,menu',
+        'management_action' => 'nullable|in:tambah,hapus,koreksi,unblokir,reset_password',
+        'management_username' => 'nullable|string|max:191',
+        'management_detail' => 'nullable|string|max:2000',
         'lampiran'      => 'nullable|array|max:3',
         'lampiran.*'    => 'file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
     ], [], [
         'category_id' => 'kategori',
         'subcategory_id' => 'subkategori',
+        'request_type_id' => 'jenis permintaan',
         'deskripsi' => 'deskripsi',
     ]);
+
+    $requestTypeIsValid = RequestType::whereKey($data['request_type_id'])
+        ->where('subcategory_id', $data['subcategory_id'])
+        ->where('is_enabled', true)
+        ->exists();
+    if (!$requestTypeIsValid) {
+        return back()
+            ->withErrors(['request_type_id' => 'Jenis permintaan tidak valid untuk subkategori yang dipilih.'])
+            ->withInput();
+    }
+    $requestType = RequestType::find($data['request_type_id']);
+    $isPergantianUser = $requestType
+        && strcasecmp(trim((string) $requestType->name), 'Pergantian User') === 0;
+    $isManajemenUserMenu = $requestType
+        && strcasecmp(trim((string) $requestType->name), 'Manajemen Menu') === 0;
+    if ($isPergantianUser) {
+        $pergantianData = $request->validate([
+            'user_lama_id' => [
+                'required',
+                Rule::exists('pergantian_users', 'id')->where('unit_kerja', $reporterUnit),
+            ],
+            'user_pengganti_id' => [
+                'required',
+                'different:user_lama_id',
+                Rule::exists('pergantian_users', 'id')->where('unit_kerja', $reporterUnit),
+            ],
+            'tanggal_awal' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_awal',
+            'alasan_pergantian' => 'required|string|max:2000',
+        ]);
+        $data = array_merge($data, $pergantianData);
+    }
 
     Log::info('TicketStore: validasi berhasil', ['input' => [
         'category_id' => $data['category_id'],
@@ -197,7 +236,29 @@ public function store(Request $request)
         }
 
         $subcategory = Subcategory::find($data['subcategory_id']);
-        $isPergantianUser = $subcategory && strcasecmp(trim((string) $subcategory->name), 'Pergantian User') === 0;
+        if ($isManajemenUserMenu) {
+            $management = $request->validate([
+                'management_type' => 'required|in:user,menu',
+                'management_action' => [
+                    'required',
+                    Rule::in($request->input('management_type') === 'menu'
+                        ? ['tambah', 'hapus']
+                        : ['tambah', 'hapus', 'koreksi', 'unblokir', 'reset_password']),
+                ],
+                'management_username' => 'required|string|max:191',
+                'management_detail' => 'required|string|max:2000',
+            ]);
+            $data = array_merge($data, $management);
+            $data['deskripsi'] = "Permohonan manajemen user dan menu dengan detail sebagai berikut :\n"
+                . 'Pilihan : ' . ($management['management_type'] === 'user' ? 'User' : 'Menu') . "\n"
+                . 'Aksi : ' . match ($management['management_action']) {
+                    'reset_password' => 'Reset Password',
+                    'unblokir' => 'Unblokir',
+                    default => ucfirst($management['management_action']),
+                } . "\n"
+                . 'Username : ' . trim($management['management_username']) . "\n"
+                . 'Detail : ' . trim($management['management_detail']);
+        }
         if ($isPergantianUser) {
             // Data pergantian user divalidasi di modal frontend.
             // Saat submit tiket, field ini hanya dibaca jika memang sudah diisi.
@@ -238,12 +299,13 @@ public function store(Request $request)
 
     // buat tiket dalam transaction
     try {
-        $ticket = DB::transaction(function () use ($data, $lampiranPaths) {
+        $ticket = DB::transaction(function () use ($data, $lampiranPaths, $request, $isPergantianUser) {
             $payload = [
                 'nomor_tiket'    => $this->generateTicketNumber(),
                 'user_id'        => auth()->id(),
                 'category_id'    => $data['category_id'],
         'subcategory_id' => $data['subcategory_id'] ?? null,
+        'request_type_id' => $data['request_type_id'],
         'it_id'          => $data['it_id'] ?? null,
         'deskripsi'      => $data['deskripsi'],
         'user_lama_id'   => $data['user_lama_id'] ?? null,
@@ -1170,7 +1232,10 @@ public function store(Request $request)
     /** Detail tiket (IT & cabang-yang-bersangkutan) */
     public function show(Ticket $ticket)
     {
-        $ticket->load(['user.kodeKantor', 'it', 'vendor', 'comments.user', 'histories.user', 'rootCauseDetail']);
+        $ticket->load([
+            'user.kodeKantor', 'it', 'vendor', 'category', 'subcategory', 'requestType',
+            'comments.user', 'histories.user', 'rootCauseDetail',
+        ]);
 
         if (Auth::user()->role === 'CABANG' && $ticket->user_id !== Auth::id()) {
             abort(403);
@@ -1231,16 +1296,36 @@ public function store(Request $request)
         $data = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
+            'request_type_id' => 'nullable|exists:request_types,id',
         ]);
+
+        if (! empty($data['subcategory_id'])) {
+            $subcategoryIsValid = Subcategory::whereKey($data['subcategory_id'])
+                ->where('category_id', $data['category_id'])
+                ->exists();
+            if (! $subcategoryIsValid) {
+                return back()->withErrors(['subcategory_id' => 'Subkategori tidak valid untuk kategori yang dipilih.']);
+            }
+        }
+        if (! empty($data['request_type_id'])) {
+            $requestTypeIsValid = RequestType::whereKey($data['request_type_id'])
+                ->where('subcategory_id', $data['subcategory_id'])
+                ->exists();
+            if (! $requestTypeIsValid) {
+                return back()->withErrors(['request_type_id' => 'Jenis permintaan tidak valid untuk subkategori yang dipilih.']);
+            }
+        }
 
         $old = [
             'category_id' => $ticket->category_id,
             'subcategory_id' => $ticket->subcategory_id,
+            'request_type_id' => $ticket->request_type_id,
             'kategori' => $ticket->kategori,
         ];
 
         $ticket->category_id = $data['category_id'] ?? null;
         $ticket->subcategory_id = $data['subcategory_id'] ?? null;
+        $ticket->request_type_id = $data['request_type_id'] ?? null;
         // keep legacy `kategori` string in sync (use category name if present)
         $ticket->kategori = $ticket->category_id ? optional(\App\Models\Category::find($ticket->category_id))->name : $ticket->kategori;
         $ticket->save();
@@ -1248,6 +1333,7 @@ public function store(Request $request)
         $new = [
             'category_id' => $ticket->category_id,
             'subcategory_id' => $ticket->subcategory_id,
+            'request_type_id' => $ticket->request_type_id,
             'kategori' => $ticket->kategori,
         ];
 
@@ -1255,13 +1341,13 @@ public function store(Request $request)
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'action' => 'category_override',
-            'note' => 'Override kategori/subkategori',
+            'note' => 'Override kategori/subkategori/jenis permintaan',
             'meta' => ['old' => $old, 'new' => $new],
         ]);
 
-        $this->notifyHistory($ticket, $h, 'Override Kategori', 'Kategori/subkategori diubah oleh IT');
+        $this->notifyHistory($ticket, $h, 'Override Klasifikasi', 'Kategori, subkategori, atau jenis permintaan diubah oleh IT');
 
-        return back()->with('success', 'Kategori dan subkategori berhasil diperbarui.');
+        return back()->with('success', 'Kategori, subkategori, dan jenis permintaan berhasil diperbarui.');
     }
 
     /** Tambah komentar */
@@ -1559,6 +1645,22 @@ public function subcategories($id)
             ->get();
 
     return response()->json($subs);
+}
+
+public function requestTypes($id)
+{
+    $subcategory = Subcategory::where('is_enabled', true)->find($id);
+    if (!$subcategory) {
+        return response()->json([], 404);
+    }
+
+    return response()->json(
+        RequestType::where('subcategory_id', $id)
+            ->where('is_enabled', true)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get()
+    );
 }
 
     /* =========================

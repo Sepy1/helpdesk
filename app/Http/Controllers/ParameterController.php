@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\RequestType;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
 use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class ParameterController extends Controller
 {
@@ -17,7 +19,7 @@ class ParameterController extends Controller
     {
         if (auth()->user()->role !== 'IT') abort(403);
 
-        $categories = Category::with('subcategories')->orderBy('name')->get();
+        $categories = Category::with(['subcategories.requestTypes'])->orderBy('name')->get();
         $rootCauses = RootCause::with('details')->orderBy('sort')->orderBy('name')->get();
         $vendors = User::where('role', 'VENDOR')->orderBy('name')->get();
         $its = User::where('role', 'IT')->orderBy('name')->get();
@@ -99,6 +101,38 @@ class ParameterController extends Controller
         $subcategory->update(['is_enabled' => $request->boolean('is_enabled')]);
 
         return back()->with('success', 'Status subkategori berhasil diperbarui.');
+    }
+
+    public function storeRequestType(Request $request)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+        $data = $request->validate([
+            'subcategory_id' => 'required|exists:subcategories,id',
+            'name' => [
+                'required',
+                'string',
+                'max:191',
+                Rule::unique('request_types', 'name')->where(
+                    fn ($query) => $query->where('subcategory_id', $request->input('subcategory_id'))
+                ),
+            ],
+        ]);
+        RequestType::create($data);
+        return back()->with('success', 'Jenis permintaan ditambahkan.');
+    }
+
+    public function updateRequestTypeStatus(Request $request, RequestType $requestType)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+        $requestType->update(['is_enabled' => $request->boolean('is_enabled')]);
+        return back()->with('success', 'Status jenis permintaan berhasil diperbarui.');
+    }
+
+    public function deleteRequestType(RequestType $requestType)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+        $requestType->delete();
+        return back()->with('success', 'Jenis permintaan dihapus.');
     }
 
     public function storeRootCause(Request $request)

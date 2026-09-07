@@ -264,6 +264,12 @@
 
   <div class="page-break-before"></div>
   <div style="font-weight:bold; margin-bottom:8px;">Daftar Tiket</div>
+  @if(!empty($ticketDetailTruncated))
+    <div style="margin-bottom:10px; padding:8px; border:1px solid #f0c36d; background:#fff8e1; color:#6b4f00; font-size:10px;">
+      Laporan memuat statistik dari seluruh {{ number_format($ticketDetailTotal ?? 0, 0, ',', '.') }} tiket.
+      Untuk menjaga proses PDF tetap stabil, daftar detail di bawah menampilkan {{ number_format($ticketDetailLimit ?? 0, 0, ',', '.') }} tiket terbaru.
+    </div>
+  @endif
   @if(!empty($groupedTickets) && count($groupedTickets) > 0)
     @foreach($groupedTickets as $groupLabel => $groupTickets)
       @if(!$loop->first)

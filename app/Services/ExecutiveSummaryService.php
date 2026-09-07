@@ -36,22 +36,32 @@ Narasi wajib mencakup:
 Jika ada data yang kosong, sebutkan "tidak tersedia" tanpa membuat asumsi.
 PROMPT;
 
-        $response = Http::withToken($apiKey)
-            ->timeout(90)
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => $model,
-                'temperature' => 0.2,
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'Anda adalah analis service desk. Jangan membuat data baru. Hanya gunakan data JSON yang diberikan user.',
+        try {
+            $response = Http::withToken($apiKey)
+                ->connectTimeout(10)
+                ->timeout(90)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $model,
+                    'temperature' => 0.2,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Anda adalah analis service desk. Jangan membuat data baru. Hanya gunakan data JSON yang diberikan user.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $prompt . "\n\nDATA TIKET (JSON):\n" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+                        ],
                     ],
-                    [
-                        'role' => 'user',
-                        'content' => $prompt . "\n\nDATA TIKET (JSON):\n" . json_encode($payload, JSON_UNESCAPED_UNICODE),
-                    ],
-                ],
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('Executive summary API request exception', [
+                'error' => $e->getMessage(),
+                'ticket_count' => count($payload['data_tiket'] ?? []),
             ]);
+
+            return null;
+        }
 
         if (! $response->successful()) {
             Log::warning('Executive summary API request failed', [

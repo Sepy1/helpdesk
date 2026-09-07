@@ -22,6 +22,10 @@
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v6h5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 14h6M9 18h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Generate Laporan
         </button>
+        <button type="button" id="btnRecap" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500" title="Download rekap status tiket sesuai filter">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-width="2" stroke-linecap="round"/></svg>
+          Download Rekap
+        </button>
       </div>
     </section>
 
@@ -806,6 +810,15 @@
     if (to) params.set('date_to', to);
     if (kodeKantor) params.set('kode_kantor', kodeKantor);
     window.location.href = `<?php echo e(route('it.tickets.export')); ?>?${params.toString()}`;
+  });
+
+  document.getElementById('btnRecap')?.addEventListener('click', () => {
+    const { from, to, kodeKantor } = selectedRange();
+    const params = new URLSearchParams();
+    if (from) params.set('date_from', from);
+    if (to) params.set('date_to', to);
+    if (kodeKantor) params.set('kode_kantor', kodeKantor);
+    window.location.href = `<?php echo e(route('it.stats.report.recap')); ?>?${params.toString()}`;
   });
 
   function csrfToken() {
