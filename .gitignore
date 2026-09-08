@@ -16,6 +16,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/storage/framework/*
+!/storage/framework/.gitignore
 
 .env
 .env.*
