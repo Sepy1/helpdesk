@@ -429,9 +429,20 @@
 <div id="comment-image-lightbox" class="fixed inset-0 z-[130] hidden bg-black/80 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="comment-image-lightbox-title" aria-hidden="true">
   <p id="comment-image-lightbox-title" class="sr-only">Pratinjau gambar</p>
   <button type="button" id="comment-image-lightbox-backdrop" class="absolute inset-0 cursor-default" aria-label="Tutup pratinjau"></button>
-  <div class="relative z-10 flex max-h-full max-w-full flex-col items-center">
-    <button type="button" id="comment-image-lightbox-close" class="mb-2 shrink-0 rounded-full bg-white/95 px-4 py-1.5 text-sm font-medium text-gray-800 shadow-md ring-1 ring-gray-200 hover:bg-white sm:absolute sm:-top-3 sm:right-0 sm:mb-0">Tutup</button>
-    <img id="comment-image-lightbox-img" src="" alt="Pratinjau gambar" class="max-h-[min(85dvh,900px)] max-w-full cursor-default rounded-lg object-contain shadow-2xl ring-1 ring-white/10" width="1200" height="900" decoding="async" />
+  <div class="relative z-10 flex h-full w-full max-w-full flex-col items-center gap-2">
+    <div class="flex shrink-0 items-center gap-1 rounded-full bg-white/95 p-1 shadow-md ring-1 ring-gray-200">
+      <button type="button" id="comment-image-zoom-out" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold text-gray-700 hover:bg-gray-100" title="Perkecil" aria-label="Perkecil gambar">−</button>
+      <button type="button" id="comment-image-zoom-reset" class="min-w-[4rem] rounded-full px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100" title="Reset zoom">100%</button>
+      <button type="button" id="comment-image-zoom-in" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold text-gray-700 hover:bg-gray-100" title="Perbesar" aria-label="Perbesar gambar">+</button>
+      <span class="mx-1 h-5 w-px bg-gray-200"></span>
+      <button type="button" id="comment-image-rotate-left" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg text-gray-700 hover:bg-gray-100" title="Putar 90° ke kiri" aria-label="Putar gambar ke kiri">↶</button>
+      <button type="button" id="comment-image-rotate-right" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg text-gray-700 hover:bg-gray-100" title="Putar 90° ke kanan" aria-label="Putar gambar ke kanan">↷</button>
+      <span class="mx-1 h-5 w-px bg-gray-200"></span>
+      <button type="button" id="comment-image-lightbox-close" class="rounded-full px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100">Tutup</button>
+    </div>
+    <div id="comment-image-viewport" class="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-lg">
+      <img id="comment-image-lightbox-img" src="" alt="Pratinjau gambar" class="max-h-full max-w-full select-none rounded-lg object-contain shadow-2xl ring-1 ring-white/10" width="1200" height="900" draggable="false" decoding="async" />
+    </div>
   </div>
 </div>
 
@@ -923,10 +934,43 @@
       const commentImageLightboxImg = document.getElementById('comment-image-lightbox-img');
       const commentImageLightboxBackdrop = document.getElementById('comment-image-lightbox-backdrop');
       const commentImageLightboxClose = document.getElementById('comment-image-lightbox-close');
+      const commentImageViewport = document.getElementById('comment-image-viewport');
+      const commentImageZoomIn = document.getElementById('comment-image-zoom-in');
+      const commentImageZoomOut = document.getElementById('comment-image-zoom-out');
+      const commentImageZoomReset = document.getElementById('comment-image-zoom-reset');
+      const commentImageRotateLeft = document.getElementById('comment-image-rotate-left');
+      const commentImageRotateRight = document.getElementById('comment-image-rotate-right');
+      let commentImageZoom = 1;
+      let commentImageRotation = 0;
+      let commentImagePanX = 0;
+      let commentImagePanY = 0;
+      let commentImageDragging = false;
+      let commentImageDragStartX = 0;
+      let commentImageDragStartY = 0;
+
+      const applyCommentImageZoom = (nextZoom) => {
+        if (!commentImageLightboxImg) return;
+        commentImageZoom = Math.min(5, Math.max(0.25, nextZoom));
+        if (commentImageZoom <= 1) {
+          commentImagePanX = 0;
+          commentImagePanY = 0;
+        }
+        commentImageLightboxImg.style.transform = `translate(${commentImagePanX}px, ${commentImagePanY}px) scale(${commentImageZoom}) rotate(${commentImageRotation}deg)`;
+        commentImageLightboxImg.style.transformOrigin = 'center center';
+        commentImageLightboxImg.style.cursor = commentImageZoom > 1 ? (commentImageDragging ? 'grabbing' : 'grab') : 'zoom-in';
+        commentImageLightboxImg.style.touchAction = 'none';
+        if (commentImageZoomReset) commentImageZoomReset.textContent = `${Math.round(commentImageZoom * 100)}%`;
+        if (commentImageZoomOut) commentImageZoomOut.disabled = commentImageZoom <= 0.25;
+        if (commentImageZoomIn) commentImageZoomIn.disabled = commentImageZoom >= 5;
+      };
 
       const openCommentImageLightbox = (src) => {
         if (!commentImageLightbox || !commentImageLightboxImg || !src) return;
         commentImageLightboxImg.src = src;
+        commentImageRotation = 0;
+        commentImagePanX = 0;
+        commentImagePanY = 0;
+        applyCommentImageZoom(1);
         commentImageLightbox.classList.remove('hidden');
         commentImageLightbox.classList.add('flex', 'flex-col', 'items-center', 'justify-center');
         commentImageLightbox.setAttribute('aria-hidden', 'false');
@@ -940,8 +984,67 @@
         commentImageLightbox.classList.remove('flex', 'flex-col', 'items-center', 'justify-center');
         commentImageLightbox.setAttribute('aria-hidden', 'true');
         commentImageLightboxImg.removeAttribute('src');
+        applyCommentImageZoom(1);
         document.body.style.overflow = '';
       };
+
+      commentImageZoomIn?.addEventListener('click', () => applyCommentImageZoom(commentImageZoom + 0.25));
+      commentImageZoomOut?.addEventListener('click', () => applyCommentImageZoom(commentImageZoom - 0.25));
+      commentImageZoomReset?.addEventListener('click', () => {
+        commentImageRotation = 0;
+        commentImagePanX = 0;
+        commentImagePanY = 0;
+        applyCommentImageZoom(1);
+      });
+      commentImageRotateLeft?.addEventListener('click', () => {
+        commentImageRotation -= 90;
+        commentImagePanX = 0;
+        commentImagePanY = 0;
+        applyCommentImageZoom(commentImageZoom);
+      });
+      commentImageRotateRight?.addEventListener('click', () => {
+        commentImageRotation += 90;
+        commentImagePanX = 0;
+        commentImagePanY = 0;
+        applyCommentImageZoom(commentImageZoom);
+      });
+      commentImageLightboxImg?.addEventListener('dblclick', () => {
+        applyCommentImageZoom(commentImageZoom === 1 ? 2 : 1);
+      });
+      commentImageViewport?.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        applyCommentImageZoom(commentImageZoom + (event.deltaY < 0 ? 0.25 : -0.25));
+      }, { passive: false });
+
+      commentImageViewport?.addEventListener('click', (event) => {
+        if (event.target === commentImageViewport) closeCommentImageLightbox();
+      });
+
+      commentImageLightboxImg?.addEventListener('pointerdown', (event) => {
+        if (commentImageZoom <= 1) return;
+        event.preventDefault();
+        commentImageDragging = true;
+        commentImageDragStartX = event.clientX - commentImagePanX;
+        commentImageDragStartY = event.clientY - commentImagePanY;
+        commentImageLightboxImg.setPointerCapture(event.pointerId);
+        applyCommentImageZoom(commentImageZoom);
+      });
+      commentImageLightboxImg?.addEventListener('pointermove', (event) => {
+        if (!commentImageDragging) return;
+        commentImagePanX = event.clientX - commentImageDragStartX;
+        commentImagePanY = event.clientY - commentImageDragStartY;
+        applyCommentImageZoom(commentImageZoom);
+      });
+      const stopCommentImageDrag = (event) => {
+        if (!commentImageDragging) return;
+        commentImageDragging = false;
+        if (commentImageLightboxImg?.hasPointerCapture(event.pointerId)) {
+          commentImageLightboxImg.releasePointerCapture(event.pointerId);
+        }
+        applyCommentImageZoom(commentImageZoom);
+      };
+      commentImageLightboxImg?.addEventListener('pointerup', stopCommentImageDrag);
+      commentImageLightboxImg?.addEventListener('pointercancel', stopCommentImageDrag);
 
       if (list) {
         list.addEventListener('click', (ev) => {
