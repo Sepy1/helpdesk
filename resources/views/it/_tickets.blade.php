@@ -1,23 +1,21 @@
 {{-- Partial: tickets list (desktop table + mobile cards + pagination) --}}
 
   {{-- ===== Desktop: tabel ===== --}}
-  <div class="hidden max-h-[calc(100dvh-15rem)] overflow-auto overscroll-contain rounded-lg border border-gray-100 md:block" id="tickets-fragment">
+  <div class="hidden max-h-[calc(100dvh-15rem)] overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg border border-gray-100 md:block" id="tickets-fragment">
     <table class="min-w-full text-sm table-fixed">
       <colgroup>
-        <col style="width:4%">   <!-- # -->
-        <col style="width:11%">  <!-- Dibuat -->
-        <col style="width:16%">  <!-- Nomor -->
-        <col style="width:12%">  <!-- Kategori -->
-        <col style="width:12%">  <!-- Subkategori -->
+        <col style="width:12%">  <!-- Dibuat -->
+        <col style="width:14%">  <!-- Nomor -->
+        <col style="width:11%">  <!-- Kategori -->
+        <col style="width:11%">  <!-- Subkategori -->
         <col style="width:10%">  <!-- Root Cause -->
-        <col style="width:14%">  <!-- Pembuat -->
-        <col style="width:9%">   <!-- Status -->
-        <col style="width:13%">  <!-- IT Handler -->
-        <col style="width:11%">  <!-- Aksi -->
+        <col style="width:12%">  <!-- Pembuat -->
+        <col style="width:12%">  <!-- Status -->
+        <col style="width:10%">  <!-- IT Handler -->
+        <col style="width:8%">   <!-- Aksi -->
       </colgroup>
       <thead class="hd-table-head sticky top-0 z-10 shadow-sm">
         <tr>
-          <th class="py-3 px-4 text-left whitespace-nowrap">#</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Nomor</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Kategori</th>
@@ -32,7 +30,6 @@
       <tbody class="divide-y divide-gray-100">
         @foreach($tickets as $i => $t)
         <tr class="{{ $i % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-hd-50/60">
-          <td class="py-3 px-4 text-gray-500">{{ $tickets->firstItem()+$i }}</td>
           <td class="py-3 px-4 whitespace-nowrap">{{ optional($t->created_at)->format('d M Y H:i') ?? '-' }}</td>
           <td class="py-3 px-4 font-medium truncate">
             <a href="{{ route('ticket.show',$t->id) }}" class="hd-link block truncate">{{ $t->nomor_tiket }}</a>
