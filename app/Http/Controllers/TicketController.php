@@ -535,14 +535,26 @@ public function store(Request $request)
     $dateFrom = $request->query('date_from');
     $dateTo   = $request->query('date_to');
 
+    // Ringkasan card mengikuti scope periode dan kantor yang sedang dipilih.
+    // Status tidak diterapkan ke query dasar agar setiap card tetap menampilkan
+    // jumlah statusnya masing-masing pada scope yang sama.
+    $ticketSummaryQuery = Ticket::query()
+        ->when($request->filled('kode_kantor'), function ($query) use ($request) {
+            $kode = trim((string) $request->kode_kantor);
+            $query->whereHas('user', fn ($userQuery) => $userQuery->where('kode_kantor', $kode));
+        })
+        ->when($dateFrom, fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+        ->when($dateTo, fn ($query) => $query->whereDate('created_at', '<=', $dateTo));
+
+    $slaExceededSummaryQuery = clone $ticketSummaryQuery;
+    $this->applySlaFilter($slaExceededSummaryQuery);
+
     $ticketSummary = [
-        'total' => Ticket::count(),
-        'open' => Ticket::where('status', 'OPEN')->count(),
-        'on_progress' => Ticket::where('status', 'ON_PROGRESS')->count(),
-        'closed' => Ticket::where('status', 'CLOSED')->count(),
-        'sla_exceeded' => Ticket::where(function ($query) {
-            $this->applySlaFilter($query);
-        })->count(),
+        'total' => (clone $ticketSummaryQuery)->count(),
+        'open' => (clone $ticketSummaryQuery)->where('status', 'OPEN')->count(),
+        'on_progress' => (clone $ticketSummaryQuery)->where('status', 'ON_PROGRESS')->count(),
+        'closed' => (clone $ticketSummaryQuery)->where('status', 'CLOSED')->count(),
+        'sla_exceeded' => $slaExceededSummaryQuery->count(),
     ];
 
     $tickets = Ticket::with(['user','it','subcategory'])

@@ -135,6 +135,11 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
 
     // ===== IT =====
     Route::middleware(['role:IT'])->group(function () {
+        Route::get('/it/changelog/list', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('it.changelog.index');
+        Route::get('/it/changelog', [\App\Http\Controllers\ChangelogController::class, 'manage'])->name('it.changelog.manage');
+        Route::post('/it/changelog', [\App\Http\Controllers\ChangelogController::class, 'store'])->name('it.changelog.store');
+        Route::put('/it/changelog/{changelog}', [\App\Http\Controllers\ChangelogController::class, 'update'])->name('it.changelog.update');
+        Route::delete('/it/changelog/{changelog}', [\App\Http\Controllers\ChangelogController::class, 'destroy'])->name('it.changelog.destroy');
         // Form create ticket untuk user IT (Input Tiket)
         Route::get('/it/create', [TicketController::class, 'create'])->name('it.ticket.create');
         Route::get('/it/board-cr', [\App\Http\Controllers\ItBoardCrController::class, 'index'])->name('it.board_cr');

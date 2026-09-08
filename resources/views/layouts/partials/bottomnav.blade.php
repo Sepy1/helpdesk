@@ -9,8 +9,7 @@
   $on   = 'text-tulisan-100';
   $off  = 'text-tulisan-500';
 
-  // jumlah kolom: IT = 6 (Dashboard, Board CR, Tiket, Profil, User, Statistik), CABANG = 3 (Buat, Tiket, Profil), VENDOR = 2 (Tiket, Profil)
-  $cols = $isIT ? 'grid-cols-6' : ($isVendor ? 'grid-cols-2' : 'grid-cols-3');
+  $cols = $isIT ? 'grid-cols-7' : ($isVendor ? 'grid-cols-2' : 'grid-cols-3');
 @endphp
 
 {{-- BOTTOM NAV: tampil di mobile, gradient biru, tinggi jelas --}}
@@ -86,6 +85,19 @@
         </a>
       @endif
     </li>
+    {{-- ITEM: Changelog (khusus IT) --}}
+    @if($isIT)
+    <li class="h-full">
+      <a href="{{ route('it.changelog.manage') }}"
+         class="{{ request()->routeIs('it.changelog.*') ? "$base text-white" : "$base text-white/80 hover:bg-white/10" }} h-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 1v4h4M8 12h8M8 16h8M8 8h2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Update</span>
+      </a>
+    </li>
+    @endif
+
     {{-- ITEM: Profil (semua role) --}}
     <li class="h-full">
       <a href="{{ route('profile.edit') }}"

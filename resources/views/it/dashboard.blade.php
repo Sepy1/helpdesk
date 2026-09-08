@@ -17,6 +17,11 @@
     </div>
 
     @php
+      $summaryScope = array_filter([
+        'kode_kantor' => request('kode_kantor'),
+        'date_from' => request('date_from'),
+        'date_to' => request('date_to'),
+      ], fn ($value) => $value !== null && $value !== '');
       $summaryCards = [
         ['label' => 'Total Tiket', 'value' => $ticketSummary['total'] ?? 0, 'query' => [], 'tone' => 'indigo'],
         ['label' => 'Tiket Open', 'value' => $ticketSummary['open'] ?? 0, 'query' => ['status' => 'OPEN'], 'tone' => 'sky'],
@@ -39,7 +44,7 @@
             ? !request()->filled('status') && !request()->boolean('sla_exceeded')
             : collect($card['query'])->every(fn ($value, $key) => (string) request($key) === (string) $value);
         @endphp
-        <a href="{{ route('it.dashboard', $card['query']) }}"
+        <a href="{{ route('it.dashboard', array_merge($summaryScope, $card['query'])) }}"
            class="group flex min-h-12 items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 transition hover:-translate-y-0.5 hover:shadow-md sm:px-3 {{ $summaryTones[$card['tone']] }} {{ $isActive ? 'ring-2 ring-current ring-offset-1' : '' }}"
            @if($card['label'] === 'Melebihi SLA') title="Tiket aktif yang melewati SLA kategori masing-masing" @endif>
           <span class="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-wide opacity-80 sm:text-xs">{{ $card['label'] }}</span>

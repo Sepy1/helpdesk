@@ -132,6 +132,7 @@
     'it.parameters',
     'it.popups.*',
     'it.users.*',
+    'it.changelog.*',
     'profile.edit',
     'vendor.profile.edit'
   ]);

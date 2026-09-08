@@ -15,6 +15,7 @@
     'settings' => '<path d="M12 15a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm7.8-3a7.7 7.7 0 0 0-.1-1.4l2-1.6a.8.8 0 0 0 .2-.9l-2-3.4a.8.8 0 0 0-.9-.3l-2.3 1a8.2 8.2 0 0 0-1.4-.8l-.4-2.5a.8.8 0 0 0-.8-.7h-4a.8.8 0 0 0-.8.7l-.4 2.5a8.2 8.2 0 0 0-1.4.8l-2.3-1a.8.8 0 0 0-.9.3l-2 3.4a.8.8 0 0 0 .2.9l2 1.6a7.7 7.7 0 0 0-.1 1.4l-2 1.6a.8.8 0 0 0-.2.9l2 3.4a.8.8 0 0 0 .9.3l2.3-1a8.2 8.2 0 0 0 1.4.8l.4 2.5a.8.8 0 0 0 .8.7h4a.8.8 0 0 0 .8-.7l.4-2.5a8.2 8.2 0 0 0 1.4-.8l2.3 1a.8.8 0 0 0 .9-.3l2-3.4a.8.8 0 0 0-.2-.9Z" fill="none" stroke="currentColor" stroke-width="1.5" />',
     'filter'   => '<path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />',
     'download' => '<path d="M12 3v10m0 0 4-4m-4 4-4-4M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    'changelog' => '<path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 1v4h4M8 12h8M8 16h8M8 8h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   ];
 
   // Logo file (opsional). Taruh logo di public/images/logo-helpdesk.svg
@@ -28,6 +29,7 @@
       ['label'=>'Statistik',   'route'=>'it.stats',       'icon'=>'chart',  'active'=>$is('it.stats')],
       ['label'=>'Parameter',   'route'=>'it.parameters',  'icon'=>'settings','active'=>$is('it.parameters*')],
       ['label'=>'Popup Info',  'route'=>'it.popups.index', 'icon'=>'board',   'active'=>$is('it.popups.*')],
+      ['label'=>'Changelog App', 'route'=>'it.changelog.manage', 'icon'=>'changelog', 'active'=>$is('it.changelog.*')],
       ['label'=>'Manajemen User', 'route'=>'it.users.index', 'icon'=>'settings', 'active'=>$is('it.users.*')],
       ['label'=>'Profil',      'route'=>'profile.edit',   'icon'=>'user',   'active'=>$is('profile.edit')],
     ];
