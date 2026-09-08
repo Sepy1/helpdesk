@@ -1,7 +1,7 @@
 {{-- Partial: tickets list (desktop table + mobile cards + pagination) --}}
 
   {{-- ===== Desktop: tabel ===== --}}
-  <div class="hidden md:block overflow-x-auto" id="tickets-fragment">
+  <div class="hidden max-h-[calc(100dvh-15rem)] overflow-auto overscroll-contain rounded-lg border border-gray-100 md:block" id="tickets-fragment">
     <table class="min-w-full text-sm table-fixed">
       <colgroup>
         <col style="width:4%">   <!-- # -->
@@ -15,7 +15,7 @@
         <col style="width:13%">  <!-- IT Handler -->
         <col style="width:11%">  <!-- Aksi -->
       </colgroup>
-      <thead class="hd-table-head">
+      <thead class="hd-table-head sticky top-0 z-10 shadow-sm">
         <tr>
           <th class="py-3 px-4 text-left whitespace-nowrap">#</th>
           <th class="py-3 px-4 text-left whitespace-nowrap">Dibuat</th>
@@ -75,7 +75,7 @@
     </table>
   </div>
    {{-- ===== Mobile: card per tiket ===== --}}
-  <div class="block md:hidden space-y-3" id="tickets-fragment-mobile">
+  <div class="block max-h-[55dvh] space-y-3 overflow-y-auto overscroll-contain rounded-lg pr-1 md:hidden" id="tickets-fragment-mobile">
     @forelse($tickets as $t)
       <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div class="flex items-start justify-between gap-3">
@@ -132,8 +132,15 @@
       <div class="text-center text-gray-500 py-8">Tidak ada tiket.</div>
     @endforelse
   </div>
+<div id="tickets-infinite-loading" class="hidden items-center justify-center gap-2 py-2 text-xs text-gray-500" role="status" aria-live="polite">
+  <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4Z"></path>
+  </svg>
+  <span>Memuat tiket berikutnya...</span>
+</div>
 {{-- Pagination: showing kiri + paginate center (hapus duplikat) --}}
-<div class="mt-4" id="tickets-fragment-pagination">
+<div class="mt-2 shrink-0" id="tickets-fragment-pagination">
   <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-3">
     <div class="text-sm text-gray-500 text-center md:text-left min-w-0">
       Tiket {{ $tickets->firstItem() }} sampai {{ $tickets->lastItem() }} dari total {{ $tickets->total() }} Tiket

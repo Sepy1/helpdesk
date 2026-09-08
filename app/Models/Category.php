@@ -9,10 +9,11 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','slug','description','is_enabled'];
+    protected $fillable = ['name','slug','description','is_enabled','sla_value','sla_unit'];
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'sla_value' => 'integer',
     ];
 
     public function subcategories()

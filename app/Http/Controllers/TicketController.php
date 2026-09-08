@@ -41,6 +41,31 @@ class TicketController extends Controller
         'Wireless Down',
         'Lainnya',
     ];
+    public const SLA_HOURS = 24;
+
+    /** Batasi query ke tiket aktif yang melewati SLA kategori masing-masing. */
+    private function applySlaFilter($query): void
+    {
+        $categories = Category::query()->get(['id', 'sla_value', 'sla_unit']);
+
+        $query->where('status', '!=', 'CLOSED')
+            ->where(function ($slaQuery) use ($categories) {
+                foreach ($categories as $category) {
+                    $hours = max(1, (int) $category->sla_value)
+                        * ($category->sla_unit === 'day' ? 24 : 1);
+                    $slaQuery->orWhere(function ($categoryQuery) use ($category, $hours) {
+                        $categoryQuery->where('category_id', $category->id)
+                            ->where('created_at', '<', now()->subHours($hours));
+                    });
+                }
+
+                // Tiket legacy tanpa kategori tetap menggunakan SLA default 24 jam.
+                $slaQuery->orWhere(function ($legacyQuery) {
+                    $legacyQuery->whereNull('category_id')
+                        ->where('created_at', '<', now()->subHours(self::SLA_HOURS));
+                });
+            });
+    }
 
     /* =========================
      * UTIL
@@ -510,9 +535,22 @@ public function store(Request $request)
     $dateFrom = $request->query('date_from');
     $dateTo   = $request->query('date_to');
 
+    $ticketSummary = [
+        'total' => Ticket::count(),
+        'open' => Ticket::where('status', 'OPEN')->count(),
+        'on_progress' => Ticket::where('status', 'ON_PROGRESS')->count(),
+        'closed' => Ticket::where('status', 'CLOSED')->count(),
+        'sla_exceeded' => Ticket::where(function ($query) {
+            $this->applySlaFilter($query);
+        })->count(),
+    ];
+
     $tickets = Ticket::with(['user','it','subcategory'])
         // filter status
         ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+        ->when($request->boolean('sla_exceeded'), function ($q) {
+            $this->applySlaFilter($q);
+        })
 
         // filter category: jika kolom category_id ada, pakai itu; jika belum, fallback ke legacy 'kategori'
         ->when($hasCategoryId && $request->filled('category_id'),
@@ -559,7 +597,7 @@ public function store(Request $request)
     $kodeKantors = KodeKantor::orderBy('kode')->get();
 
     // kirim semua data ke view agar select bisa di-render
-    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses', 'kodeKantors'));
+    return view('it.dashboard', compact('tickets', 'categories', 'subcategories', 'selectedCategoryId', 'rootCauses', 'kodeKantors', 'ticketSummary'));
     }
 
     /**
@@ -583,6 +621,9 @@ public function store(Request $request)
 
         $tickets = Ticket::with(['user','it','subcategory'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($request->boolean('sla_exceeded'), function ($q) {
+                $this->applySlaFilter($q);
+            })
             ->when($hasCategoryId && $request->filled('category_id'),
                    fn($q) => $q->where('category_id', $request->category_id))
             ->when(!$hasCategoryId && $request->filled('kategori'),
@@ -629,6 +670,9 @@ public function store(Request $request)
 
         $q = Ticket::with(['user.kodeKantor', 'it', 'subcategory', 'rootCauseDetail'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($request->boolean('sla_exceeded'), function ($q) {
+                $this->applySlaFilter($q);
+            })
             ->when($hasCategoryId && $request->filled('category_id'), fn($q) => $q->where('category_id', $request->category_id))
             ->when(!$hasCategoryId && $request->filled('kategori'), fn($q) => $q->where('kategori', $request->kategori))
             ->when($hasSubcategoryId && $request->filled('subcategory_id'), fn($q) => $q->where('subcategory_id', $request->subcategory_id))

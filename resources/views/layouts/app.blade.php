@@ -27,6 +27,7 @@
     .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
     #nprogress .bar{background:#6366F1!important;height:3px!important}
     #nprogress .peg{box-shadow:0 0 10px #6366F1,0 0 5px #6366F1!important}
+    #nprogress .spinner{display:none!important}
 
     /* Konten tetap stabil untuk mencegah flicker */
     .page-root{opacity:1;transform:none;transition:none;will-change:auto}
@@ -1037,6 +1038,91 @@ function logoutMobile() {
     }
   </script>
   @endauth
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('select[data-themed-select]').forEach(function (select) {
+        if (select.dataset.enhanced === 'true') return;
+        select.dataset.enhanced = 'true';
+
+        const shell = document.createElement('div');
+        shell.className = 'hd-select-shell';
+        shell.dataset.open = 'false';
+        select.parentNode.insertBefore(shell, select);
+        shell.appendChild(select);
+        select.classList.add('hd-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'hd-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.innerHTML = '<span class="min-w-0 truncate"></span><span class="hd-select-chevron" aria-hidden="true"></span>';
+
+        const menu = document.createElement('div');
+        menu.className = 'hd-select-menu';
+        menu.setAttribute('role', 'listbox');
+        shell.append(trigger, menu);
+
+        function close() {
+          shell.dataset.open = 'false';
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        function render() {
+          const options = Array.from(select.options);
+          const selected = options.find(option => option.selected) || options[0];
+          trigger.querySelector('span').textContent = selected ? selected.textContent : '-';
+          trigger.disabled = select.disabled;
+          menu.replaceChildren();
+
+          options.forEach(function (option) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'hd-select-option';
+            item.setAttribute('role', 'option');
+            item.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+            item.textContent = option.textContent;
+            item.addEventListener('click', function () {
+              select.value = option.value;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+              close();
+              trigger.focus();
+            });
+            menu.appendChild(item);
+          });
+        }
+
+        new MutationObserver(render).observe(select, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['disabled', 'selected'],
+        });
+        select.addEventListener('change', render);
+
+        trigger.addEventListener('click', function () {
+          if (trigger.disabled) return;
+          const willOpen = shell.dataset.open !== 'true';
+          document.querySelectorAll('.hd-select-shell[data-open="true"]').forEach(function (other) {
+            other.dataset.open = 'false';
+          });
+          shell.dataset.open = willOpen ? 'true' : 'false';
+          trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        document.addEventListener('click', function (event) {
+          if (!shell.contains(event.target)) close();
+        });
+        shell.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') {
+            close();
+            trigger.focus();
+          }
+        });
+        render();
+      });
+    });
+  </script>
 
   @stack('scripts')
 </body>

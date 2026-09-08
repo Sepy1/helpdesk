@@ -110,6 +110,20 @@ class ParameterController extends Controller
         return back()->with('success', 'Status kategori berhasil diperbarui.');
     }
 
+    public function updateCategorySla(Request $request, Category $category)
+    {
+        if (auth()->user()->role !== 'IT') abort(403);
+
+        $data = $request->validate([
+            'sla_value' => ['required', 'integer', 'min:1', 'max:3650'],
+            'sla_unit' => ['required', Rule::in(['hour', 'day'])],
+        ]);
+
+        $category->update($data);
+
+        return back()->with('success', 'SLA kategori berhasil diperbarui.');
+    }
+
     public function updateSubcategoryStatus(Request $request, Subcategory $subcategory)
     {
         if (auth()->user()->role !== 'IT') abort(403);

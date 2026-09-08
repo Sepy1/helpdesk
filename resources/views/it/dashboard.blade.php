@@ -16,8 +16,43 @@
       </div>
     </div>
 
+    @php
+      $summaryCards = [
+        ['label' => 'Total Tiket', 'value' => $ticketSummary['total'] ?? 0, 'query' => [], 'tone' => 'indigo'],
+        ['label' => 'Tiket Open', 'value' => $ticketSummary['open'] ?? 0, 'query' => ['status' => 'OPEN'], 'tone' => 'sky'],
+        ['label' => 'Tiket On Progress', 'value' => $ticketSummary['on_progress'] ?? 0, 'query' => ['status' => 'ON_PROGRESS'], 'tone' => 'amber'],
+        ['label' => 'Tiket Closed', 'value' => $ticketSummary['closed'] ?? 0, 'query' => ['status' => 'CLOSED'], 'tone' => 'emerald'],
+        ['label' => 'Melebihi SLA', 'value' => $ticketSummary['sla_exceeded'] ?? 0, 'query' => ['sla_exceeded' => 1], 'tone' => 'rose'],
+      ];
+      $summaryTones = [
+        'indigo' => 'border-indigo-200 bg-indigo-50 text-indigo-700',
+        'sky' => 'border-sky-200 bg-sky-50 text-sky-700',
+        'amber' => 'border-amber-200 bg-amber-50 text-amber-700',
+        'emerald' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        'rose' => 'border-rose-200 bg-rose-50 text-rose-700',
+      ];
+    @endphp
+    <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5" aria-label="Ringkasan tiket">
+      @foreach($summaryCards as $card)
+        @php
+          $isActive = $card['query'] === []
+            ? !request()->filled('status') && !request()->boolean('sla_exceeded')
+            : collect($card['query'])->every(fn ($value, $key) => (string) request($key) === (string) $value);
+        @endphp
+        <a href="{{ route('it.dashboard', $card['query']) }}"
+           class="group flex min-h-12 items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 transition hover:-translate-y-0.5 hover:shadow-md sm:px-3 {{ $summaryTones[$card['tone']] }} {{ $isActive ? 'ring-2 ring-current ring-offset-1' : '' }}"
+           @if($card['label'] === 'Melebihi SLA') title="Tiket aktif yang melewati SLA kategori masing-masing" @endif>
+          <span class="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-wide opacity-80 sm:text-xs">{{ $card['label'] }}</span>
+          <span class="shrink-0 text-lg font-bold tabular-nums sm:text-xl">{{ number_format($card['value']) }}</span>
+        </a>
+      @endforeach
+    </div>
+
     {{-- Filter: gabung kategori & subkategori ke kolom pencarian --}}
     <form method="GET" class="w-full flex flex-col xl:flex-row xl:flex-nowrap items-end gap-2 mb-4 md:mb-6" id="filter-form">
+      @if(request()->boolean('sla_exceeded'))
+        <input type="hidden" name="sla_exceeded" value="1">
+      @endif
       <div class="w-full xl:w-[260px] xl:shrink-0">
         <input type="text" id="filter-q" name="q" value="{{ request('q') }}" placeholder="Cari nomor / deskripsi / kategori"
                class="w-full h-10 rounded-lg border-gray-300 px-3 focus:border-indigo-500 focus:ring-indigo-500" autocomplete="off" />
@@ -121,7 +156,7 @@
   // Polling: fetch tickets fragment and replace content if changed
   (function(){
     const intervalMs = 3000; // 3s
-    const activeFilterKeys = ['q', 'kode_kantor', 'status', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
+    const activeFilterKeys = ['q', 'kode_kantor', 'status', 'sla_exceeded', 'date_from', 'date_to', 'root_cause', 'category_id', 'subcategory_id', 'kategori'];
     const queryParams = new URLSearchParams(window.location.search);
     const hasActiveFilter = activeFilterKeys.some((key) => {
       const value = queryParams.get(key);
@@ -134,6 +169,7 @@
     const fragmentUrl = '{{ route("it.tickets.fragment") }}' + window.location.search;
     async function fetchFragment(){
       try{
+        if (window.__ticketInfiniteLoadingStarted || window.__ticketInfiniteHasLoadedMore) return;
         const res = await fetch(fragmentUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         if(!res.ok) return;
         const html = await res.text();
@@ -160,6 +196,84 @@
     }
     // start polling after small delay
     setTimeout(() => { fetchFragment(); setInterval(fetchFragment, intervalMs); }, 3000);
+  })();
+</script>
+<script>
+  // Infinite scroll: tambahkan halaman berikutnya saat area daftar mendekati batas bawah.
+  (function () {
+    let loading = false;
+    let finished = false;
+
+    function nextPageUrl() {
+      const nextLink = document.querySelector('#tickets-fragment-pagination a[rel="next"]');
+      if (!nextLink) return null;
+
+      const dashboardUrl = new URL(nextLink.href, window.location.origin);
+      const fragmentUrl = new URL(@json(route('it.tickets.fragment')), window.location.origin);
+      fragmentUrl.search = dashboardUrl.search;
+      return fragmentUrl.toString();
+    }
+
+    function setLoading(isLoading) {
+      const indicator = document.getElementById('tickets-infinite-loading');
+      if (!indicator) return;
+      indicator.classList.toggle('hidden', !isLoading);
+      indicator.classList.toggle('flex', isLoading);
+    }
+
+    async function loadNextPage() {
+      if (loading || finished) return;
+      const url = nextPageUrl();
+      if (!url) {
+        finished = true;
+        return;
+      }
+
+      loading = true;
+      window.__ticketInfiniteLoadingStarted = true;
+      setLoading(true);
+      try {
+        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!response.ok) throw new Error('Gagal memuat halaman berikutnya');
+
+        const holder = document.createElement('div');
+        holder.innerHTML = await response.text();
+
+        const currentBody = document.querySelector('#tickets-fragment tbody');
+        const nextBody = holder.querySelector('#tickets-fragment tbody');
+        if (currentBody && nextBody) {
+          Array.from(nextBody.children).forEach((row) => currentBody.appendChild(row));
+        }
+
+        const currentMobile = document.getElementById('tickets-fragment-mobile');
+        const nextMobile = holder.querySelector('#tickets-fragment-mobile');
+        if (currentMobile && nextMobile) {
+          Array.from(nextMobile.children).forEach((card) => currentMobile.appendChild(card));
+        }
+
+        const currentPagination = document.getElementById('tickets-fragment-pagination');
+        const nextPagination = holder.querySelector('#tickets-fragment-pagination');
+        if (currentPagination && nextPagination) currentPagination.replaceWith(nextPagination);
+
+        window.__ticketInfiniteHasLoadedMore = true;
+        finished = !nextPageUrl();
+      } catch (error) {
+        // Pagination biasa tetap tersedia sebagai fallback.
+        window.__ticketInfiniteLoadingStarted = false;
+      } finally {
+        loading = false;
+        setLoading(false);
+      }
+    }
+
+    document.addEventListener('scroll', function (event) {
+      const scroller = event.target;
+      if (!(scroller instanceof HTMLElement)) return;
+      if (scroller.id !== 'tickets-fragment' && scroller.id !== 'tickets-fragment-mobile') return;
+
+      const distanceToBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      if (distanceToBottom <= 120) loadNextPage();
+    }, true);
   })();
 </script>
 @endsection
@@ -195,7 +309,13 @@
       }
 
       form.querySelectorAll('select').forEach(function (sel) {
-        sel.addEventListener('change', function () { applyFiltersFromForm(); });
+        sel.addEventListener('change', function () {
+          // Memilih status biasa menggantikan mode khusus "Melebihi SLA".
+          if (sel.name === 'status' && sel.value) {
+            form.querySelector('input[name="sla_exceeded"]')?.remove();
+          }
+          applyFiltersFromForm();
+        });
       });
 
       rangeInput.addEventListener('keydown', function (e) {

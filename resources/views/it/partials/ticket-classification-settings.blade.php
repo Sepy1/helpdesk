@@ -23,6 +23,16 @@
             <span class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{{ $category->name }}</span>
             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{{ $category->subcategories->count() }} sub</span>
             <div class="flex shrink-0 items-center gap-2" onclick="event.stopPropagation()">
+              <form method="POST" action="{{ route('it.parameters.category.sla', $category) }}" class="inline-flex items-center gap-1" title="SLA kategori">
+                @csrf
+                <span class="text-xs font-semibold text-slate-500">SLA</span>
+                <input type="number" name="sla_value" min="1" max="3650" required value="{{ $category->sla_value ?? 24 }}" class="h-8 w-16 rounded-md border-slate-200 px-2 py-1 text-xs focus:border-blue-500 focus:ring-blue-500">
+                <select name="sla_unit" class="h-8 rounded-md border-slate-200 py-1 pl-2 pr-7 text-xs focus:border-blue-500 focus:ring-blue-500">
+                  <option value="hour" @selected(($category->sla_unit ?? 'hour') === 'hour')>Jam</option>
+                  <option value="day" @selected(($category->sla_unit ?? 'hour') === 'day')>Hari</option>
+                </select>
+                <button type="submit" class="inline-flex h-8 items-center rounded-md bg-blue-50 px-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">Simpan</button>
+              </form>
               <form method="POST" action="{{ route('it.parameters.category.status', $category) }}" class="inline-flex items-center gap-1.5">@csrf<input type="hidden" name="is_enabled" value="0"><input type="checkbox" name="is_enabled" value="1" @checked($category->is_enabled) onchange="this.form.submit()" aria-label="Enable kategori {{ $category->name }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"><span class="text-xs text-slate-500">Enable</span></form>
               <form method="POST" action="{{ route('it.parameters.category.delete', $category->id) }}" onsubmit="return confirm('Hapus kategori beserta seluruh data turunannya?');">@csrf<button type="submit" class="{{ $btnDanger }}">Hapus</button></form>
             </div>

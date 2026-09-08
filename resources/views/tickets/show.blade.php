@@ -148,17 +148,17 @@
 @endpush
 
 @section('content')
-{{-- Mobile: biarkan halaman mengalir normal; Desktop: split layout + tinggi viewport --}}
-<div class="flex flex-col lg:min-h-[calc(100dvh-6.25rem)] lg:max-h-[calc(100dvh-6.25rem)]">
-<div class="grid flex-1 grid-cols-1 gap-6 lg:min-h-0 lg:overflow-hidden lg:grid-cols-3 lg:items-stretch">
+{{-- Halaman memakai scroll utama; hanya panel komentar yang memiliki scroll internal. --}}
+<div class="flex flex-col">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
   {{-- Kolom kiri (konten utama) --}}
-  <div class="flex flex-col gap-6 overflow-visible lg:col-span-2 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden">
+  <div class="flex flex-col gap-6 overflow-visible lg:col-span-2">
     {{-- Form tindak lanjut dipindahkan ke modal Update untuk tampilan lebih rapi --}}
 
     {{-- =========================
          CARD UTAMA: Nomor + Kategori + Handler + Deskripsi + Lampiran + Aksi
          ========================= --}}
-    <div class="show-card mt-0 shrink-0 bg-white rounded-2xl p-3 text-xs sm:p-5 sm:text-sm">
+    <div id="ticket-main-card" class="show-card mt-0 shrink-0 bg-white rounded-2xl p-3 text-xs sm:p-5 sm:text-sm">
       {{-- Header: nomor tiket + created info --}}
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div class="min-w-0">
@@ -220,7 +220,7 @@
       {{-- Deskripsi --}}
       <div class="mt-6">
         <div class="text-xs text-gray-500 mb-1">Deskripsi</div>
-        <div class="text-sm text-gray-800 whitespace-pre-line">{{ $ticket->deskripsi }}</div>
+        <div class="max-h-36 overflow-y-auto overscroll-contain whitespace-pre-line rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 pr-2 text-sm leading-6 text-gray-800 sm:max-h-44">{{ $ticket->deskripsi }}</div>
       </div>
 
       {{-- Lampiran + Aksi di bawah --}}
@@ -272,39 +272,56 @@
     </div>
     {{-- ========================= END CARD UTAMA ========================= --}}
 
-    {{-- Ringkasan (dipindah ke kiri agar komentar bisa lebih leluasa di kanan) --}}
-    <div class="show-card min-h-0 flex-1 rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:overflow-y-auto">
-      <h4 class="font-medium text-gray-800 mb-3">Ringkasan</h4>
-      <dl class="text-[13px] text-gray-700 space-y-1">
-        <div class="flex justify-between gap-2"><dt class="shrink-0">Nomor</dt><dd class="font-medium text-right">
-          {{ $ticket->nomor_tiket }}
-          @if($ticket->user?->kodeKantor?->nama_kantor || $ticket->user?->kode_kantor)
-            <span class="block text-xs font-normal text-gray-500">{{ $ticket->user?->kodeKantor?->nama_kantor ?? $ticket->user?->kode_kantor }}</span>
-          @endif
-        </dd></div>
-        <div class="flex justify-between"><dt>Status</dt><dd class="font-medium">{{ $ticket->status }}</dd></div>
-        <div class="flex justify-between gap-2"><dt>Kategori</dt><dd class="text-right">{{ $ticket->category?->name ?? $ticket->kategori ?? '-' }}</dd></div>
-        <div class="flex justify-between gap-2"><dt>Subkategori</dt><dd class="text-right">{{ $ticket->subcategory?->name ?? '-' }}</dd></div>
-        <div class="flex justify-between gap-2"><dt>Jenis Permintaan</dt><dd class="text-right">{{ $ticket->requestType?->name ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Dibuat</dt><dd>{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Handler</dt><dd>{{ $ticket->it->name ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Vendor</dt><dd>{{ $ticket->vendor->name ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Eskalasi</dt><dd>{{ $ticket->escalated ?? 'TIDAK' }}</dd></div>
-        <div class="flex justify-between"><dt>Taken At</dt><dd>{{ optional($ticket->taken_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        <div class="flex justify-between"><dt>Closed At</dt><dd>{{ optional($ticket->closed_at)->format('d M Y H:i') ?? '-' }}</dd></div>
-        @if($ticket->status === 'CLOSED' && $ticket->rootCauseDetail)
-          <div class="flex justify-between gap-2"><dt class="shrink-0">Detail root cause</dt><dd class="text-right font-medium text-gray-800">{{ $ticket->rootCauseDetail->label }}</dd></div>
-        @endif
-      </dl>
+    {{-- Ringkasan informasi tiket --}}
+    @php
+      $summaryStatusColor = match($ticket->status) {
+        'OPEN' => 'bg-red-100 text-red-700 ring-red-200',
+        'TAKEN', 'ON_PROGRESS' => 'bg-amber-100 text-amber-700 ring-amber-200',
+        'ESKALASI_VENDOR' => 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200',
+        'VENDOR_RESOLVED' => 'bg-indigo-100 text-indigo-700 ring-indigo-200',
+        'CLOSED' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+        default => 'bg-gray-100 text-gray-700 ring-gray-200',
+      };
+      $eskalasiValue = strtoupper((string) ($ticket->eskalasi ?? 'TIDAK'));
+      $cabangKode = $ticket->user?->kode_kantor;
+      $cabangNama = $ticket->user?->kodeKantor?->nama_kantor;
+      $cabangLabel = collect([$cabangKode, $cabangNama])->filter()->implode(' - ') ?: '-';
+    @endphp
+    <section id="ticket-info-card" class="show-card shrink-0 overflow-visible rounded-2xl bg-white p-4 text-xs sm:p-5 sm:text-sm" aria-labelledby="ticket-summary-title">
+      <div class="mb-3 flex items-center gap-2.5">
+        <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-sm" aria-hidden="true">i</span>
+        <h4 id="ticket-summary-title" class="text-sm font-bold text-slate-900 sm:text-base">Informasi Tiket</h4>
+      </div>
 
-      
-    </div>
+      <div class="grid grid-cols-1 gap-x-10 lg:grid-cols-2">
+        <dl class="divide-y divide-slate-200 border-y border-slate-200 text-[13px]">
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] items-center gap-3 px-3 py-2"><dt class="text-slate-500">Status</dt><dd><span class="inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset {{ $summaryStatusColor }}">{{ $ticket->status }}</span></dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Kategori</dt><dd class="font-medium text-slate-800">{{ $ticket->category?->name ?? $ticket->kategori ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Subkategori</dt><dd class="font-medium text-slate-800">{{ $ticket->subcategory?->name ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Jenis Permintaan</dt><dd class="font-medium text-slate-800">{{ $ticket->requestType?->name ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Dibuat</dt><dd class="font-medium text-slate-800">{{ optional($ticket->created_at)->format('d M Y H:i') ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Handler</dt><dd class="font-medium text-slate-800">{{ $ticket->it->name ?? '-' }}</dd></div>
+        </dl>
+
+        <dl class="divide-y divide-slate-200 border-b border-slate-200 text-[13px] lg:border-t">
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Vendor</dt><dd class="font-medium text-slate-800">{{ $ticket->vendor->name ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] items-center gap-3 px-3 py-2"><dt class="text-slate-500">Eskalasi</dt><dd><span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-inset ring-slate-200">{{ $eskalasiValue }}</span></dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Taken At</dt><dd class="font-medium text-slate-800">{{ optional($ticket->taken_at)->format('d M Y H:i') ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Closed At</dt><dd class="font-medium text-slate-800">{{ optional($ticket->closed_at)->format('d M Y H:i') ?? '-' }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Cabang</dt><dd class="font-medium text-slate-800">{{ $cabangLabel }}</dd></div>
+          <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Terakhir Update</dt><dd class="font-medium text-slate-800">{{ optional($ticket->updated_at)->format('d M Y H:i') ?? '-' }}</dd></div>
+          @if($ticket->status === 'CLOSED' && $ticket->rootCauseDetail)
+            <div class="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3 py-2"><dt class="text-slate-500">Detail Root Cause</dt><dd class="font-medium text-slate-800">{{ $ticket->rootCauseDetail->label }}</dd></div>
+          @endif
+        </dl>
+      </div>
+    </section>
 
   </div>
 
   {{-- Komentar kanan: tinggi dibatasi viewport; daftar di #chat-list yang menggulir --}}
-  <aside class="flex min-h-[14rem] flex-col lg:min-h-0 lg:h-full">
-    <div class="show-card flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm lg:min-h-0 lg:h-full lg:max-h-full">
+  <aside id="ticket-comments-panel" class="flex min-h-[14rem] flex-col lg:min-h-0 lg:self-start">
+    <div class="show-card flex h-full min-h-0 flex-col overflow-hidden rounded-2xl bg-white p-3 text-xs sm:p-5 sm:text-sm">
       <div class="shrink-0 flex items-center justify-between">
         <div class="flex items-center">
           <h3 class="font-semibold text-gray-800">Komentar / Progres</h3>
@@ -313,7 +330,7 @@
       
       </div>  
 
-      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-visible pr-1 min-h-[10rem] lg:min-h-[12rem] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
+      <div id="chat-list" class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain pr-1">
         @forelse($ticket->comments->sortBy('created_at') as $c)
           @php $mine = auth()->check() && auth()->id() === $c->user_id; @endphp
           <div id="c-{{ $c->id }}" class="flex {{ $mine ? 'justify-end' : 'justify-start' }}" data-comment-ts="{{ optional($c->created_at)->format('c') }}">
@@ -1223,6 +1240,35 @@
           renderDetailRadios();
         }
       } catch (_) {}
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const infoCard = document.getElementById('ticket-info-card');
+      const commentsPanel = document.getElementById('ticket-comments-panel');
+      const mainCard = document.getElementById('ticket-main-card');
+      if (!infoCard || !commentsPanel || !mainCard) return;
+
+      function syncCommentsHeight() {
+        if (window.matchMedia('(min-width: 1024px)').matches) {
+          // offsetHeight memakai satuan layout CSS sehingga tetap akurat saat
+          // global layout menerapkan zoom 80% pada halaman detail.
+          const cardsGap = 24;
+          commentsPanel.style.height = Math.ceil(mainCard.offsetHeight + cardsGap + infoCard.offsetHeight) + 'px';
+          commentsPanel.style.marginTop = '0';
+        } else {
+          commentsPanel.style.height = '';
+          commentsPanel.style.marginTop = '';
+        }
+      }
+
+      syncCommentsHeight();
+      window.addEventListener('resize', syncCommentsHeight);
+      if ('ResizeObserver' in window) {
+        const cardResizeObserver = new ResizeObserver(syncCommentsHeight);
+        cardResizeObserver.observe(infoCard);
+        cardResizeObserver.observe(mainCard);
+      }
     });
   </script>
   @endpush
