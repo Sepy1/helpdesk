@@ -171,6 +171,9 @@ Route::get('/ticket/comment/{comment}/download', [TicketController::class, 'down
         Route::post('/it/parameters/it-visibility', [\App\Http\Controllers\ParameterController::class, 'saveItVisibility'])->name('it.parameters.it.visibility');
         Route::post('/it/parameters/ai-chat', [\App\Http\Controllers\ParameterController::class, 'saveAiChatSetting'])->name('it.parameters.ai_chat');
         Route::post('/it/parameters/theme', [\App\Http\Controllers\ParameterController::class, 'saveTheme'])->name('it.parameters.theme');
+        Route::post('/it/parameters/comment-shortcuts', [\App\Http\Controllers\ParameterController::class, 'storeCommentShortcut'])->name('it.parameters.comment_shortcuts.store');
+        Route::put('/it/parameters/comment-shortcuts/{commentShortcut}', [\App\Http\Controllers\ParameterController::class, 'updateCommentShortcut'])->name('it.parameters.comment_shortcuts.update');
+        Route::delete('/it/parameters/comment-shortcuts/{commentShortcut}', [\App\Http\Controllers\ParameterController::class, 'deleteCommentShortcut'])->name('it.parameters.comment_shortcuts.delete');
         Route::get('/it/popups', [\App\Http\Controllers\PopupAnnouncementController::class, 'index'])->name('it.popups.index');
         Route::get('/it/popups/{popup}/image', [\App\Http\Controllers\PopupAnnouncementController::class, 'image'])->name('it.popups.image');
         Route::post('/it/popups', [\App\Http\Controllers\PopupAnnouncementController::class, 'store'])->name('it.popups.store');

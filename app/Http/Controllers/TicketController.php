@@ -14,6 +14,7 @@ use App\Models\Subcategory;
 use App\Models\RequestType;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
+use App\Models\CommentShortcut;
 use App\Models\KodeKantor;
 use App\Models\PergantianUser;
 use Illuminate\Support\Facades\Mail;
@@ -1326,6 +1327,9 @@ public function store(Request $request)
         $rootCauses = RootCause::orderBy('sort')->orderBy('name')->get();
         $statuses = self::STATUS;
         $categories = \App\Models\Category::orderBy('name')->get(['id','name']);
+        $commentShortcuts = Auth::user()->role === 'IT'
+            ? CommentShortcut::orderBy('sort_order')->orderBy('id')->get(['id', 'text'])
+            : collect();
         $rootCauseDetailsByRootName = RootCause::with('details')
             ->orderBy('sort')
             ->orderBy('name')
@@ -1343,7 +1347,7 @@ public function store(Request $request)
             })
             ->all();
 
-        return view('tickets.show', compact('ticket', 'vendors', 'its', 'rootCauses', 'statuses', 'categories', 'rootCauseDetailsByRootName'));
+        return view('tickets.show', compact('ticket', 'vendors', 'its', 'rootCauses', 'statuses', 'categories', 'rootCauseDetailsByRootName', 'commentShortcuts'));
     }
 
     /** Override kategori / subkategori oleh IT */

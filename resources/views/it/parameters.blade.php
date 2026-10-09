@@ -7,6 +7,7 @@
   $rootCauses = $rootCauses ?? collect();
   $its = $its ?? collect();
   $usersForAiChat = $usersForAiChat ?? collect();
+  $commentShortcuts = $commentShortcuts ?? collect();
 
   $categoryCount = $categories->count();
   $subcategoryCount = $categories->sum(fn ($category) => $category->subcategories->count());
@@ -38,7 +39,7 @@
           <span>{{ now()->format('d/m/Y H:i') }}</span>
         </div>
         <h1 class="mt-2 text-2xl font-semibold tracking-normal text-slate-900 sm:text-3xl">Parameter</h1>
-        <p class="mt-1 max-w-3xl text-sm text-slate-500">Kelola master tiket, penutupan, vendor, penugasan IT, dan akses AI chat.</p>
+        <p class="mt-1 max-w-3xl text-sm text-slate-500">Kelola master tiket, shortcut komentar, penutupan, penugasan IT, dan akses AI chat.</p>
       </div>
 
       <div class="flex flex-wrap gap-2">
@@ -82,6 +83,42 @@
       <div class="{{ $card }} p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">IT tampil</p>
         <p class="mt-2 text-2xl font-semibold text-slate-950">{{ $visibleItCount }}</p>
+      </div>
+    </section>
+
+    <section class="{{ $card }}">
+      <div class="{{ $cardHead }}">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 class="{{ $cardTitle }}">Shortcut Komentar IT</h2>
+            <p class="{{ $cardHint }}">Teks berikut tampil sebagai tombol cepat pada card komentar tiket untuk user IT.</p>
+          </div>
+          <form method="POST" action="{{ route('it.parameters.comment_shortcuts.store') }}" class="flex w-full flex-col gap-2 sm:flex-row lg:max-w-xl">
+            @csrf
+            <input name="text" required maxlength="500" value="{{ old('text') }}" class="{{ $input }}" placeholder="Teks shortcut komentar">
+            <button type="submit" class="{{ $btnPrimary }}">Tambah</button>
+          </form>
+        </div>
+        @error('text')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+      </div>
+      <div class="divide-y divide-slate-100">
+        @forelse($commentShortcuts as $shortcut)
+          <div class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:px-5">
+            <form method="POST" action="{{ route('it.parameters.comment_shortcuts.update', $shortcut) }}" class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row">
+              @csrf
+              @method('PUT')
+              <input name="text" required maxlength="500" value="{{ $shortcut->text }}" class="{{ $input }}" aria-label="Teks shortcut komentar">
+              <button type="submit" class="{{ $btnSecondary }}">Simpan</button>
+            </form>
+            <form method="POST" action="{{ route('it.parameters.comment_shortcuts.delete', $shortcut) }}" onsubmit="return confirm('Hapus shortcut komentar ini?');">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="{{ $btnDanger }}">Hapus</button>
+            </form>
+          </div>
+        @empty
+          <p class="px-4 py-8 text-center text-sm text-slate-500">Belum ada shortcut komentar.</p>
+        @endforelse
       </div>
     </section>
 

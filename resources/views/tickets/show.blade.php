@@ -398,6 +398,15 @@
         @if($ticket->status !== 'CLOSED')
           <form action="{{ route('ticket.comment', $ticket->id) }}" method="POST" enctype="multipart/form-data" id="ticket-comment-form" class="flex flex-col gap-2">
             @csrf
+            @if(auth()->user()->role === 'IT' && ($commentShortcuts ?? collect())->isNotEmpty())
+              <div class="flex flex-wrap gap-1.5" aria-label="Shortcut komentar">
+                @foreach($commentShortcuts as $shortcut)
+                  <button type="button" class="js-comment-shortcut rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-left text-[11px] font-medium text-blue-700 transition hover:border-blue-300 hover:bg-blue-100" data-shortcut="{{ $shortcut->text }}">
+                    {{ $shortcut->text }}
+                  </button>
+                @endforeach
+              </div>
+            @endif
             <div id="comment-attachment-preview" class="hidden flex flex-wrap items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 p-2">
               <img id="comment-attachment-preview-img" alt="Pratinjau lampiran — klik untuk memperbesar" title="Klik untuk pratinjau" class="hidden max-h-40 w-auto max-w-full cursor-zoom-in rounded-md object-contain ring-1 ring-gray-200/80 transition-opacity hover:opacity-90" />
               <span id="comment-attachment-preview-file" class="hidden max-w-full break-all text-xs text-gray-700"></span>
@@ -839,6 +848,19 @@
       const attachInput = document.getElementById('attachInput');
       const attachBtn = document.getElementById('attachBtn');
       const commentBodyEl = document.getElementById('commentBody');
+      document.querySelectorAll('.js-comment-shortcut').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (!commentBodyEl) return;
+          document.querySelectorAll('.js-comment-shortcut').forEach((shortcutButton) => {
+            shortcutButton.disabled = true;
+          });
+          commentBodyEl.value = button.dataset.shortcut || '';
+          commentBodyEl.dispatchEvent(new Event('input', { bubbles: true }));
+          commentBodyEl.focus();
+          commentBodyEl.setSelectionRange(commentBodyEl.value.length, commentBodyEl.value.length);
+          commentBodyEl.form?.requestSubmit();
+        });
+      });
       const previewWrap = document.getElementById('comment-attachment-preview');
       const previewImg = document.getElementById('comment-attachment-preview-img');
       const previewFile = document.getElementById('comment-attachment-preview-file');

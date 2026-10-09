@@ -9,6 +9,7 @@ use App\Models\RequestType;
 use App\Models\RootCause;
 use App\Models\RootCauseDetail;
 use App\Models\AppSetting;
+use App\Models\CommentShortcut;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -28,8 +29,39 @@ class ParameterController extends Controller
             'default_app_theme',
             AppSetting::getValue('app_theme', 'blue')
         );
+        $commentShortcuts = CommentShortcut::orderBy('sort_order')->orderBy('id')->get();
 
-        return view('it.parameters', compact('categories','rootCauses','its','usersForAiChat','aiChatEnabled','appTheme'));
+        return view('it.parameters', compact('categories','rootCauses','its','usersForAiChat','aiChatEnabled','appTheme','commentShortcuts'));
+    }
+
+    public function storeCommentShortcut(Request $request)
+    {
+        $data = $request->validate([
+            'text' => ['required', 'string', 'max:500', 'unique:comment_shortcuts,text'],
+        ]);
+
+        $data['sort_order'] = (CommentShortcut::max('sort_order') ?? 0) + 1;
+        CommentShortcut::create($data);
+
+        return back()->with('success', 'Shortcut komentar ditambahkan.');
+    }
+
+    public function updateCommentShortcut(Request $request, CommentShortcut $commentShortcut)
+    {
+        $data = $request->validate([
+            'text' => ['required', 'string', 'max:500', Rule::unique('comment_shortcuts', 'text')->ignore($commentShortcut->id)],
+        ]);
+
+        $commentShortcut->update($data);
+
+        return back()->with('success', 'Shortcut komentar diperbarui.');
+    }
+
+    public function deleteCommentShortcut(CommentShortcut $commentShortcut)
+    {
+        $commentShortcut->delete();
+
+        return back()->with('success', 'Shortcut komentar dihapus.');
     }
 
     public function saveItVisibility(Request $request)
