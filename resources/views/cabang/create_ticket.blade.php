@@ -59,6 +59,27 @@
       @error('request_type_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
 
+    <div id="saturday-replacement-card" class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 class="font-semibold text-blue-950">Pergantian Hari Sabtu</h3>
+          <p class="mt-1 text-xs text-blue-800">Unduh template, isi data pergantian, lalu unggah kembali. Form Word akan dibuat otomatis.</p>
+        </div>
+        <a href="{{ route('saturday-replacement.template') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100">Download Template Excel</a>
+      </div>
+      <div class="mt-4">
+        <label for="saturday-replacement-file" class="mb-1 block text-xs font-medium text-gray-700">Upload Data Pergantian</label>
+        <input id="saturday-replacement-file" type="file" accept=".xlsx" class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:text-white hover:file:bg-blue-800">
+        <input type="hidden" name="saturday_replacement_token" id="saturday-replacement-token" value="{{ old('saturday_replacement_token') }}">
+        @error('saturday_replacement_token') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        <p id="saturday-replacement-status" class="mt-2 text-xs text-gray-600">Belum ada file yang diproses.</p>
+        <div id="saturday-replacement-result" class="mt-3 hidden rounded-lg bg-white p-3 ring-1 ring-emerald-200">
+          <p class="text-xs font-medium text-emerald-700">Form Word berhasil dibuat. Tiket sekarang dapat dikirim.</p>
+          <a id="saturday-replacement-download" href="#" class="mt-2 inline-flex text-xs font-semibold text-indigo-600 hover:underline">Download Form Pengajuan Pergantian</a>
+        </div>
+      </div>
+    </div>
+
     {{-- Deskripsi --}}
     <div>
       <label class="block text-xs font-medium text-gray-700 mb-1">Deskripsi Permintaan</label>
@@ -137,7 +158,7 @@
     </div>
 
     <div class="pt-2">
-      <button type="submit" class="hd-btn-primary block w-full justify-center px-4 sm:px-8 py-2.5 text-sm font-medium shadow-sm">
+      <button type="submit" id="ticket-submit-button" class="hd-btn-primary block w-full justify-center px-4 sm:px-8 py-2.5 text-sm font-medium shadow-sm disabled:cursor-not-allowed disabled:opacity-50">
         Kirim Tiket
       </button>
     </div>
@@ -313,6 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const managementDetail = document.getElementById('management-detail');
   const managementTypeInputs = document.querySelectorAll('input[name="management_type"]');
   const managementActionInputs = document.querySelectorAll('input[name="management_action"]');
+  const saturdayCard = document.getElementById('saturday-replacement-card');
+  const saturdayFile = document.getElementById('saturday-replacement-file');
+  const saturdayToken = document.getElementById('saturday-replacement-token');
+  const saturdayStatus = document.getElementById('saturday-replacement-status');
+  const saturdayResult = document.getElementById('saturday-replacement-result');
+  const saturdayDownload = document.getElementById('saturday-replacement-download');
+  const submitButton = document.getElementById('ticket-submit-button');
 
   const baseUrl = '{{ url('/categories') }}'; // -> /categories
   const pergantianUrl = '{{ route('pergantian-users.index') }}';
@@ -533,6 +561,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (setSelected) requestTypeSelect.value = setSelected;
       updatePergantianUserFields();
       updateManagementFields();
+      updateSaturdayReplacementCard();
     } catch (err) {
       console.error('Error saat memuat jenis permintaan', err);
       resetRequestTypes('-- Gagal memuat jenis permintaan --');
@@ -541,6 +570,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function isManajemenUserMenuSelected() {
     return getSelectedRequestTypeText() === 'manajemen menu';
+  }
+
+  function isSaturdayReplacementSelected() {
+    return getSelectedRequestTypeText() === 'pergantian hari sabtu';
+  }
+
+  function updateSaturdayReplacementCard() {
+    const selected = isSaturdayReplacementSelected();
+    saturdayCard.classList.toggle('hidden', !selected);
+    submitButton.disabled = selected && !saturdayToken.value;
+    if (selected) {
+      deskripsi.value = 'Permohonan pergantian user Hari Sabtu. Data Excel dan form Word terlampir.';
+    }
+  }
+
+  async function prepareSaturdayReplacement() {
+    saturdayToken.value = '';
+    saturdayResult.classList.add('hidden');
+    submitButton.disabled = true;
+    if (!saturdayFile.files.length) {
+      saturdayStatus.textContent = 'Belum ada file yang diproses.';
+      return;
+    }
+
+    saturdayStatus.textContent = 'Memvalidasi Excel dan membuat form Word...';
+    saturdayStatus.className = 'mt-2 text-xs text-blue-700';
+    const body = new FormData();
+    body.append('saturday_replacement_file', saturdayFile.files[0]);
+    try {
+      const response = await fetch('{{ route('saturday-replacement.prepare') }}', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        body,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : payload.message;
+        throw new Error(firstError || 'Data pergantian gagal diproses.');
+      }
+      saturdayToken.value = payload.token;
+      saturdayDownload.href = payload.download_url;
+      saturdayStatus.textContent = `${payload.row_count} baris data berhasil diproses.`;
+      saturdayStatus.className = 'mt-2 text-xs text-emerald-700';
+      saturdayResult.classList.remove('hidden');
+      submitButton.disabled = false;
+    } catch (error) {
+      saturdayStatus.textContent = error.message || 'Data pergantian gagal diproses.';
+      saturdayStatus.className = 'mt-2 text-xs text-red-600';
+      saturdayFile.value = '';
+    }
   }
 
   function selectedManagementType() {
@@ -664,7 +743,10 @@ Alasan : ${alasan}`;
   requestTypeSelect.addEventListener('change', function () {
     updatePergantianUserFields();
     updateManagementFields();
+    updateSaturdayReplacementCard();
   });
+
+  saturdayFile.addEventListener('change', prepareSaturdayReplacement);
 
   managementTypeInputs.forEach(input => input.addEventListener('change', function () {
     updateManagementActions();
@@ -726,6 +808,7 @@ Alasan : ${alasan}`;
 
   updatePergantianUserFields();
   updateManagementFields();
+  updateSaturdayReplacementCard();
 
   if (oldUserLama) {
     const selected = pergantianUsers.find((item) => String(item.id) === String(oldUserLama));

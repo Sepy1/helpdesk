@@ -17,6 +17,8 @@ use App\Models\RootCauseDetail;
 use App\Models\CommentShortcut;
 use App\Models\KodeKantor;
 use App\Models\PergantianUser;
+use App\Models\TicketAttachment;
+use App\Services\SaturdayReplacementService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use App\Mail\TicketSubmitted;
@@ -43,6 +45,24 @@ class TicketController extends Controller
         'Lainnya',
     ];
     public const SLA_HOURS = 24;
+
+    /** Ambil unit kerja akun, termasuk akun cabang legacy yang memakai kode kantor sebagai username. */
+    private function resolveReporterUnitCode(?User $user): ?string
+    {
+        if (! $user) return null;
+
+        $unitCode = trim((string) $user->kode_kantor);
+        if ($unitCode !== '' && KodeKantor::whereKey($unitCode)->exists()) {
+            return $unitCode;
+        }
+
+        $legacyUnitCode = trim((string) $user->username);
+        if ($legacyUnitCode !== '' && KodeKantor::whereKey($legacyUnitCode)->exists()) {
+            return $legacyUnitCode;
+        }
+
+        return null;
+    }
 
     /** Batasi query ke tiket aktif yang melewati SLA kategori masing-masing. */
     private function applySlaFilter($query): void
@@ -153,7 +173,7 @@ public function create()
     }
 
     $pergantianUsersByUnit = collect();
-    $reporterUnit = auth()->user()?->kode_kantor;
+    $reporterUnit = $this->resolveReporterUnitCode(auth()->user());
     if ($reporterUnit) {
         $pergantianUsersByUnit = PergantianUser::query()
             ->where('unit_kerja', $reporterUnit)
@@ -180,11 +200,44 @@ public function pergantianUsers(Request $request)
     return response()->json($users);
 }
 
+public function saturdayReplacementTemplate(SaturdayReplacementService $service)
+{
+    $path = tempnam(sys_get_temp_dir(), 'saturday-replacement-') . '.xlsx';
+    $service->createExcelTemplate($path);
+
+    return response()->download($path, 'template-pergantian-hari-sabtu.xlsx')->deleteFileAfterSend(true);
+}
+
+public function prepareSaturdayReplacement(Request $request, SaturdayReplacementService $service)
+{
+    $data = $request->validate([
+        'saturday_replacement_file' => 'required|file|mimes:xlsx|max:5072',
+    ], [], ['saturday_replacement_file' => 'data pergantian']);
+    $unitCode = $this->resolveReporterUnitCode(auth()->user());
+    if (! $unitCode && auth()->user()?->role === 'IT') {
+        $unitCode = $service->inferUnitCode($data['saturday_replacement_file']);
+    }
+    if (! $unitCode) {
+        return response()->json(['message' => 'Unit kerja tidak dapat ditentukan. Pastikan semua username Excel terdaftar pada unit kerja yang sama.'], 422);
+    }
+
+    $prepared = $service->prepare($data['saturday_replacement_file'], (int) auth()->id(), $unitCode);
+    $prepared['download_url'] = route('saturday-replacement.download', $prepared['token']);
+
+    return response()->json($prepared);
+}
+
+public function downloadPreparedSaturdayReplacement(string $token, SaturdayReplacementService $service)
+{
+    $metadata = $service->metadata($token, (int) auth()->id());
+    return Storage::disk('local')->download($metadata['word_path'], 'form-pergantian-user-hari-sabtu.docx');
+}
+
 /** Simpan tiket baru */
 public function store(Request $request)
 {
     Log::info('TicketStore: masuk ke store() oleh user_id=' . optional(Auth::user())->id);
-    $reporterUnit = auth()->user()?->kode_kantor;
+    $reporterUnit = $this->resolveReporterUnitCode(auth()->user());
 
     // validasi (dukungan hingga 3 lampiran)
     $data = $request->validate([
@@ -197,6 +250,7 @@ public function store(Request $request)
         'management_action' => 'nullable|in:tambah,hapus,koreksi,unblokir,reset_password',
         'management_username' => 'nullable|string|max:191',
         'management_detail' => 'nullable|string|max:2000',
+        'saturday_replacement_token' => 'nullable|string|uuid',
         'lampiran'      => 'nullable|array|max:3',
         'lampiran.*'    => 'file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:5072',
     ], [], [
@@ -224,6 +278,13 @@ public function store(Request $request)
         && strcasecmp(trim((string) $requestType->name), 'Pergantian User') === 0;
     $isManajemenUserMenu = $requestType
         && strcasecmp(trim((string) $requestType->name), 'Manajemen Menu') === 0;
+    $isSaturdayReplacement = $requestType
+        && strcasecmp(trim((string) $requestType->name), SaturdayReplacementService::REQUEST_TYPE) === 0;
+    if ($isSaturdayReplacement) {
+        $request->validate(['saturday_replacement_token' => 'required|string|uuid']);
+        app(SaturdayReplacementService::class)->metadata((string) $request->input('saturday_replacement_token'), (int) auth()->id());
+        $data['deskripsi'] = 'Permohonan pergantian user Hari Sabtu. Data Excel dan form Word terlampir.';
+    }
     if ($isPergantianUser) {
         $pergantianData = $request->validate([
             'user_lama_id' => [
@@ -327,9 +388,18 @@ public function store(Request $request)
         Log::info('TicketStore: tidak ada lampiran di request');
     }
 
+    $preparedAttachments = [];
+    if ($isSaturdayReplacement) {
+        $preparedAttachments = app(SaturdayReplacementService::class)->movePreparedAttachments(
+            (string) $request->input('saturday_replacement_token'),
+            (int) auth()->id()
+        );
+        $lampiranPaths = array_merge(array_column($preparedAttachments, 'path'), $lampiranPaths);
+    }
+
     // buat tiket dalam transaction
     try {
-        $ticket = DB::transaction(function () use ($data, $lampiranPaths, $request, $isPergantianUser) {
+        $ticket = DB::transaction(function () use ($data, $lampiranPaths, $preparedAttachments, $request, $isPergantianUser) {
             $payload = [
                 'nomor_tiket'    => $this->generateTicketNumber(),
                 'user_id'        => auth()->id(),
@@ -367,6 +437,21 @@ public function store(Request $request)
 
             $created = Ticket::create($payload);
 
+            foreach ($preparedAttachments as $attachment) {
+                $created->attachments()->create($attachment);
+            }
+            $preparedPaths = array_column($preparedAttachments, 'path');
+            foreach ($lampiranPaths as $path) {
+                if (in_array($path, $preparedPaths, true)) continue;
+                $created->attachments()->create([
+                    'path' => $path,
+                    'original_name' => basename($path),
+                    'mime_type' => Storage::disk('public')->mimeType($path),
+                    'size' => Storage::disk('public')->size($path),
+                    'kind' => 'general',
+                ]);
+            }
+
             Log::info('TicketStore: ticket dibuat di transaction', [
                 'ticket_id' => $created->id,
                 'nomor_tiket' => $created->nomor_tiket,
@@ -381,17 +466,6 @@ public function store(Request $request)
                 'note'      => 'Ticket dibuat',
                 'meta'      => ['nomor_tiket' => $created->nomor_tiket],
             ]);
-            // jika ada lebih dari 1 lampiran, simpan sisanya sebagai komentar dengan attachment
-            if (!empty($lampiranPaths) && count($lampiranPaths) > 1) {
-                foreach (array_slice($lampiranPaths, 1) as $p) {
-                    \App\Models\TicketComment::create([
-                        'ticket_id' => $created->id,
-                        'user_id'   => auth()->id(),
-                        'body'      => 'Lampiran (dari pembuatan tiket)',
-                        'attachment'=> $p,
-                    ]);
-                }
-            }
             return $created;
         });
     } catch (\Throwable $e) {
@@ -1631,6 +1705,19 @@ public function downloadCommentAttachment(TicketComment $comment)
         }
 
         return Storage::disk('public')->download($path);
+    }
+
+    public function downloadTicketAttachment(TicketAttachment $attachment)
+    {
+        $ticket = $attachment->ticket;
+        $user = auth()->user();
+        if ($user->role === 'CABANG' && $ticket->user_id !== $user->id) abort(403);
+        if (! Storage::disk('public')->exists($attachment->path)) abort(404);
+
+        if (request()->query('inline')) {
+            return response()->file(Storage::disk('public')->path($attachment->path));
+        }
+        return Storage::disk('public')->download($attachment->path, $attachment->original_name);
     }
 
     /* =========================

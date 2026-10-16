@@ -62,6 +62,11 @@ public function requestType()
     return $this->belongsTo(RequestType::class);
 }
 
+public function attachments()
+{
+    return $this->hasMany(TicketAttachment::class);
+}
+
     public function rootCauseDetail()
     {
         return $this->belongsTo(RootCauseDetail::class, 'root_cause_detail_id');

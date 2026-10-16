@@ -110,6 +110,10 @@ Route::middleware(['auth'])->group(function () {
     
 Route::get('/ticket/{ticket}', [TicketController::class, 'show'])->name('ticket.show');
 Route::get('/ticket/{ticket}/download', [TicketController::class, 'downloadAttachment'])->name('ticket.download');
+Route::get('/ticket-attachment/{attachment}/download', [TicketController::class, 'downloadTicketAttachment'])->name('ticket-attachment.download');
+Route::get('/pergantian-hari-sabtu/template', [TicketController::class, 'saturdayReplacementTemplate'])->name('saturday-replacement.template');
+Route::post('/pergantian-hari-sabtu/prepare', [TicketController::class, 'prepareSaturdayReplacement'])->name('saturday-replacement.prepare');
+Route::get('/pergantian-hari-sabtu/{token}/download', [TicketController::class, 'downloadPreparedSaturdayReplacement'])->name('saturday-replacement.download');
 
 // Komentar tiket
 Route::post('/ticket/{ticket}/comment', [TicketCommentController::class, 'store'])->name('ticket.comment');

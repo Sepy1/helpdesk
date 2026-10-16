@@ -228,7 +228,17 @@
         <div>
           <div class="text-xs text-gray-500 mb-1">Lampiran</div>
           {{-- Hanya lampiran saat pembuatan/ubah tiket; lampiran komentar hanya di card komentar --}}
-          @if($ticket->lampiran)
+          @php $ticketAttachments = $ticket->attachments ?? collect(); @endphp
+          @if($ticketAttachments->isNotEmpty())
+            <div class="space-y-2">
+              @foreach($ticketAttachments as $attachment)
+                <div>
+                  <a href="{{ route('ticket-attachment.download', $attachment) }}?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: {{ $attachment->original_name }}</a>
+                  <a href="{{ route('ticket-attachment.download', $attachment) }}" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
+                </div>
+              @endforeach
+            </div>
+          @elseif($ticket->lampiran)
             <div>
               <a href="{{ route('ticket.download',$ticket->id) }}?inline=1" target="_blank" rel="noopener" class="inline-flex max-w-full items-center rounded-md px-2 py-1 text-left text-xs text-indigo-600 ring-1 ring-gray-200 hover:bg-indigo-50 break-all whitespace-normal">Lihat: {{ basename($ticket->lampiran) }}</a>
               <a href="{{ route('ticket.download',$ticket->id) }}" class="mt-1 block text-xs text-gray-600 hover:underline sm:ml-2 sm:mt-0 sm:inline">Unduh</a>
