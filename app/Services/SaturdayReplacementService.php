@@ -142,7 +142,6 @@ class SaturdayReplacementService
         $result = [];
         foreach ([
             ['key' => 'excel_path', 'name' => 'data-pergantian-hari-sabtu.xlsx', 'kind' => 'saturday_replacement_excel'],
-            ['key' => 'word_path', 'name' => 'form-pergantian-user-hari-sabtu.docx', 'kind' => 'saturday_replacement_form'],
         ] as $item) {
             $source = $metadata[$item['key']];
             if (! Storage::disk('local')->exists($source)) {
@@ -153,9 +152,7 @@ class SaturdayReplacementService
             $result[] = [
                 'path' => $destination,
                 'original_name' => $item['name'],
-                'mime_type' => $item['kind'] === 'saturday_replacement_excel'
-                    ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'size' => Storage::disk('public')->size($destination),
                 'kind' => $item['kind'],
             ];
@@ -184,8 +181,8 @@ class SaturdayReplacementService
 
         $rawRows = [];
         for ($row = 2; $row <= $sheet->getHighestDataRow(); $row++) {
-            $usernameExisting = trim((string) $sheet->getCell([1, $row])->getFormattedValue());
-            $usernameReplacement = trim((string) $sheet->getCell([2, $row])->getFormattedValue());
+            $usernameExisting = preg_replace('/\s+/u', '', (string) $sheet->getCell([1, $row])->getFormattedValue());
+            $usernameReplacement = preg_replace('/\s+/u', '', (string) $sheet->getCell([2, $row])->getFormattedValue());
             $start = trim((string) $sheet->getCell([3, $row])->getFormattedValue());
             $end = trim((string) $sheet->getCell([4, $row])->getFormattedValue());
             if ($usernameExisting === '' && $usernameReplacement === '' && $start === '' && $end === '') {
@@ -264,6 +261,7 @@ class SaturdayReplacementService
         $dom->loadXML($xml);
         $xpath = new DOMXPath($dom);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+        $xpath->registerNamespace('w14', 'http://schemas.microsoft.com/office/word/2010/wordml');
 
         $office = KodeKantor::find($unitCode);
         $this->replaceParagraphText($xpath, '$user nama kantor', (string) ($office?->nama_kantor ?? $unitCode));
@@ -286,21 +284,52 @@ class SaturdayReplacementService
             throw new \RuntimeException('Slot data pada template Word tidak ditemukan.');
         }
         $parent = $templateRow->parentNode;
+
+        // Tabel D berada di dalam tabel utama. Tinggi row induk yang "exact" dapat
+        // memotong baris tambahan sehingga hanya record pertama yang terlihat.
+        foreach ($xpath->query('ancestor::w:tr/w:trPr/w:trHeight', $templateRow) as $height) {
+            $height->parentNode->removeChild($height);
+        }
+
         foreach ($records as $record) {
             $clone = $templateRow->cloneNode(true);
             $values = [
-                $record['existing_username'], $record['existing_name'],
-                $record['replacement_username'], $record['replacement_name'],
+                $this->singleLineValue($record['existing_username']), $this->singleLineValue($record['existing_name']),
+                $this->singleLineValue($record['replacement_username']), $this->singleLineValue($record['replacement_name']),
                 $record['start_date'], $record['end_date'], '',
             ];
             foreach ($xpath->query('./w:tc', $clone) as $index => $cell) {
                 $this->setNodeText($xpath, $cell, $values[$index] ?? '');
+                if (in_array($index, [0, 2], true)) {
+                    $this->preventCellWrapping($dom, $xpath, $cell);
+                }
+            }
+            foreach ($xpath->query('.//*[@w14:paraId or @w14:textId]', $clone) as $element) {
+                $element->removeAttributeNS('http://schemas.microsoft.com/office/word/2010/wordml', 'paraId');
+                $element->removeAttributeNS('http://schemas.microsoft.com/office/word/2010/wordml', 'textId');
             }
             $parent->insertBefore($clone, $templateRow);
         }
         $parent->removeChild($templateRow);
         $zip->addFromString('word/document.xml', $dom->saveXML());
         $zip->close();
+    }
+
+    private function singleLineValue(string $value): string
+    {
+        return trim((string) preg_replace('/\s+/u', ' ', $value));
+    }
+
+    private function preventCellWrapping(DOMDocument $dom, DOMXPath $xpath, DOMNode $cell): void
+    {
+        $cellProperties = $xpath->query('./w:tcPr', $cell)->item(0);
+        if (! $cellProperties) {
+            $cellProperties = $dom->createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'w:tcPr');
+            $cell->insertBefore($cellProperties, $cell->firstChild);
+        }
+        if ($xpath->query('./w:noWrap', $cellProperties)->length === 0) {
+            $cellProperties->appendChild($dom->createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'w:noWrap'));
+        }
     }
 
     private function replaceParagraphText(DOMXPath $xpath, string $search, string $replacement): void

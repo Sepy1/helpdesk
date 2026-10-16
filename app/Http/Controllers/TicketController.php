@@ -283,7 +283,7 @@ public function store(Request $request)
     if ($isSaturdayReplacement) {
         $request->validate(['saturday_replacement_token' => 'required|string|uuid']);
         app(SaturdayReplacementService::class)->metadata((string) $request->input('saturday_replacement_token'), (int) auth()->id());
-        $data['deskripsi'] = 'Permohonan pergantian user Hari Sabtu. Data Excel dan form Word terlampir.';
+        $data['deskripsi'] = 'Permohonan pergantian user Hari Sabtu. Data Excel terlampir.';
     }
     if ($isPergantianUser) {
         $pergantianData = $request->validate([

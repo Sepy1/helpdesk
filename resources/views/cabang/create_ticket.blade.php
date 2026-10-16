@@ -63,9 +63,9 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 class="font-semibold text-blue-950">Pergantian Hari Sabtu</h3>
-          <p class="mt-1 text-xs text-blue-800">Unduh template, isi data pergantian, lalu unggah kembali. Form Word akan dibuat otomatis.</p>
+          <p class="mt-1 text-xs text-blue-800">Unduh template, isi data pergantian, lalu unggah kembali. Form pergantian akan dibuat otomatis.</p>
         </div>
-        <a href="{{ route('saturday-replacement.template') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100">Download Template Excel</a>
+        <a href="{{ route('saturday-replacement.template') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800">Download Template Excel</a>
       </div>
       <div class="mt-4">
         <label for="saturday-replacement-file" class="mb-1 block text-xs font-medium text-gray-700">Upload Data Pergantian</label>
@@ -73,8 +73,8 @@
         <input type="hidden" name="saturday_replacement_token" id="saturday-replacement-token" value="{{ old('saturday_replacement_token') }}">
         @error('saturday_replacement_token') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         <p id="saturday-replacement-status" class="mt-2 text-xs text-gray-600">Belum ada file yang diproses.</p>
-        <div id="saturday-replacement-result" class="mt-3 hidden rounded-lg bg-white p-3 ring-1 ring-emerald-200">
-          <p class="text-xs font-medium text-emerald-700">Form Word berhasil dibuat. Tiket sekarang dapat dikirim.</p>
+        <div id="saturday-replacement-result" class="mt-3 hidden rounded-lg bg-emerald-50 p-3 ring-1 ring-emerald-200">
+          <p class="text-xs font-medium text-emerald-700">Form Pergantian berhasil di generate, Silahkan Download dan Upload Form yang telah di tanda tangani sebagai lampiran tiket</p>
           <a id="saturday-replacement-download" href="#" class="mt-2 inline-flex text-xs font-semibold text-indigo-600 hover:underline">Download Form Pengajuan Pergantian</a>
         </div>
       </div>
@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function () {
     saturdayCard.classList.toggle('hidden', !selected);
     submitButton.disabled = selected && !saturdayToken.value;
     if (selected) {
-      deskripsi.value = 'Permohonan pergantian user Hari Sabtu. Data Excel dan form Word terlampir.';
+      deskripsi.value = 'Permohonan pergantian user Hari Sabtu. Data Excel terlampir.';
     }
   }
 
