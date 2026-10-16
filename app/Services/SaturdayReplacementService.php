@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -32,8 +33,8 @@ class SaturdayReplacementService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Data Pergantian');
         $headers = [
-            "Username Eksisting\nContoh: user.lama",
-            "Username Pengganti\nContoh: user.pengganti",
+            "Username Eksisting\nContoh: user1",
+            "Username Pengganti\nContoh: user2",
             "Tanggal Mulai Pergantian\nContoh: 17/10/2026",
             "Tanggal Selesai Pergantian\nContoh: 17/10/2026",
         ];
@@ -183,15 +184,23 @@ class SaturdayReplacementService
         for ($row = 2; $row <= $sheet->getHighestDataRow(); $row++) {
             $usernameExisting = preg_replace('/\s+/u', '', (string) $sheet->getCell([1, $row])->getFormattedValue());
             $usernameReplacement = preg_replace('/\s+/u', '', (string) $sheet->getCell([2, $row])->getFormattedValue());
-            $start = trim((string) $sheet->getCell([3, $row])->getFormattedValue());
-            $end = trim((string) $sheet->getCell([4, $row])->getFormattedValue());
+            $startCell = $sheet->getCell([3, $row]);
+            $endCell = $sheet->getCell([4, $row]);
+            $start = trim((string) $startCell->getFormattedValue());
+            $end = trim((string) $endCell->getFormattedValue());
             if ($usernameExisting === '' && $usernameReplacement === '' && $start === '' && $end === '') {
                 continue;
             }
             if (in_array('', [$usernameExisting, $usernameReplacement, $start, $end], true)) {
                 throw ValidationException::withMessages(['saturday_replacement_file' => "Baris {$row} belum lengkap."]);
             }
-            $rawRows[] = compact('row', 'usernameExisting', 'usernameReplacement', 'start', 'end');
+            $rawRows[] = [
+                'row' => $row,
+                'usernameExisting' => $usernameExisting,
+                'usernameReplacement' => $usernameReplacement,
+                'start' => $this->parseExcelDateCell($startCell, $row),
+                'end' => $this->parseExcelDateCell($endCell, $row),
+            ];
         }
         if ($rawRows === []) {
             throw ValidationException::withMessages(['saturday_replacement_file' => 'Excel belum berisi data pergantian.']);
@@ -216,8 +225,8 @@ class SaturdayReplacementService
             if (strcasecmp($existing->user_name, $replacement->user_name) === 0) {
                 throw ValidationException::withMessages(['saturday_replacement_file' => "Username eksisting dan pengganti pada baris {$row['row']} harus berbeda."]);
             }
-            $start = $this->parseDate($row['start'], $row['row']);
-            $end = $this->parseDate($row['end'], $row['row']);
+            $start = $row['start'];
+            $end = $row['end'];
             if ($end->lt($start)) {
                 throw ValidationException::withMessages(['saturday_replacement_file' => "Tanggal selesai pada baris {$row['row']} tidak boleh sebelum tanggal mulai."]);
             }
@@ -242,6 +251,16 @@ class SaturdayReplacementService
             }
         }
         throw ValidationException::withMessages(['saturday_replacement_file' => "Format tanggal pada baris {$row} tidak valid."]);
+    }
+
+    private function parseExcelDateCell($cell, int $row): Carbon
+    {
+        $rawValue = $cell->getValue();
+        if (is_numeric($rawValue) && ExcelDate::isDateTime($cell)) {
+            return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $rawValue))->startOfDay();
+        }
+
+        return $this->parseDate(trim((string) $cell->getFormattedValue()), $row);
     }
 
     private function generateWordForm(array $records, string $unitCode, string $targetPath): void
@@ -299,7 +318,13 @@ class SaturdayReplacementService
                 $record['start_date'], $record['end_date'], '',
             ];
             foreach ($xpath->query('./w:tc', $clone) as $index => $cell) {
-                $this->setNodeText($xpath, $cell, $values[$index] ?? '');
+                $templateCellText = $this->nodeText($xpath, $cell);
+                $value = match (true) {
+                    str_contains($templateCellText, '$tanggal mulai') => $record['start_date'],
+                    str_contains($templateCellText, '$tanggal selesai') => $record['end_date'],
+                    default => $values[$index] ?? '',
+                };
+                $this->setNodeText($xpath, $cell, $value);
                 if (in_array($index, [0, 2], true)) {
                     $this->preventCellWrapping($dom, $xpath, $cell);
                 }
